@@ -11,5 +11,4 @@ A number of additional features are supported by ptouch-print that could be inte
 ## Gallery
 ![home screen](screenshots/home.jpg "Home Screen")
 
-Inline-style: 
 ![preview](screenshots/preview.jpg "Preview")
