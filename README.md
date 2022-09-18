@@ -6,4 +6,10 @@ Labeler is a quick and dirty web interface wrapping around [ptouch-print](https:
 - Preview of rendered text
 - Single and double line prints
 
-A number of additional features are supported by ptouch-print that could be integrated (images, fonts, fontsizes, ...). I will do so, as I required them, but am open to PRs. 
+A number of additional features are supported by ptouch-print that could be integrated (images, fonts, fontsizes, ...). I will do so, as I required them, but am open to PRs.
+
+## Gallery
+![home screen](screenshots/home.jpg "Home Screen")
+
+Inline-style: 
+![preview](screenshots/preview.jpg "Preview")
