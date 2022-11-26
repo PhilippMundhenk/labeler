@@ -7,11 +7,21 @@
 <?php
 exec("ptouch-print --info 2>&1", $output, $retval);
 global $tapeSize;
-$tapeSize=$output[3];
-if(strpos($tapeSize, "No media") !== false) {
-	$tapeSize = "None";
-} else {
-	$tapeSize=str_replace("media width = ", "", $tapeSize);
+global $title;
+$title="Labeler";
+global $error;
+$error=false;
+if(count($output)<3) {
+	$errorText="ERROR! Printer not connected or turned off!";
+	$error=true;
+}
+else {
+	$tapeSize=$output[3];
+	if(strpos($tapeSize, "No media") !== false) {
+		$tapeSize = "None";
+	} else {
+		$tapeSize=str_replace("media width = ", "", $tapeSize);
+	}
 }
 
 global $preview;
@@ -54,36 +64,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <body>
 	<div class="form">
-		<div class="title">Labeler</div>
-		<div class="subtitle"><?php print("Tape size: ".$tapeSize); ?></div>
-		<div class="cut cut-long"></div>
-		<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
-    			<div class="input-container ic1">
-      				<input class="input" type="text" id="line_one" name="line_one" onload='this.click();' value="<?php print($line_one); ?>" placeholder="" />
-				<div class="cut"></div>
-	      			<label for="line_one" class="placeholder">Line 1</label>
-    			</div>
-			<div class="input-container ic2">
-      				<input class="input" type="text" id="line_two" name="line_two" placeholder="" value="<?php print($line_two); ?>" />
-				<div class="cut"></div>
-      				<label for="line_two" class="placeholder">Line 2</label><br>
-    			</div>
-			<div class="cut cut-short"></div>
-			<button type="submit" name="action" value="preview" class="submit">Preview</button>
-			<?php
-				if ($preview) {
-					$filename="preview.png";
-					if (file_exists($filename)) {
-						print('<div class="cut"></div>');
-						print('<div class="input-container ic3">');
-						print("<img width=100% src=$filename />");
-						print('</div>');
-						print('<div class="cut"></div>');
+		<?php
+			if($error) {
+		?>
+			<div class="title" style="margin-bottom:30px"><?php print($errorText); ?></div>
+		<?php 
+			} 
+			else {
+		?>
+			<div class="title">Labeler</div>
+			<div class="subtitle"><?php print("Tape size: ".$tapeSize); ?></div>
+			<div class="cut cut-long"></div>
+			<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+	    			<div class="input-container ic1">
+	      				<input class="input" type="text" id="line_one" name="line_one" onload='this.click();' value="<?php print($line_one); ?>" placeholder="" />
+					<div class="cut"></div>
+		      			<label for="line_one" class="placeholder">Line 1</label>
+	    			</div>
+				<div class="input-container ic2">
+	      				<input class="input" type="text" id="line_two" name="line_two" placeholder="" value="<?php print($line_two); ?>" />
+					<div class="cut"></div>
+	      				<label for="line_two" class="placeholder">Line 2</label><br>
+	    			</div>
+				<div class="cut cut-short"></div>
+				<button type="submit" name="action" value="preview" class="submit">Preview</button>
+				<?php
+					if ($preview) {
+						$filename="preview.png";
+						if (file_exists($filename)) {
+							print('<div class="cut"></div>');
+							print('<div class="input-container ic3">');
+							print("<img width=100% src=$filename />");
+							print('</div>');
+							print('<div class="cut"></div>');
+						}
 					}
-				}
-			?>
-			<button type="submit" name="action" value="print" class="submit">Print</button>
-		</form>
+				?>
+				<button type="submit" name="action" value="print" class="submit">Print</button>
+			</form>
+		<?php } ?>
 	</div>
 </body>
 </html>
