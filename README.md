@@ -46,6 +46,8 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
   tape, open cover, cutter jam, overheating, weak batteries, P-Lite mode or missing USB permissions,
   a check after every print job (ptouch-print itself does not notice a jam during printing), a hint
   when the printer switched itself off, and a log of the last print jobs.
+- **Templates** to start from: asset tag with numbered QR code, Wi-Fi guest access, cable label,
+  folder spine, address, name tag, shelf label with barcode.
 - **Undo and redo** for every change, also with Ctrl+Z and Ctrl+Shift+Z.
 - **Saved labels** in the browser; the current label is kept between visits.
 - Light and dark mode, works on phones, can be added to the home screen.

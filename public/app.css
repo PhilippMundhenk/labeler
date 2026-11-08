@@ -224,6 +224,14 @@ dialog::backdrop { background: #0008; }
 .info { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
 .info dt { color: var(--muted); }
 .info dd { margin: 0; overflow-wrap: anywhere; }
+.templates { list-style: none; padding: 0; margin: 12px 0 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.templates button {
+  display: grid; gap: 4px; width: 100%; height: 100%; padding: 12px 14px; text-align: left; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--field); color: var(--fg); font: inherit;
+}
+.templates button:hover { border-color: var(--primary); }
+.templates strong { font-size: 15px; }
+.templates span { color: var(--muted); font-size: 13px; }
 .log { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 8px; font-size: 13px; }
 .log li { border-left: 3px solid var(--ok); padding: 4px 10px; background: var(--field); border-radius: 0 6px 6px 0; }
 .log li.failed { border-color: var(--bad); }
