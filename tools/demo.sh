@@ -9,4 +9,4 @@ export LABELER_PTOUCH_BIN="$PWD/tools/ptouch-sim/ptouch-print"
 export LABELER_DATA_DIR="$PWD/test-results/demo/data"
 export PTSIM_OUT="${PTSIM_OUT:-$PWD/test-results/demo/printed}"
 echo "Labeler demo on http://localhost:8080/ (simulated printer)"
-exec php -S 0.0.0.0:8080 -t public
+exec php -S 0.0.0.0:8080 -t public src/router.php

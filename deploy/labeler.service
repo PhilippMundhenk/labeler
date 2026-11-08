@@ -11,7 +11,7 @@ Group=labeler
 # access to the printer (udev rule deploy/99-labeler-ptouch.rules)
 SupplementaryGroups=lp
 WorkingDirectory=/opt/labeler
-ExecStart=/usr/bin/php -S 0.0.0.0:8080 -t /opt/labeler/public
+ExecStart=/usr/bin/php -S 0.0.0.0:8080 -t /opt/labeler/public /opt/labeler/src/router.php
 Environment=LABELER_DATA_DIR=/var/lib/labeler
 StateDirectory=labeler
 Restart=on-failure

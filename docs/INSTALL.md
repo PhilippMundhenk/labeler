@@ -122,6 +122,9 @@ the group `lp`:
   then `sudo usermod -aG lp www-data` and restart lighttpd.
 - Apache: `Alias /labeler /opt/labeler/public` with `mod_php` or PHP-FPM.
 
+With your own web server, let it handle caching and compression (nginx: `gzip on;`, `etag on;`);
+with the built-in server, `src/router.php` does it (the service file already uses it).
+
 For the print log, create a writable data folder: `sudo install -d -o www-data /opt/labeler/data`.
 Never make the whole `/opt/labeler` the document root: `src/` and `config.php` must not be served.
 
