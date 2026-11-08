@@ -1,0 +1,35 @@
+{
+    "name": "philippmundhenk/labeler",
+    "description": "Web interface for Brother P-Touch label printers through ptouch-print",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    },
+    "autoload-dev": {
+        "files": [
+            "src/bootstrap.php",
+            "tools/ptouch-sim/Png.php",
+            "tools/ptouch-sim/Simulator.php"
+        ],
+        "psr-4": {
+            "Labeler\\Tests\\": "tests/php/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "coverage": [
+            "@php -d pcov.directory=. vendor/bin/phpunit --coverage-clover coverage/php/clover.xml --coverage-text",
+            "php tools/coverage-gate.php coverage/php/clover.xml 95"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "7.4.33"
+        }
+    }
+}

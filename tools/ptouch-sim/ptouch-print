@@ -1,0 +1,15 @@
+#!/usr/bin/env php
+<?php
+
+// Simulated ptouch-print with a simulated printer. See README.md in this folder.
+
+declare(strict_types=1);
+
+require __DIR__ . '/Png.php';
+require __DIR__ . '/Simulator.php';
+
+$sim = new Labeler\Sim\Simulator(Labeler\Sim\Simulator::stateFromEnv(getenv()));
+$result = $sim->run(array_slice($argv, 1));
+fwrite(STDERR, $result['stderr']);
+fwrite(STDOUT, $result['stdout']);
+exit($result['code']);
