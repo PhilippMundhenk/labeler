@@ -22,7 +22,11 @@ export function tapePx(mm, dpi = 180, maxPx = Infinity) {
 
 export const BLOCK_DEFAULTS = {
   text: { type: 'text', text: 'Label', font: 'sans-serif', size: 0, bold: true, italic: false, align: 'center', invert: false },
-  qr: { type: 'qr', content: 'https://example.com', level: 'M', scale: 100, quiet: 1 },
+  qr: {
+    type: 'qr', kind: 'text', content: 'https://example.com', level: 'M', scale: 100, quiet: 1,
+    wifiSsid: '', wifiPassword: '', wifiType: 'WPA', wifiHidden: false,
+    contactName: '', org: '', phone: '', email: '', url: '', subject: '',
+  },
   barcode: { type: 'barcode', content: '1234567890', text: true, bar: 2, scale: 100 },
   image: { type: 'image', src: '', name: '', mode: 'threshold', level: 128, invert: false, scale: 100 },
   icon: { type: 'icon', icon: '', src: '', invert: false, scale: 100 },
@@ -73,7 +77,18 @@ export function normalizeBlock(raw) {
       break;
     case 'qr':
       Object.assign(b, {
+        kind: oneOf(raw.kind, ['text', 'wifi', 'contact', 'email', 'phone'], d.kind),
         content: str(raw.content, 2000, d.content),
+        wifiSsid: str(raw.wifiSsid, 64),
+        wifiPassword: str(raw.wifiPassword, 128),
+        wifiType: oneOf(raw.wifiType, ['WPA', 'WEP', 'nopass'], d.wifiType),
+        wifiHidden: Boolean(raw.wifiHidden),
+        contactName: str(raw.contactName, 200),
+        org: str(raw.org, 200),
+        phone: str(raw.phone, 50),
+        email: str(raw.email, 200),
+        url: str(raw.url, 500),
+        subject: str(raw.subject, 200),
         level: oneOf(raw.level, ['L', 'M', 'Q', 'H'], d.level),
         scale: num(raw.scale, 20, 100, d.scale),
         quiet: num(raw.quiet, 0, 4, d.quiet),

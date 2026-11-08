@@ -15,6 +15,7 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - Font selection (built-in list, fonts in the server's `fonts/` folder, fonts of the device),
   size, bold, italic, alignment, white on black, any number of lines (#4).
 - QR codes and Code 128 barcodes (#5).
+- QR helpers for Wi-Fi, contacts (vCard), e-mail and phone numbers with correct escaping (#21).
 - Icon blocks with search over Material Design Icons and Simple Icons through the Iconify API,
   `icon_api` setting (#16).
 - Placeholders {date}, {time}, {datetime} and a counter {n} that numbers every copy (#17).
