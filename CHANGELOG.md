@@ -15,10 +15,13 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - Font selection (built-in list, fonts in the server's `fonts/` folder, fonts of the device),
   size, bold, italic, alignment, white on black, any number of lines (#4).
 - QR codes and Code 128 barcodes (#5).
+- Icon blocks with search over Material Design Icons and Simple Icons through the Iconify API,
+  `icon_api` setting (#16).
 - Images: PNG, JPEG, SVG, black and white or dithered, threshold, invert (#6).
 - Labels made of several blocks; margins, gap, minimum length, position, frame; copies, chain
   printing, cut before the label; saved labels; download as PNG (#7).
-- Responsive interface with light and dark mode, printer badge, tape colours in the preview,
+- Responsive interface with light and dark mode, toggle chips, inline block errors, reasons
+  next to a disabled Print button, printer badge, tape colours in the preview,
   details dialog with the print log, web app manifest (#8).
 - JSON API (`status`, `print`, `fonts`, `font`, `log`, `health`), `config.php` and `LABELER_*`
   settings (#9).

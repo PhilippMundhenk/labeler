@@ -35,6 +35,7 @@
       </div>
 
       <div class="print-row">
+        <span id="print-hint" class="print-hint" aria-live="polite"></span>
         <label class="inline copies">Copies <input id="copies" type="number" inputmode="numeric" min="1" max="50" value="1"></label>
         <button type="button" id="print" class="primary" disabled>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v5H7zM5 9h14a2 2 0 0 1 2 2v6h-4v4H7v-4H3v-6a2 2 0 0 1 2-2zm4 7v3h6v-3z"/></svg>
@@ -60,6 +61,7 @@
       <p id="empty-hint" class="muted" hidden>The label is empty. Add a block below.</p>
       <div class="add" role="group" aria-label="Add a block">
         <button type="button" id="add-text" data-add="text" class="secondary">+ Text</button>
+        <button type="button" id="add-icon" data-add="icon" class="secondary" hidden>+ Icon</button>
         <button type="button" data-add="qr" class="secondary">+ QR code</button>
         <button type="button" data-add="barcode" class="secondary">+ Barcode</button>
         <button type="button" data-add="image" class="secondary">+ Image</button>
@@ -68,18 +70,19 @@
       <button type="button" id="local-fonts" class="link" hidden>Use the fonts of this device</button>
     </section>
 
+    <div class="side">
     <section class="card" aria-labelledby="layout-title">
       <h2 id="layout-title">Layout</h2>
       <div id="settings" class="fields">
         <label class="field">Margin (mm)<input id="margin" type="number" inputmode="decimal" min="0" max="100" step="0.5"></label>
         <label class="field">Gap between blocks (mm)<input id="gap" type="number" inputmode="decimal" min="0" max="100" step="0.5"></label>
-        <label class="field">Minimum length (mm)<input id="length" type="number" inputmode="decimal" min="0" max="1000" step="1"><small class="hint">0 = as long as the content</small></label>
+        <label class="field">Minimum length (mm)<input id="length" type="number" inputmode="decimal" min="0" max="1000" step="1" placeholder="Auto"><small class="hint">Empty: as long as the content</small></label>
         <fieldset class="field segmented"><legend>Position</legend>
           <label><input type="radio" name="label-align" value="left"><span>Left</span></label>
           <label><input type="radio" name="label-align" value="center"><span>Center</span></label>
           <label><input type="radio" name="label-align" value="right"><span>Right</span></label>
         </fieldset>
-        <label class="check"><input id="frame" type="checkbox"> Frame</label>
+        <div class="field toggles"><label class="toggle"><input id="frame" type="checkbox"><span>Frame</span></label></div>
         <label class="field">Frame line (px)<input id="frame-width" type="number" min="1" max="10" step="1"></label>
       </div>
     </section>
@@ -93,6 +96,7 @@
       <ul id="saved-list" class="saved"></ul>
       <p class="muted small">Saved in this browser.</p>
     </section>
+    </div>
   </main>
 
   <footer>
