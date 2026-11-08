@@ -55,6 +55,16 @@ test('dashed cut mark column', () => {
   assert.equal(new Bitmap(2, 8).dashedColumn(0).countBlack(), 4);
 });
 
+test('rotations', () => {
+  const bm = new Bitmap(3, 2);
+  bm.set(0, 0);
+  bm.set(2, 1);
+  bm.set(1, 1);
+  assert.deepEqual(rows(bm), ['#..', '.##']);
+  assert.deepEqual(rows(bm.rotate90()), ['.#', '#.', '#.']);
+  assert.deepEqual(rows(bm.rotate180()), ['##.', '..#']);
+});
+
 test('mirror flips every row', () => {
   const bm = new Bitmap(3, 2);
   bm.set(0, 0);

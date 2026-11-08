@@ -41,6 +41,9 @@ test('normalizeBlock cleans every block type', () => {
   assert.deepEqual([img.src, img.mode, img.level], ['', 'dither', 254]);
   assert.equal(normalizeBlock({ type: 'image', src: 'data:image/png;base64,AA' }).src, 'data:image/png;base64,AA');
   assert.equal(normalizeBlock({ type: 'spacer', width: -4 }).width, 0);
+  assert.equal(normalizeBlock({ type: 'spacer' }).rotate, undefined);
+  assert.equal(normalizeBlock({ type: 'text', rotate: '90' }).rotate, 90);
+  assert.equal(normalizeBlock({ type: 'image', rotate: 45 }).rotate, 0);
 });
 
 test('normalizeLabel survives garbage and limits the block count', () => {
