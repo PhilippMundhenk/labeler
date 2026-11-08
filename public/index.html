@@ -56,7 +56,11 @@
     <section class="card" aria-labelledby="blocks-title">
       <div class="section-head">
         <h2 id="blocks-title">Content</h2>
-        <button type="button" id="clear" class="link">Start over</button>
+        <span class="head-tools">
+          <button type="button" id="undo" class="icon" aria-label="Undo" title="Undo (Ctrl+Z)" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05 1-6.9 2.6L2 7v9h9l-3.62-3.62A7.98 7.98 0 0 1 20.1 16l2.37-.78A10.5 10.5 0 0 0 12.5 8z"/></svg></button>
+          <button type="button" id="redo" class="icon" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.4 10.6A10.46 10.46 0 0 0 1.53 15.22L3.9 16a7.98 7.98 0 0 1 12.72-3.62L13 16h9V7z"/></svg></button>
+          <button type="button" id="clear" class="link">Start over</button>
+        </span>
       </div>
       <ol id="blocks" class="blocks"></ol>
       <p id="empty-hint" class="muted" hidden>The label is empty. Add a block below.</p>

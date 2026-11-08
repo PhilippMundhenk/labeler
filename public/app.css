@@ -80,6 +80,7 @@ main {
 h2 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 650; }
 h3 { font-size: 14px; margin: 16px 0 8px; }
 .section-head { display: flex; justify-content: space-between; align-items: baseline; }
+.head-tools { display: flex; align-items: center; gap: 2px; }
 
 /* preview */
 .preview-card { position: sticky; top: 56px; z-index: 5; box-shadow: 0 6px 20px #0000000f; }
