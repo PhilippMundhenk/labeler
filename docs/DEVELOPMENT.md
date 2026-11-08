@@ -76,10 +76,10 @@ comes from `PTSIM_*` variables or a JSON file that tests rewrite while the serve
 
 ### Coverage
 
-| Part | Tool | Gate | Measured 2026-11-08 |
+| Part | Tool | Gate | Measured 2026-11-09 |
 | --- | --- | --- | --- |
-| PHP (`src/`, simulator) | PHPUnit + pcov, `tools/coverage-gate.php` | 95 % lines per file | 99.7 % |
-| JS (`public/js/`) | c8 over node tests **and** browser tests | 95 % lines per file | 99.2 % |
+| PHP (`src/`, simulator) | PHPUnit + pcov, `tools/coverage-gate.php` | 95 % lines per file | 99.6 % (111 tests) |
+| JS (`public/js/`) | c8 over node tests **and** browser tests | 95 % lines per file | 99.1 % (68 node tests, 69 browser tests) |
 
 The browser tests collect V8 coverage of every page and write it in the format c8 reads
 (`tests/e2e/fixtures.js`), so `npm run coverage` merges it with the node tests and applies one gate.
