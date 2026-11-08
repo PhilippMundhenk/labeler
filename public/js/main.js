@@ -9,6 +9,7 @@ import { COLLECTIONS, searchIcons, fetchIcon, iconUrl, parseId } from './icons.j
 import { resolveLabel, usesCounter, usesColumns } from './placeholders.js';
 import { parseBatch } from './csv.js';
 import { KINDS } from './qrcontent.js';
+import { History } from './history.js';
 import { FORMATS } from './barcodes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -325,6 +326,7 @@ function scheduleSearch(block) {
 }
 
 async function pickIcon(block, id) {
+  persist();
   try {
     block.src = await fetchIcon(iconApi(), id);
     block.icon = id;
@@ -333,7 +335,7 @@ async function pickIcon(block, id) {
     picker(block.id).message = err.message;
   }
   renderBlocks();
-  changed();
+  commit();
 }
 
 function renderBlocks() {
@@ -424,7 +426,7 @@ async function onBlockChange(e) {
       state.errors[block.id] = err.message;
     }
     renderBlocks();
-    changed();
+    commit();
     return;
   }
   if ('iconSet' in el.dataset) {
@@ -435,7 +437,7 @@ async function onBlockChange(e) {
   if (el.type === 'radio' || el.tagName === 'SELECT') {
     block[el.dataset.k] = el.value;
     if ('rerender' in el.dataset) renderBlocks();
-    changed();
+    commit();
   }
 }
 
@@ -447,6 +449,7 @@ function onBlockClick(e) {
   }
   const btn = e.target.closest('button[data-act]');
   if (!btn) return;
+  persist();
   const blocks = state.label.blocks;
   const i = blocks.findIndex((b) => b.id === btn.closest('.block').dataset.id);
   const act = btn.dataset.act;
@@ -459,7 +462,7 @@ function onBlockClick(e) {
   if (act === 'up' && i > 0) [blocks[i - 1], blocks[i]] = [blocks[i], blocks[i - 1]];
   if (act === 'down' && i < blocks.length - 1) [blocks[i + 1], blocks[i]] = [blocks[i], blocks[i + 1]];
   renderBlocks();
-  changed();
+  commit();
   // keep the keyboard focus on the block that was acted on
   const target = act === 'delete' ? $('#add-text') : $(`.block[data-id="${focusId}"] [data-act="${act}"]`);
   if (target && !target.disabled) target.focus();
@@ -467,10 +470,11 @@ function onBlockClick(e) {
 }
 
 function addBlock(type) {
+  persist(); // pending typing becomes its own undo step
   const block = newBlock(type);
   state.label.blocks.push(block);
   renderBlocks();
-  changed();
+  commit();
   const first = document.querySelector(`.block[data-id="${block.id}"] textarea, .block[data-id="${block.id}"] input`);
   if (first) first.focus();
 }
@@ -540,10 +544,11 @@ function onSavedClick(e) {
   const loadName = e.target.closest('[data-load]')?.dataset.load;
   const removeName = e.target.closest('[data-remove]')?.dataset.remove;
   if (loadName && saved[loadName]) {
+    persist();
     state.label = normalizeLabel(saved[loadName]);
     renderSettings();
     renderBlocks();
-    changed();
+    commit();
     toast(`Loaded "${loadName}"`, 'ok');
   }
   if (removeName) {
@@ -567,7 +572,43 @@ function changed() {
 
 function persist() {
   clearTimeout(persistTimer);
+  if (history.push(JSON.stringify(state.label))) updateUndo();
   if (!store(STORE_LABEL, state.label)) toast('The label is too large to be kept in this browser', 'warn');
+}
+
+/** A change that is one step in the history right away (not merged with typing). */
+function commit() {
+  changed();
+  persist();
+}
+
+/* ---------- undo and redo ---------- */
+
+const history = new History(100);
+
+function updateUndo() {
+  $('#undo').disabled = !history.canUndo;
+  $('#redo').disabled = !history.canRedo;
+}
+
+function applySnapshot(snapshot) {
+  state.label = normalizeLabel(JSON.parse(snapshot));
+  renderSettings();
+  renderBlocks();
+  scheduleRender();
+  store(STORE_LABEL, state.label);
+  updateUndo();
+}
+
+function undo() {
+  persist(); // typing that is not saved yet becomes a step first
+  const snapshot = history.undo();
+  if (snapshot) applySnapshot(snapshot);
+}
+
+function redo() {
+  const snapshot = history.redo();
+  if (snapshot) applySnapshot(snapshot);
 }
 
 function scheduleRender() {
@@ -841,16 +882,27 @@ function init() {
   });
   $('#details-close').addEventListener('click', () => $('#details').close());
   $('#clear').addEventListener('click', () => {
+    persist();
     state.label = defaultLabel();
     renderSettings();
     renderBlocks();
-    changed();
+    commit();
   });
   if ('queryLocalFonts' in window) {
     $('#local-fonts').hidden = false;
     $('#local-fonts').addEventListener('click', loadLocalFonts);
   }
+  $('#undo').addEventListener('click', undo);
+  $('#redo').addEventListener('click', redo);
   document.addEventListener('keydown', (e) => {
+    // inside text fields Ctrl+Z stays the browser's own text undo
+    const typing = e.target.closest && e.target.closest('input[type="text"], input[type="search"], input[type="number"], textarea');
+    const key = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && !typing && (key === 'z' || key === 'y')) {
+      e.preventDefault();
+      if (key === 'y' || e.shiftKey) redo();
+      else undo();
+    }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       onPrint();
@@ -869,6 +921,8 @@ function init() {
     if (document.visibilityState === 'visible') refreshStatus();
   });
 
+  history.reset(JSON.stringify(state.label));
+  updateUndo();
   renderSettings();
   renderBlocks();
   renderSaved();
