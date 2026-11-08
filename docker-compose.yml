@@ -1,0 +1,28 @@
+# Labeler interface. Pick one way to reach the printer below, then: docker compose up -d
+# and open http://<server>:8080/. Details: docs/DOCKER.md
+services:
+  labeler:
+    image: ghcr.io/philippmundhenk/labeler:latest
+    # build: .                       # or build the image from this checkout
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data                 # print log and fonts (put .ttf/.otf/.woff2 into ./data/fonts)
+    environment:
+      # 1) printer on another computer running the printer agent (sudo sh install.sh --agent);
+      #    the agent prints both values when it is installed
+      LABELER_PRINTER_URL: "http://printer-pi:8631"
+      LABELER_PRINTER_TOKEN: "paste-the-token-of-the-agent"
+      # 2) or try it without a printer: comment out the two lines above and use
+      # LABELER_DEMO: "1"
+      # Optional:
+      # LABELER_ICON_API: ""         # switch off the icon search (or your own Iconify server)
+      # LABELER_MAX_COPIES: "20"
+    # 3) or a printer plugged into this Docker host: remove LABELER_PRINTER_URL above and
+    #    pass the USB bus; the group id must be the one owning the printer's device node
+    #    (with deploy/99-labeler-ptouch.rules on the host: the host's "lp" group, usually 7)
+    # devices:
+    #   - /dev/bus/usb:/dev/bus/usb
+    # group_add:
+    #   - "7"

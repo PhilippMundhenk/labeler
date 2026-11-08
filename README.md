@@ -12,7 +12,8 @@ will print.
 Labeler is a small web front end for [ptouch-print](https://git.familie-radermacher.ch/linux/ptouch-print.git)
 by Dominic Radermacher, which does the actual talking to the printer over USB. It is made for a
 Raspberry Pi Zero next to the printer: a few PHP files and static pages, no database, no build
-step, no Docker. The label is drawn in your browser, so the Pi only passes it on.
+step. The label is drawn in your browser, so the Pi only passes it on. The interface can also run
+in Docker on a server, with only a small printer agent next to the printer.
 
 > Labeler is an independent open-source project. It has no relation to Brother Industries and is
 > neither endorsed nor supported by them. "Brother" and "P-Touch" only say which printers it
@@ -46,6 +47,17 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
   a check after every print job (ptouch-print itself does not notice a jam during printing), and a log of the last print jobs.
 - **Saved labels** in the browser; the current label is kept between visits.
 - Light and dark mode, works on phones, can be added to the home screen.
+
+## Try it in Docker
+
+```sh
+docker run --rm -p 8080:8080 -e LABELER_DEMO=1 ghcr.io/philippmundhenk/labeler
+```
+
+opens a demo with a simulated printer at <http://localhost:8080/>. For real use, run the interface
+in Docker on your server with [`docker-compose.yml`](docker-compose.yml) and the printer on a small
+computer with the printer agent (below); or pass the USB bus when the printer hangs on the Docker
+host. Details: [docs/DOCKER.md](docs/DOCKER.md).
 
 ## Quick start on a Raspberry Pi
 
@@ -128,8 +140,9 @@ Dark mode and more: [docs/screenshots.md](docs/screenshots.md).
 
 ## Documentation
 
-- [docs/INSTALL.md](docs/INSTALL.md): installing ptouch-print and Labeler, web servers, updates,
-  troubleshooting.
+- [docs/INSTALL.md](docs/INSTALL.md): installing ptouch-print and Labeler, the printer agent, web
+  servers, updates, troubleshooting.
+- [docs/DOCKER.md](docs/DOCKER.md): the container image, demo mode, printer agent or USB.
 - [docs/DESIGN.md](docs/DESIGN.md): how it works, ptouch-print versions, and the
   [architecture decision records](docs/adr/README.md).
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): tests (simulated printer, browser tests, contract
