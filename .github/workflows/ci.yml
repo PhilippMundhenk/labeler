@@ -25,11 +25,11 @@ jobs:
         run: docker build -t labeler-dev tools/dev
       - name: Install dependencies
         run: |
-          docker run --rm -v "$PWD:/work" -w /work -e HOME=/tmp labeler-dev sh -c 'npm ci && composer install --no-progress'
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work -e HOME=/tmp labeler-dev sh -c 'npm ci && composer install --no-progress'
       - name: PHP tests with 95 % line coverage per file
-        run: docker run --rm -v "$PWD:/work" -w /work -e HOME=/tmp labeler-dev composer coverage
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work -e HOME=/tmp labeler-dev composer coverage
       - name: JS lint, unit and browser tests with 95 % line coverage per file
-        run: docker run --rm -v "$PWD:/work" -w /work -e HOME=/tmp -e CI=true labeler-dev npm test
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work -e HOME=/tmp -e CI=true labeler-dev npm test
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -53,13 +53,13 @@ jobs:
         php: ["7.4", "8.2", "8.4"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install dependencies (lock file is resolved for PHP 7.4)
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/app" -w /app -e COMPOSER_HOME=/tmp composer:2 install --no-progress --ignore-platform-reqs
       - name: Lint and unit tests
         run: |
-          docker run --rm -v "$PWD:/work" -w /work php:${{ matrix.php }}-cli sh -c '
-            apt-get update -qq && apt-get install -y -qq unzip >/dev/null
-            curl -sS https://getcomposer.org/installer | php -- --quiet --install-dir=/usr/local/bin --filename=composer
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work php:${{ matrix.php }}-cli sh -c '
             for f in src/*.php public/*.php tools/ptouch-sim/*.php tools/ptouch-sim/ptouch-print; do php -l "$f" >/dev/null || exit 1; done
-            composer install --no-progress --quiet && vendor/bin/phpunit'
+            vendor/bin/phpunit'
 
   contract:
     name: Real ptouch-print ${{ matrix.ref }}
