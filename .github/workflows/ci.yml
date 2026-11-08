@@ -83,8 +83,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Raspberry Pi OS is Debian: bookworm (PHP 8.2) and bullseye (PHP 7.4)
-        image: ["debian:bookworm", "debian:bullseye"]
+        # Raspberry Pi OS is Debian: bookworm (PHP 8.2) and trixie (PHP 8.4). bullseye's security
+        # mirror no longer serves all packages its index lists; PHP 7.4 is tested in php-versions.
+        image: ["debian:bookworm", "debian:trixie"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: sh tools/test-install.sh ${{ matrix.image }}
