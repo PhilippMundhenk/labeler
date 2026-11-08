@@ -45,7 +45,7 @@ and adds the others when `--version` says they are there.
 | 1.5 | 2021-10 | `--info` without printer width; `--text a b` takes several lines. No `--copies`: Labeler runs ptouch-print once per copy. |
 | 1.6 | 2024-10 | `--copies`, `--chain`, `--force-tape-width`; `--info` shows colour names (`01 (White)`). |
 | 1.7 | 2025-08 | argp command line: positional arguments are rejected, so `--text "a" "b"` fails with "No arguments supported" (the cause of #1); second line is `--newline`. `--info` adds the printer width. |
-| 1.8 | 2026-03 | `--precut`, `--align`, `--timeout`; hex values with `0x`; PNG resolution 180 dpi. |
+| 1.8 | 2026-03 | `--precut`, `--align`, `--timeout`; hex values with `0x`; PNG resolution 180 dpi. `--precut` sends `ESC i M 0x40`, which Brother's raster command reference defines as **auto cut**; Labeler calls it that. Without it, the printer's own cut setting applies. |
 | 1.9 | 2026-09 | `printer has N dpi` line (360 dpi printers), `--serial`, `--list-connected`, serial in the USB message. |
 
 `ptouch-print --image` prints black for palette colour 1 when it is darker than colour 0. A
