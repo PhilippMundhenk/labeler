@@ -227,6 +227,8 @@ fieldset.segmented { border: 0; padding: 0; grid-column: 1 / -1; }
 footer { max-width: 1180px; margin: 8px auto 32px; padding: 0 16px; color: var(--muted); font-size: 13px; }
 footer a { color: var(--link); }
 footer .link { font-size: 13px; }
+footer .lang { margin-left: 12px; font-size: 13px; }
+footer .lang select { width: auto; min-height: 32px; padding: 4px 8px; }
 #login-dialog { width: min(380px, calc(100vw - 32px)); }
 #login-dialog .field { margin: 12px 0; }
 

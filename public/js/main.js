@@ -13,6 +13,7 @@ import { parseBatch } from './csv.js';
 import { KINDS } from './qrcontent.js';
 import { History } from './history.js';
 import { TEMPLATES, findTemplate } from './templates.js';
+import { LANGUAGES, detectLanguage, setLanguage, language, watch, misses } from './i18n.js';
 import { FORMATS } from './barcodes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -22,6 +23,7 @@ const STORE_TAPE = 'labeler.tape';
 const STORE_BATCH = 'labeler.batch';
 const STORE_HISTORY = 'labeler.history';
 const STORE_SERIAL = 'labeler.serial';
+const STORE_LANG = 'labeler.lang';
 const HISTORY_MAX = 20;
 
 const TAPE_COLORS = {
@@ -236,7 +238,7 @@ function fontOptions(current) {
   let html = known ? '' : `<option>${esc(current)}</option>`;
   for (const [name, list] of groups) {
     if (!list.length) continue;
-    html += `<optgroup label="${name}">${list.map((f) => `<option${f === current ? ' selected' : ''}>${esc(f)}</option>`).join('')}</optgroup>`;
+    html += `<optgroup label="${name}">${list.map((f) => `<option data-no-i18n${f === current ? ' selected' : ''}>${esc(f)}</option>`).join('')}</optgroup>`;
   }
   return html;
 }
@@ -685,7 +687,7 @@ function renderSaved() {
   $('#saved-local span').textContent = `${local.length} ${local.length === 1 ? 'label is' : 'labels are'} saved only in this browser.`;
   const names = Object.keys(saved).sort((a, b) => a.localeCompare(b));
   $('#saved-list').innerHTML = names.length
-    ? names.map((n) => `<li><button type="button" class="link" data-load="${esc(n)}">${esc(n)}</button><button type="button" class="icon" data-remove="${esc(n)}" aria-label="Delete saved label ${esc(n)}">${icon('trash')}</button></li>`).join('')
+    ? names.map((n) => `<li><button type="button" class="link" data-load="${esc(n)}" data-no-i18n>${esc(n)}</button><button type="button" class="icon" data-remove="${esc(n)}" aria-label="Delete saved label ${esc(n)}">${icon('trash')}</button></li>`).join('')
     : '<li class="muted">No saved labels yet.</li>';
 }
 
@@ -1054,7 +1056,18 @@ async function openDetails() {
 
 /* ---------- start ---------- */
 
+function initLanguage() {
+  setLanguage(detectLanguage(load(STORE_LANG, ''), navigator.languages || [navigator.language]));
+  $('#lang').innerHTML = LANGUAGES.map(([code, name]) => `<option value="${code}"${code === language() ? ' selected' : ''}>${name}</option>`).join('');
+  $('#lang').addEventListener('change', (e) => {
+    store(STORE_LANG, e.target.value);
+    location.reload();
+  });
+  watch(document.body);
+}
+
 function init() {
+  initLanguage();
   state.label = normalizeLabel(load(STORE_LABEL, null) || defaultLabel());
 
   const select = $('#tape-select');
@@ -1204,4 +1217,4 @@ function init() {
 init();
 
 // for the browser tests
-window.labeler = { state, render: () => render(), labelPng };
+window.labeler = { state, render: () => render(), labelPng, i18nMisses: misses };

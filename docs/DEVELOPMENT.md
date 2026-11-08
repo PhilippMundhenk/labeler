@@ -86,6 +86,17 @@ The browser tests collect V8 coverage of every page and write it in the format c
 Excluded: `public/lib/qrcode.mjs` (vendored), `src/bootstrap.php` (only `require_once` lines,
 loaded before coverage starts), `public/api.php` (request wiring, exercised by every browser test).
 
+## Translations
+
+The interface is written in English; `public/js/i18n.js` translates it as it appears on the page
+(a MutationObserver over text nodes and the placeholder, title, aria-label and label attributes).
+The English text is the key, so a new string needs only an entry in `public/js/i18n-de.js`;
+`{name}` in a key stands for a part that is taken over (numbers, names). Content the user typed,
+font names and saved label names sit inside `[data-no-i18n]` and are never translated. In German,
+texts without a translation are collected, and `tests/e2e/i18n.spec.js` walks every screen and
+fails on any. A new language: copy `i18n-de.js`, translate, add it to `DICTIONARIES` and
+`LANGUAGES` in `i18n.js`.
+
 ## Screenshots
 
 ```sh
