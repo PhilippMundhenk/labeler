@@ -157,13 +157,16 @@ final class AgentTest extends TestCase
         $agent = new Remote('http://127.0.0.1:' . self::$port, self::TOKEN, 5);
         $this->assertSame(['status' => 404, 'data' => ['error' => 'unknown action'], 'error' => ''], $agent->call('GET', 'nope'));
         $other = new Remote('http://127.0.0.1:' . self::$port . '/nothing-here', self::TOKEN, 5);
-        $this->assertSame(['status' => 404, 'data' => null, 'error' => 'not a Labeler agent'], $other->call('GET', 'status'));
+        // 404, or the page itself with 200 on PHP 8.4's built-in server: either way not an agent
+        $answer = $other->call('GET', 'status');
+        $this->assertSame([null, 'not a Labeler agent'], [$answer['data'], $answer['error']]);
+        $this->assertContains($answer['status'], [200, 404]);
         $api = $this->ui();
         $ref = new \ReflectionProperty(Api::class, 'remote');
         $ref->setAccessible(true);
         $ref->setValue($api, new Remote('http://127.0.0.1:' . self::$port . '/nothing-here', self::TOKEN, 5));
         [, $body] = self::json($api->handle('GET', ['action' => 'status'], '', ''));
-        $this->assertStringContainsString('answered HTTP 404: not a Labeler agent', $body['printer']['message']);
+        $this->assertMatchesRegularExpression('/answered HTTP (200|404): not a Labeler agent/', $body['printer']['message']);
     }
 
     public function testTheAgentChecksItsToken(): void
