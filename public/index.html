@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#2A6FDB">
+  <meta name="description" content="Design and print labels on a Brother P-Touch printer">
+  <title>Labeler</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="app.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="./"><img src="icon.svg" alt="" width="28" height="28"> Labeler</a>
+    <button type="button" id="status" class="chip" data-state="busy" aria-haspopup="dialog" title="Printer details and print log">
+      <span class="dot" aria-hidden="true"></span><span id="status-text">Checking printer…</span>
+    </button>
+  </header>
+
+  <main>
+    <section class="card preview-card" aria-labelledby="preview-title">
+      <h2 id="preview-title" class="sr-only">Preview</h2>
+      <div class="meta"><span id="tape-info">12 mm tape</span><span id="length-info"></span></div>
+      <div class="tape"><canvas id="preview" role="img" aria-label="Label preview"></canvas></div>
+
+      <div id="printer-notice" class="notice" hidden>
+        <p id="printer-message"></p>
+        <div class="row">
+          <label id="manual-tape" class="inline">Design for <select id="tape-select" aria-label="Tape width"></select></label>
+          <button type="button" id="retry" class="secondary">Check again</button>
+        </div>
+      </div>
+
+      <div class="print-row">
+        <label class="inline copies">Copies <input id="copies" type="number" inputmode="numeric" min="1" max="50" value="1"></label>
+        <button type="button" id="print" class="primary" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v5H7zM5 9h14a2 2 0 0 1 2 2v6h-4v4H7v-4H3v-6a2 2 0 0 1 2-2zm4 7v3h6v-3z"/></svg>
+          Print
+        </button>
+      </div>
+      <details class="options">
+        <summary>More options</summary>
+        <div class="row wrap">
+          <label class="check" title=""><input id="chain" type="checkbox"> Chain printing (no feed and cut after the label)</label>
+          <label class="check" title=""><input id="precut" type="checkbox"> Cut before the label</label>
+          <button type="button" id="download" class="secondary">Download PNG</button>
+        </div>
+      </details>
+    </section>
+
+    <section class="card" aria-labelledby="blocks-title">
+      <div class="section-head">
+        <h2 id="blocks-title">Content</h2>
+        <button type="button" id="clear" class="link">Start over</button>
+      </div>
+      <ol id="blocks" class="blocks"></ol>
+      <p id="empty-hint" class="muted" hidden>The label is empty. Add a block below.</p>
+      <div class="add" role="group" aria-label="Add a block">
+        <button type="button" id="add-text" data-add="text" class="secondary">+ Text</button>
+        <button type="button" data-add="qr" class="secondary">+ QR code</button>
+        <button type="button" data-add="barcode" class="secondary">+ Barcode</button>
+        <button type="button" data-add="image" class="secondary">+ Image</button>
+        <button type="button" data-add="spacer" class="secondary">+ Space</button>
+      </div>
+      <button type="button" id="local-fonts" class="link" hidden>Use the fonts of this device</button>
+    </section>
+
+    <section class="card" aria-labelledby="layout-title">
+      <h2 id="layout-title">Layout</h2>
+      <div id="settings" class="fields">
+        <label class="field">Margin (mm)<input id="margin" type="number" inputmode="decimal" min="0" max="100" step="0.5"></label>
+        <label class="field">Gap between blocks (mm)<input id="gap" type="number" inputmode="decimal" min="0" max="100" step="0.5"></label>
+        <label class="field">Minimum length (mm)<input id="length" type="number" inputmode="decimal" min="0" max="1000" step="1"><small class="hint">0 = as long as the content</small></label>
+        <fieldset class="field segmented"><legend>Position</legend>
+          <label><input type="radio" name="label-align" value="left"><span>Left</span></label>
+          <label><input type="radio" name="label-align" value="center"><span>Center</span></label>
+          <label><input type="radio" name="label-align" value="right"><span>Right</span></label>
+        </fieldset>
+        <label class="check"><input id="frame" type="checkbox"> Frame</label>
+        <label class="field">Frame line (px)<input id="frame-width" type="number" min="1" max="10" step="1"></label>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="saved-title">
+      <h2 id="saved-title">Saved labels</h2>
+      <form id="save-form" class="row">
+        <input id="save-name" type="text" placeholder="Name" aria-label="Name of the label" maxlength="80" required>
+        <button type="submit" class="secondary">Save</button>
+      </form>
+      <ul id="saved-list" class="saved"></ul>
+      <p class="muted small">Saved in this browser.</p>
+    </section>
+  </main>
+
+  <footer>
+    Labeler is an independent open-source project. It has no relation to Brother Industries and is
+    neither endorsed nor supported by them; "Brother" and "P-Touch" only say which printers it works with.
+    <a href="https://github.com/PhilippMundhenk/labeler">Source and help</a>
+  </footer>
+
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+  <dialog id="details" aria-labelledby="details-title">
+    <h2 id="details-title">Printer</h2>
+    <dl id="details-info" class="info"></dl>
+    <h3>Recent prints</h3>
+    <ul id="details-log" class="log"></ul>
+    <div class="row end">
+      <button type="button" id="details-refresh" class="secondary">Check again</button>
+      <button type="button" id="details-close" class="primary">Close</button>
+    </div>
+  </dialog>
+</body>
+</html>
