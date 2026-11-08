@@ -199,6 +199,11 @@ fieldset.segmented { border: 0; padding: 0; grid-column: 1 / -1; }
 .icon-result img { width: 100%; height: auto; max-width: 32px; }
 #local-fonts { margin-top: 10px; font-size: 14px; }
 
+.batch-tools { margin-top: 8px; }
+.batch-nav { gap: 12px; margin-top: 8px; }
+.batch-nav .secondary { min-height: 36px; padding: 0 14px; }
+.section-head .toggles { margin-bottom: 12px; }
+#batch-data { min-height: 88px; }
 .saved { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 2px; }
 .saved li { display: flex; justify-content: space-between; align-items: center; }
 

@@ -88,6 +88,27 @@
       </div>
     </section>
 
+    <section class="card" aria-labelledby="batch-title">
+      <div class="section-head">
+        <h2 id="batch-title">Batch</h2>
+        <div class="toggles"><label class="toggle"><input id="batch-on" type="checkbox"><span>One label per row</span></label></div>
+      </div>
+      <label class="field wide" for="batch-data">Rows
+        <textarea id="batch-data" rows="4" spellcheck="false" placeholder="Kitchen;Shelf 1&#10;Kitchen;Shelf 2"></textarea>
+        <small class="hint">One row per line, columns separated by comma, semicolon or tab, or pasted from a spreadsheet. Use {1}, {2}… or {column name} in the blocks.</small>
+      </label>
+      <div class="row wrap batch-tools">
+        <input id="batch-file" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" aria-label="Load rows from a file">
+        <div class="toggles"><label class="toggle"><input id="batch-header" type="checkbox"><span>First row has column names</span></label></div>
+      </div>
+      <p id="batch-info" class="muted small" aria-live="polite"></p>
+      <div id="batch-nav" class="row batch-nav" hidden>
+        <button type="button" class="secondary" id="batch-prev" aria-label="Previous row">‹</button>
+        <span id="batch-pos"></span>
+        <button type="button" class="secondary" id="batch-next" aria-label="Next row">›</button>
+      </div>
+    </section>
+
     <section class="card" aria-labelledby="saved-title">
       <h2 id="saved-title">Saved labels</h2>
       <form id="save-form" class="row">

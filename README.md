@@ -35,6 +35,8 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
   black.
 - **QR codes** with selectable error correction, **barcodes** with or without text below.
 - **Placeholders**: {date}, {time} and a counter {n} that gives every copy its own number.
+- **Batch printing**: paste a list or load a CSV file and print one label per row, with {1} or
+  {column name} in any block.
 - **Images** (PNG, JPEG, SVG): black and white or dithered, adjustable threshold, invert.
 - **Layout**: margins, gap, minimum length with position, frame.
 - **Printing**: copies, chain printing and cut before the label where the installed ptouch-print

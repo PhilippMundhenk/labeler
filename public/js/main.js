@@ -6,12 +6,14 @@ import {
 import { renderLabel, drawPreview } from './render.js';
 import { encodePng, toBase64 } from './png.js';
 import { COLLECTIONS, searchIcons, fetchIcon, iconUrl, parseId } from './icons.js';
-import { resolveLabel, usesCounter } from './placeholders.js';
+import { resolveLabel, usesCounter, usesColumns } from './placeholders.js';
+import { parseBatch } from './csv.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const STORE_LABEL = 'labeler.label';
 const STORE_SAVED = 'labeler.saved';
 const STORE_TAPE = 'labeler.tape';
+const STORE_BATCH = 'labeler.batch';
 
 const TAPE_COLORS = {
   White: '#fafaf7', 'Matte White': '#f3f3ef', Clear: '#e4ebf0', 'Matte Clear': '#e4ebf0', Red: '#d8342c',
@@ -75,6 +77,7 @@ const state = {
   rendering: null,
   dirty: false,
   printing: false,
+  batch: { text: '', header: false, on: false, index: 0, rows: [], headers: [] },
 };
 
 function load(key, fallback) {
@@ -150,9 +153,10 @@ function updatePrintButton() {
   const errors = Object.keys(state.errors).length;
   const empty = !state.bitmap || state.bitmap.countBlack() === 0;
   btn.disabled = state.printing || !state.tape.live || errors > 0 || empty;
+  const batch = batchActive() ? `${state.batch.rows.length} labels from the batch` : '';
   const reason = !state.tape.live ? 'No printer ready' : errors ? 'Fix the marked blocks first' : empty ? 'The label is empty' : '';
   btn.title = reason || 'Print (Ctrl+Enter)';
-  $('#print-hint').textContent = state.printing ? 'Printing…' : reason;
+  $('#print-hint').textContent = state.printing ? 'Printing…' : reason || batch;
 }
 
 /* ---------- fonts ---------- */
@@ -524,6 +528,7 @@ let renderTimer = null;
 let persistTimer = null;
 
 function changed() {
+  if (state.batch.on) updateBatch(false);
   scheduleRender();
   clearTimeout(persistTimer);
   persistTimer = setTimeout(persist, 300);
@@ -580,8 +585,74 @@ async function labelPng() {
   return encodePng(state.bitmap, undefined, state.tape.dpi);
 }
 
+/* ---------- batch ---------- */
+
+const batchActive = () => state.batch.on && state.batch.rows.length > 0;
+
+function updateBatch(persist = true) {
+  const b = state.batch;
+  const parsed = parseBatch(b.text, b.header);
+  b.rows = parsed.rows;
+  b.headers = parsed.headers;
+  b.index = Math.min(b.index, Math.max(0, b.rows.length - 1));
+  const cols = b.headers.length ? b.headers.map((h) => `{${h}}`).join(', ')
+    : b.rows.length ? Array.from({ length: Math.max(...b.rows.map((r) => r.length)) }, (_, i) => `{${i + 1}}`).join(', ') : '';
+  let info = b.rows.length ? `${b.rows.length} ${b.rows.length === 1 ? 'row' : 'rows'} · ${cols}` : 'No rows yet.';
+  if (b.on && b.rows.length && !usesColumns(state.label, b.headers)) info += ' · No block uses these placeholders yet, so all labels would look the same.';
+  $('#batch-info').textContent = info;
+  $('#batch-nav').hidden = !batchActive();
+  $('#batch-pos').textContent = `Row ${b.index + 1} of ${b.rows.length}`;
+  $('#batch-prev').disabled = b.index === 0;
+  $('#batch-next').disabled = b.index >= b.rows.length - 1;
+  if (persist) store(STORE_BATCH, { text: b.text, header: b.header, on: b.on });
+  scheduleRender();
+}
+
+function initBatch() {
+  const saved = load(STORE_BATCH, {}) || {};
+  Object.assign(state.batch, {
+    text: typeof saved.text === 'string' ? saved.text : '',
+    header: Boolean(saved.header),
+    on: Boolean(saved.on),
+  });
+  $('#batch-data').value = state.batch.text;
+  $('#batch-header').checked = state.batch.header;
+  $('#batch-on').checked = state.batch.on;
+  $('#batch-data').addEventListener('input', (e) => {
+    state.batch.text = e.target.value;
+    updateBatch();
+  });
+  $('#batch-header').addEventListener('change', (e) => {
+    state.batch.header = e.target.checked;
+    updateBatch();
+  });
+  $('#batch-on').addEventListener('change', (e) => {
+    state.batch.on = e.target.checked;
+    updateBatch();
+  });
+  $('#batch-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    state.batch.text = await file.text();
+    $('#batch-data').value = state.batch.text;
+    state.batch.on = true;
+    $('#batch-on').checked = true;
+    updateBatch();
+  });
+  $('#batch-prev').addEventListener('click', () => {
+    state.batch.index -= 1;
+    updateBatch(false);
+  });
+  $('#batch-next').addEventListener('click', () => {
+    state.batch.index += 1;
+    updateBatch(false);
+  });
+  updateBatch(false);
+}
+
 function previewContext() {
-  return { n: state.label.counter };
+  const b = state.batch;
+  return batchActive() ? { n: state.label.counter, row: b.rows[b.index], headers: b.headers } : { n: state.label.counter };
 }
 
 /**
@@ -590,8 +661,17 @@ function previewContext() {
  */
 function printJobs(copies) {
   const label = state.label;
-  if (!usesCounter(label)) return [{ ctx: previewContext(), copies }];
-  return Array.from({ length: copies }, (_, i) => ({ ctx: { n: label.counter + i }, copies: 1, counts: true }));
+  const b = state.batch;
+  const rows = batchActive() ? b.rows : [null];
+  const counter = usesCounter(label);
+  const jobs = [];
+  let n = label.counter;
+  for (const row of rows) {
+    const base = row ? { row, headers: b.headers } : {};
+    if (!counter) jobs.push({ ctx: { ...base, n }, copies });
+    else for (let c = 0; c < copies; c++) jobs.push({ ctx: { ...base, n: n++ }, copies: 1, counts: true });
+  }
+  return jobs;
 }
 
 async function onPrint() {
@@ -607,7 +687,12 @@ async function onPrint() {
     for (let i = 0; i < jobs.length; i++) {
       const job = jobs[i];
       if (jobs.length > 1) $('#print-hint').textContent = `Printing ${i + 1} of ${jobs.length}…`;
-      const { bitmap } = await renderLabel(resolveLabel(state.label, job.ctx), state.tape);
+      const { bitmap, errors } = await renderLabel(resolveLabel(state.label, job.ctx), state.tape);
+      const problem = Object.values(errors)[0];
+      if (problem || !bitmap.countBlack()) {
+        toast(`Label ${i + 1} cannot be printed: ${problem || 'it is empty'}`, 'bad');
+        break;
+      }
       const res = await printLabel(toBase64(await encodePng(bitmap, undefined, state.tape.dpi)), {
         copies: job.copies,
         chain: $('#chain').checked || i < jobs.length - 1,
@@ -755,6 +840,7 @@ function init() {
   renderSettings();
   renderBlocks();
   renderSaved();
+  initBatch();
   refreshStatus();
   loadServerFonts();
 }
