@@ -43,6 +43,7 @@ const FIELDS = {
     { k: 'size', type: 'number', label: 'Size (pt)', min: 0, max: 200, step: 1, auto: true, hint: 'Empty fits the text to the tape.' },
     { k: 'align', type: 'choice', label: 'Align', options: [['left', 'Left'], ['center', 'Center'], ['right', 'Right']] },
     { type: 'toggles', label: 'Style', items: [['bold', 'Bold'], ['italic', 'Italic'], ['invert', 'White on black']] },
+    { k: 'rotate', type: 'choice', label: 'Rotation', options: [[0, '0°'], [90, '90°'], [180, '180°'], [270, '270°']] },
   ],
   qr: [
     { k: 'kind', type: 'select', label: 'Content type', options: KINDS },
@@ -67,6 +68,7 @@ const FIELDS = {
     { k: 'bar', type: 'number', label: 'Bar width (px)', min: 1, max: 6, step: 1 },
     { k: 'scale', type: 'range', label: 'Height', min: 20, max: 100, unit: '%' },
     { type: 'toggles', label: 'Options', items: [['text', 'Show text below']] },
+    { k: 'rotate', type: 'choice', label: 'Rotation', options: [[0, '0°'], [90, '90°'], [180, '180°'], [270, '270°']] },
   ],
   image: [
     { k: 'src', type: 'file', label: 'Image', hint: 'PNG, JPEG, SVG or GIF. Logos work best in high contrast.' },
@@ -74,11 +76,13 @@ const FIELDS = {
     { k: 'level', type: 'range', label: 'Threshold', min: 1, max: 254, unit: '' },
     { k: 'scale', type: 'range', label: 'Height', min: 10, max: 100, unit: '%' },
     { type: 'toggles', label: 'Options', items: [['invert', 'Invert']] },
+    { k: 'rotate', type: 'choice', label: 'Rotation', options: [[0, '0°'], [90, '90°'], [180, '180°'], [270, '270°']] },
   ],
   icon: [
     { k: 'icon', type: 'icons', label: 'Icon' },
     { k: 'scale', type: 'range', label: 'Height', min: 10, max: 100, unit: '%' },
     { type: 'toggles', label: 'Options', items: [['invert', 'Invert']] },
+    { k: 'rotate', type: 'choice', label: 'Rotation', options: [[0, '0°'], [90, '90°'], [180, '180°'], [270, '270°']] },
   ],
   spacer: [{ k: 'width', type: 'number', label: 'Width (mm)', min: 0, max: 500, step: 0.5 }],
 };
@@ -255,7 +259,7 @@ function fieldHtml(block, f) {
         `<label class="toggle"><input type="checkbox" data-k="${k}"${block[k] ? ' checked' : ''}><span>${text}</span></label>`).join('')}</div>`;
     case 'choice':
       return `<fieldset class="field segmented"><legend>${f.label}</legend>${f.options.map(([val, text]) =>
-        `<label><input type="radio" name="${id}" data-k="${f.k}" value="${val}"${val === v ? ' checked' : ''}><span>${text}</span></label>`).join('')}</fieldset>`;
+        `<label><input type="radio" name="${id}" data-k="${f.k}" value="${val}"${String(val) === String(v) ? ' checked' : ''}><span>${text}</span></label>`).join('')}</fieldset>`;
     case 'select':
       // label beside, not around, the select: otherwise its name includes every option
       return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}" data-k="${f.k}" data-rerender>${f.options.map(([val, text]) =>
@@ -436,7 +440,7 @@ async function onBlockChange(e) {
     return;
   }
   if (el.type === 'radio' || el.tagName === 'SELECT') {
-    block[el.dataset.k] = el.value;
+    block[el.dataset.k] = el.dataset.k === 'rotate' ? Number(el.value) : el.value;
     if ('rerender' in el.dataset) renderBlocks();
     commit();
   }

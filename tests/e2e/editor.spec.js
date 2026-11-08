@@ -172,6 +172,29 @@ test('cut marks at both ends (#51)', async ({ page }) => {
   expect(right).toBe(40);
 });
 
+test('rotated blocks (#23)', async ({ page }) => {
+  setSim({ tape_mm: 24 });
+  await ready(page);
+  const text = block(page, 'text');
+  await text.locator('textarea').fill('Shelf');
+  const flat = await previewSize(page);
+  await text.getByText('90°', { exact: true }).click();
+  const turned = await previewSize(page);
+  expect(turned.height).toBe(128);
+  expect(turned.width).toBeLessThan(flat.width);
+  await text.getByText('270°', { exact: true }).click();
+  expect((await previewSize(page)).width).toBe(turned.width);
+  await text.getByText('180°', { exact: true }).click();
+  expect((await previewSize(page)).width).toBe(flat.width);
+  await text.getByText('90°', { exact: true }).click();
+  await text.getByLabel('Size (pt)').fill('40');
+  await text.locator('textarea').fill('A very long text that cannot run across');
+  await settled(page);
+  await expect(text.locator('.block-error')).toContainText('too long to run across the tape');
+  await page.locator('[data-add="spacer"]').click();
+  await expect(block(page, 'spacer').getByText('90°')).toHaveCount(0);
+});
+
 test('mirrored printing flips the label (#50)', async ({ page }) => {
   await ready(page);
   await block(page, 'text').locator('textarea').fill('AB');

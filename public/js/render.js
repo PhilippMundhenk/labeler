@@ -129,6 +129,25 @@ async function renderImage(b, H) {
   return bm;
 }
 
+/**
+ * Turned blocks: 180 degrees is the bitmap turned around; for 90 and 270 degrees the content
+ * runs across the tape, so it is rendered at the height that makes its length fit the tape.
+ */
+async function renderTurned(b, H, dpi) {
+  const angle = b.rotate || 0;
+  if (angle === 0 || b.type === 'spacer') return renderBlock(b, H, dpi);
+  if (angle === 180) return (await renderBlock(b, H, dpi)).rotate180();
+  let part = await renderBlock(b, H, dpi);
+  if (!part.width) return part;
+  part = await renderBlock(b, Math.max(8, Math.floor((H * H) / part.width)), dpi);
+  if (part.width > H) throw new Error('too long to run across the tape: shorten it or choose a smaller size');
+  let turned = part.rotate90();
+  if (angle === 270) turned = turned.rotate180();
+  const out = new Bitmap(turned.width, H);
+  out.blit(turned, 0, Math.floor((H - turned.height) / 2));
+  return out;
+}
+
 async function renderBlock(b, H, dpi) {
   switch (b.type) {
     case 'text': return renderText(b, H, dpi);
@@ -149,7 +168,7 @@ export async function renderLabel(label, tape) {
   const parts = [];
   for (const block of label.blocks) {
     try {
-      parts.push(await renderBlock(block, H, tape.dpi));
+      parts.push(await renderTurned(block, H, tape.dpi));
     } catch (e) {
       errors[block.id] = e.message || String(e);
       parts.push(new Bitmap(0, H));

@@ -56,6 +56,23 @@ export class Bitmap {
     return this;
   }
 
+  /** The bitmap turned by 90 degrees clockwise (a new bitmap). */
+  rotate90() {
+    const out = new Bitmap(this.height, this.width);
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        if (this.data[y * this.width + x]) out.data[x * out.width + (this.height - 1 - y)] = 1;
+      }
+    }
+    return out;
+  }
+
+  /** Turned by 180 degrees, in place. */
+  rotate180() {
+    this.data.reverse();
+    return this;
+  }
+
   /** Flips the bitmap left to right, for clear tape read from the back. */
   mirror() {
     for (let y = 0; y < this.height; y++) {

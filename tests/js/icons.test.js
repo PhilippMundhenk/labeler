@@ -66,7 +66,7 @@ test('fetchIcon returns the SVG as a data URL', async () => {
 });
 
 test('icon blocks are normalized', () => {
-  assert.deepEqual(Object.keys(newBlock('icon')).sort(), ['icon', 'id', 'invert', 'scale', 'src', 'type']);
+  assert.deepEqual(Object.keys(newBlock('icon')).sort(), ['icon', 'id', 'invert', 'rotate', 'scale', 'src', 'type']);
   const b = normalizeBlock({ type: 'icon', icon: 'mdi:home', src: 'data:image/svg+xml;base64,AA', invert: 1, scale: 1 });
   assert.deepEqual([b.icon, b.src, b.invert, b.scale], ['mdi:home', 'data:image/svg+xml;base64,AA', true, 10]);
   const bad = normalizeBlock({ type: 'icon', icon: '<script>', src: 'data:text/html,x' });

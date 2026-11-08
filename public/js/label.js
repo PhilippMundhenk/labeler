@@ -21,15 +21,15 @@ export function tapePx(mm, dpi = 180, maxPx = Infinity) {
 }
 
 export const BLOCK_DEFAULTS = {
-  text: { type: 'text', text: 'Label', font: 'sans-serif', size: 0, bold: true, italic: false, align: 'center', invert: false },
+  text: { type: 'text', text: 'Label', font: 'sans-serif', size: 0, bold: true, italic: false, align: 'center', invert: false, rotate: 0 },
   qr: {
     type: 'qr', kind: 'text', content: 'https://example.com', level: 'M', scale: 100, quiet: 1,
     wifiSsid: '', wifiPassword: '', wifiType: 'WPA', wifiHidden: false,
     contactName: '', org: '', phone: '', email: '', url: '', subject: '',
   },
-  barcode: { type: 'barcode', format: 'code128', content: '1234567890', text: true, bar: 2, scale: 100 },
-  image: { type: 'image', src: '', name: '', mode: 'threshold', level: 128, invert: false, scale: 100 },
-  icon: { type: 'icon', icon: '', src: '', invert: false, scale: 100 },
+  barcode: { type: 'barcode', format: 'code128', content: '1234567890', text: true, bar: 2, scale: 100, rotate: 0 },
+  image: { type: 'image', src: '', name: '', mode: 'threshold', level: 128, invert: false, scale: 100, rotate: 0 },
+  icon: { type: 'icon', icon: '', src: '', invert: false, scale: 100, rotate: 0 },
   spacer: { type: 'spacer', width: 5 },
 };
 
@@ -124,6 +124,7 @@ export function normalizeBlock(raw) {
     default: // spacer
       b.width = num(raw.width, 0, 500, d.width);
   }
+  if (b.type !== 'spacer') b.rotate = [0, 90, 180, 270].includes(Number(raw.rotate)) ? Number(raw.rotate) : 0;
   return b;
 }
 
