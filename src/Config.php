@@ -41,6 +41,13 @@ final class Config
             'max_copies' => 50,
             // Entries kept in the print log.
             'log_entries' => 50,
+            // Access token for this API. When set, every request except health needs
+            // "Authorization: Bearer <token>". Always set it on a printer agent.
+            'token' => '',
+            // Printer agent to use instead of a local ptouch-print, e.g. http://printer-pi:8631,
+            // and its token. Empty: print locally.
+            'printer_url' => '',
+            'printer_token' => '',
         ];
     }
 
@@ -71,8 +78,11 @@ final class Config
         foreach (['timeout', 'max_upload_bytes', 'max_copies', 'log_entries'] as $key) {
             $values[$key] = max(0, (int) $values[$key]);
         }
-        foreach (['ptouch_bin', 'serial', 'data_dir', 'fonts_dir'] as $key) {
+        foreach (['ptouch_bin', 'serial', 'data_dir', 'fonts_dir', 'token', 'printer_url', 'printer_token'] as $key) {
             $values[$key] = trim((string) $values[$key]);
+        }
+        if (!preg_match('#^https?://[^\s"\'<>?\#]+$#', $values['printer_url'])) {
+            $values['printer_url'] = '';
         }
         return new self($values);
     }

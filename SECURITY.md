@@ -11,6 +11,12 @@ response within a week.
 - Labeler has no login. Anyone who can reach the page can print and read the print log. Run it on
   your home network only; do not forward the port to the internet. If it must be reachable from
   elsewhere, put it behind a VPN or a reverse proxy with authentication.
+- A printer agent (`install.sh --agent`) always has an access token (48 hex characters,
+  `config.php` readable only by root and the service). Every request except `health` needs it as
+  `Authorization: Bearer` or `X-Labeler-Token`; it is compared in constant time. It travels in
+  plain HTTP: use TLS (reverse proxy) or a VPN between networks you do not trust.
+- The interface forwards to `printer_url` only (http/https, no redirects followed); keep its
+  `printer_token` out of shared files like any other secret.
 - The document root must be `public/`. `src/`, `config.php` and the data folder are outside it on
   purpose.
 - The server never passes user input through a shell. It runs ptouch-print with an argument list,

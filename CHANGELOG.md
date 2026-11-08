@@ -27,6 +27,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
   against upstream (#11).
 - CI, release zip, Dependabot, secret scanning (#12).
 - Install and update script for Raspberry Pi OS and Debian, tested in CI (#33).
+- Printer agent: the API alone on the computer with the printer, protected by an access token
+  (`install.sh --agent`); the interface forwards to it with `printer_url` and `printer_token` (#42).
 - Documentation, release package, systemd unit, udev rule, nginx and lighttpd examples (#13, #14).
 
 ### Fixed
