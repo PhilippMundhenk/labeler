@@ -1,5 +1,7 @@
 // Labeler user interface.
-import { getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel, login, logout } from './api.js';
+import {
+  getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel, login, logout, getLabels, saveLabel, deleteLabel,
+} from './api.js';
 import {
   BLOCK_NAMES, FONTS, TAPES, defaultLabel, newBlock, newId, normalizeLabel, pxToMm, tapePx,
 } from './label.js';
@@ -152,6 +154,7 @@ async function refreshStatus() {
     $('#status-text').textContent = p && p.connected ? 'Printer not ready' : 'No printer';
   }
   $('#logout').hidden = !(state.status && state.status.password);
+  if (Boolean(state.status && state.status.shared_labels) !== sharedLabels()) refreshSaved();
   let message = res.ok ? (p && !p.ready ? p.message : '') : res.data.error;
   if (p && !p.connected && state.wasReady) {
     // the printer was there a moment ago: P-Touch printers switch themselves off after a while
@@ -655,18 +658,52 @@ function onHistoryClick(e) {
   }
 }
 
+// Saved labels live on the server when its data folder allows it (shared by every browser),
+// otherwise in this browser.
+let serverLabels = null;
+const sharedLabels = () => serverLabels !== null;
+
+function savedLabels() {
+  if (!sharedLabels()) return load(STORE_SAVED, {});
+  return Object.fromEntries(Object.entries(serverLabels).map(([name, entry]) => [name, entry.label]));
+}
+
+async function refreshSaved() {
+  serverLabels = null;
+  if (state.status && state.status.shared_labels) {
+    const res = await getLabels();
+    if (res.ok && res.data.enabled) serverLabels = res.data.labels;
+  }
+  renderSaved();
+}
+
 function renderSaved() {
-  const saved = load(STORE_SAVED, {});
+  const saved = savedLabels();
+  const local = Object.keys(load(STORE_SAVED, {}));
+  $('#saved-where').textContent = sharedLabels() ? 'Saved on the server, for every browser.' : 'Saved in this browser.';
+  $('#saved-local').hidden = !(sharedLabels() && local.length);
+  $('#saved-local span').textContent = `${local.length} ${local.length === 1 ? 'label is' : 'labels are'} saved only in this browser.`;
   const names = Object.keys(saved).sort((a, b) => a.localeCompare(b));
   $('#saved-list').innerHTML = names.length
     ? names.map((n) => `<li><button type="button" class="link" data-load="${esc(n)}">${esc(n)}</button><button type="button" class="icon" data-remove="${esc(n)}" aria-label="Delete saved label ${esc(n)}">${icon('trash')}</button></li>`).join('')
     : '<li class="muted">No saved labels yet.</li>';
 }
 
-function onSave(e) {
+async function onSave(e) {
   e.preventDefault();
   const name = $('#save-name').value.trim();
   if (!name) return;
+  if (sharedLabels()) {
+    const res = await saveLabel(name, state.label);
+    if (!res.ok) {
+      toast(`Not saved: ${res.data.error}`, 'bad');
+      return;
+    }
+    $('#save-name').value = '';
+    await refreshSaved();
+    toast(`Saved "${name}"`, 'ok');
+    return;
+  }
   const saved = load(STORE_SAVED, {});
   saved[name] = state.label;
   if (!store(STORE_SAVED, saved)) {
@@ -678,8 +715,23 @@ function onSave(e) {
   toast(`Saved "${name}"`, 'ok');
 }
 
-function onSavedClick(e) {
-  const saved = load(STORE_SAVED, {});
+async function copyLocalLabels() {
+  const local = load(STORE_SAVED, {});
+  for (const [name, label] of Object.entries(local)) {
+    const res = await saveLabel(name, label);
+    if (!res.ok) {
+      toast(`"${name}" not copied: ${res.data.error}`, 'bad');
+      return;
+    }
+    delete local[name];
+    store(STORE_SAVED, local);
+  }
+  await refreshSaved();
+  toast('Copied to the server', 'ok');
+}
+
+async function onSavedClick(e) {
+  const saved = savedLabels();
   const loadName = e.target.closest('[data-load]')?.dataset.load;
   const removeName = e.target.closest('[data-remove]')?.dataset.remove;
   if (loadName && saved[loadName]) {
@@ -690,7 +742,10 @@ function onSavedClick(e) {
     commit();
     toast(`Loaded "${loadName}"`, 'ok');
   }
-  if (removeName) {
+  if (removeName && sharedLabels()) {
+    await deleteLabel(removeName);
+    await refreshSaved();
+  } else if (removeName) {
     delete saved[removeName];
     store(STORE_SAVED, saved);
     renderSaved();
@@ -1038,6 +1093,7 @@ function init() {
   $('#save-form').addEventListener('submit', onSave);
   $('#saved-list').addEventListener('click', onSavedClick);
   $('#history-list').addEventListener('click', onHistoryClick);
+  $('#copy-local').addEventListener('click', copyLocalLabels);
   $('#print').addEventListener('click', onPrint);
   $('#download').addEventListener('click', onDownload);
   $('#status').addEventListener('click', openDetails);

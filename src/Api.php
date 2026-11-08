@@ -56,6 +56,9 @@ final class Api
             'log' => ['GET', 'log'],
             'printers' => ['GET', 'printers'],
             'login' => ['POST', 'login'],
+            'labels' => ['GET', 'labels'],
+            'label-save' => ['POST', 'labelSave'],
+            'label-delete' => ['POST', 'labelDelete'],
             'logout' => ['POST', 'logout'],
         ];
         if (!isset($routes[$action])) {
@@ -94,10 +97,41 @@ final class Api
         if ($handler === 'print') {
             return $this->print($body, $contentType);
         }
+        if ($handler === 'labelSave' || $handler === 'labelDelete') {
+            return $this->changeLabels($handler, $body, $contentType);
+        }
         if ($handler === 'font') {
             return $this->font($query['file'] ?? '');
         }
         return $this->$handler();
+    }
+
+    private function labels(): Response
+    {
+        $labels = new Labels((string) $this->config->get('data_dir'));
+        return Response::json(200, ['enabled' => $labels->enabled(), 'labels' => (object) $labels->all()]);
+    }
+
+    private function changeLabels(string $handler, string $body, string $contentType): Response
+    {
+        if (stripos($contentType, 'application/json') !== 0) {
+            return Response::json(415, ['error' => 'send application/json']);
+        }
+        $request = json_decode($body, true);
+        if (!is_array($request) || !is_string($request['name'] ?? null)) {
+            return Response::json(400, ['error' => 'expected {"name": "..."}']);
+        }
+        $labels = new Labels((string) $this->config->get('data_dir'));
+        try {
+            if ($handler === 'labelSave') {
+                $labels->save($request['name'], $request['label'] ?? null);
+            } else {
+                $labels->delete($request['name']);
+            }
+        } catch (InvalidArgumentException $e) {
+            return Response::json(422, ['error' => $e->getMessage()]);
+        }
+        return Response::json(200, ['ok' => true]);
     }
 
     private function login(string $body, bool $secure): Response
@@ -137,6 +171,7 @@ final class Api
             'max_copies' => (int) $this->config->get('max_copies'),
             'icon_api' => (string) $this->config->get('icon_api'),
             'password' => $this->session->enabled(),
+            'shared_labels' => (new Labels((string) $this->config->get('data_dir')))->enabled(),
             'printer' => $info,
             'agent' => null,
         ]);
@@ -165,6 +200,7 @@ final class Api
             'max_copies' => $maxCopies,
             'icon_api' => (string) $this->config->get('icon_api'),
             'password' => $this->session->enabled(),
+            'shared_labels' => (new Labels((string) $this->config->get('data_dir')))->enabled(),
             'printer' => $printer,
             'agent' => ['url' => $remote->url(), 'version' => $data['app_version'] ?? null, 'reachable' => $result['status'] !== 0],
         ]);

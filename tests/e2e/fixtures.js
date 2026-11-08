@@ -35,6 +35,7 @@ export const test = base.extend({
     setSim({});
     clearPrinted();
     rmSync(resolve(RUN, 'data/print-log.json'), { force: true });
+    rmSync(resolve(RUN, 'data/labels.json'), { force: true });
     await use();
   }, { auto: true }],
   page: async ({ page, browserName }, use) => {
@@ -82,6 +83,14 @@ export async function settled(page) {
   await page.waitForFunction(() => !window.labeler.state.rendering);
   await page.waitForTimeout(80);
   await page.waitForFunction(() => !window.labeler.state.rendering);
+}
+
+/** Pretends the server cannot keep saved labels, so the browser storage is used. */
+export async function browserLabels(page) {
+  await page.route('**/api.php?action=status*', async (route) => {
+    const json = await (await route.fetch()).json();
+    await route.fulfill({ json: { ...json, shared_labels: false } });
+  });
 }
 
 export async function ready(page) {
