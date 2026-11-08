@@ -1,0 +1,6 @@
+# Lets members of the group "lp" use Brother USB devices (vendor 04f9), so the web server
+# user can talk to the label printer. ptouch-print's own rule (TAG+="uaccess") only covers
+# users logged in at the console, not a service.
+# Install: sudo cp 99-labeler-ptouch.rules /etc/udev/rules.d/ && sudo udevadm control --reload-rules
+# then unplug and plug in the printer.
+SUBSYSTEM=="usb", ATTRS{idVendor}=="04f9", MODE="0660", GROUP="lp"
