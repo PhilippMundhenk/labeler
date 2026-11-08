@@ -290,6 +290,7 @@ test('printer not ready, older status without colours', async ({ page }) => {
     json.printer = { ...json.printer, ready: true, mode: undefined, model: null, tape_color: null, text_color: null, media_width_mm: 12, tape_px: 76, dpi: 180 };
     json.features = undefined;
     json.max_copies = undefined;
+    json.agent = { url: 'http://printer-pi:8631', reachable: false };
     await route.fulfill({ json });
   });
   await page.locator('#retry').click();
@@ -297,4 +298,5 @@ test('printer not ready, older status without colours', async ({ page }) => {
   await expect(page.locator('#chain')).toBeDisabled();
   await page.locator('#status').click();
   await expect(page.locator('#details-info')).toContainText('Serial');
+  await expect(page.locator('#details-info')).toContainText('http://printer-pi:8631 (not reachable)');
 });

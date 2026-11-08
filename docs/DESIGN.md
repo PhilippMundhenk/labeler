@@ -31,6 +31,11 @@ nothing about fonts, QR codes or layout; it answers four questions: what is atta
 print this image (`print`), which fonts are in the folder (`fonts`, `font`), and what happened
 (`log`).
 
+Split setup ([ADR 0006](adr/0006-printer-agent.md)): the interface can forward `status`, `print`
+and `log` to a printer agent elsewhere (`printer_url`), which is the same API without the
+interface, protected by an access token. The browser still renders; the interface checks the
+request; the agent checks the PNG against its tape and prints.
+
 ## ptouch-print versions
 
 Labeler only uses options that exist in every version since 1.5 (`--info`, `--version`, `--image`)
@@ -62,6 +67,7 @@ See the [architecture decision records](adr/README.md):
 3. [0003](adr/0003-simulated-printer.md) Tests run against a simulated ptouch-print; a contract test pins the simulator to the real tool.
 4. [0004](adr/0004-php-built-in-server.md) PHP's built-in server under systemd is the default deployment.
 5. [0005](adr/0005-labels-in-the-browser.md) Saved labels live in the browser's storage.
+6. [0006](adr/0006-printer-agent.md) A printer agent with an access token lets the interface run elsewhere.
 
 ## Limits and open questions
 

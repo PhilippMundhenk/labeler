@@ -129,6 +129,7 @@ test('the details dialog shows the printer and the print log', async ({ page }) 
   await page.locator('#status').click();
   await expect(page.locator('#details-info')).toContainText('PT-P700');
   await expect(page.locator('#details-log')).toContainText('Nothing printed yet');
+  await expect(page.locator('#details-info')).toContainText('none, this computer prints');
   await page.locator('#details-close').click();
   await page.locator('#print').click();
   await expect(page.locator('.toast.ok')).toBeVisible();

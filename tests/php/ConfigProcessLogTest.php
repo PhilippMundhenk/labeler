@@ -26,6 +26,10 @@ final class ConfigProcessLogTest extends TestCase
         $this->assertSame(7, $config->get('timeout'));
         $this->assertSame('/opt/pt', $config->get('ptouch_bin'));
         $this->assertSame('A1', $config->get('serial'));
+        $this->assertSame('', $config->get('printer_url'));
+        $this->assertSame('http://pi.lan:8631', Config::load($this->tmp, null, ['LABELER_PRINTER_URL' => ' http://pi.lan:8631 '])->get('printer_url'));
+        $this->assertSame('', Config::load($this->tmp, null, ['LABELER_PRINTER_URL' => 'file:///etc/passwd'])->get('printer_url'));
+        $this->assertSame('', Config::load($this->tmp, null, ['LABELER_PRINTER_URL' => 'http://pi/?x=1'])->get('printer_url'));
         $this->assertSame(0, $config->get('max_copies'));
         $this->assertArrayNotHasKey('unknown', $config->all());
     }
