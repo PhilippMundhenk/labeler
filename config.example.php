@@ -28,4 +28,9 @@ return [
 
     // Entries kept in the print log.
     'log_entries' => 50,
+
+    // Iconify API for the icon search (Material Design Icons, Simple Icons). The browser asks
+    // it directly; the chosen icon is stored in the label. Use your own Iconify server, or ''
+    // to switch icons off.
+    'icon_api' => 'https://api.iconify.design',
 ];

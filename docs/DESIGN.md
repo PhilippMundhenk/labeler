@@ -26,6 +26,10 @@ the small computer the printer hangs on.
  preview canvas (tape colour from --info) ◀── status ─── │
 ```
 
+Icons are searched and downloaded by the browser from an Iconify API (`icon_api`); the SVG of
+the chosen icon is stored in the label and rendered like an image, so neither the Pi nor printing
+depend on that service.
+
 The browser does all the drawing (ADR [0001](adr/0001-render-in-the-browser.md)). The server knows
 nothing about fonts, QR codes or layout; it answers four questions: what is attached (`status`),
 print this image (`print`), which fonts are in the folder (`fonts`, `font`), and what happened

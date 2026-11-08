@@ -25,10 +25,11 @@ export const BLOCK_DEFAULTS = {
   qr: { type: 'qr', content: 'https://example.com', level: 'M', scale: 100, quiet: 1 },
   barcode: { type: 'barcode', content: '1234567890', text: true, bar: 2, scale: 100 },
   image: { type: 'image', src: '', name: '', mode: 'threshold', level: 128, invert: false, scale: 100 },
+  icon: { type: 'icon', icon: '', src: '', invert: false, scale: 100 },
   spacer: { type: 'spacer', width: 5 },
 };
 
-export const BLOCK_NAMES = { text: 'Text', qr: 'QR code', barcode: 'Barcode', image: 'Image', spacer: 'Space' };
+export const BLOCK_NAMES = { text: 'Text', icon: 'Icon', qr: 'QR code', barcode: 'Barcode', image: 'Image', spacer: 'Space' };
 
 export const LABEL_DEFAULTS = { margin: 2, gap: 2, length: 0, align: 'center', frame: false, frameWidth: 2 };
 
@@ -92,6 +93,14 @@ export function normalizeBlock(raw) {
         name: str(raw.name, 200),
         mode: oneOf(raw.mode, ['threshold', 'dither'], d.mode),
         level: num(raw.level, 1, 254, d.level),
+        invert: Boolean(raw.invert),
+        scale: num(raw.scale, 10, 100, d.scale),
+      });
+      break;
+    case 'icon':
+      Object.assign(b, {
+        icon: typeof raw.icon === 'string' && /^[a-z0-9-]+:[a-z0-9-]+$/.test(raw.icon) ? raw.icon : '',
+        src: typeof raw.src === 'string' && raw.src.startsWith('data:image/svg+xml') ? raw.src : '',
         invert: Boolean(raw.invert),
         scale: num(raw.scale, 10, 100, d.scale),
       });

@@ -56,6 +56,7 @@ final class ApiTest extends TestCase
         $this->assertTrue($body['printer']['ready']);
         $this->assertSame(76, $body['printer']['tape_px']);
         $this->assertSame(5, $body['max_copies']);
+        $this->assertSame('https://api.iconify.design', $body['icon_api']);
         $this->assertTrue($body['features']['precut']);
     }
 

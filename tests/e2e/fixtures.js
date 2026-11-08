@@ -40,6 +40,23 @@ export const test = base.extend({
   page: async ({ page, browserName }, use) => {
     const errors = [];
     page.on('pageerror', (err) => errors.push(err));
+    // a fake Iconify API: the tests never use the internet
+    await page.route('https://api.iconify.design/**', (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname === '/search') {
+        const q = url.searchParams.get('query');
+        if (q === 'offline') return route.abort();
+        if (q === 'busy') return route.fulfill({ status: 503, body: 'busy' });
+        const all = ['mdi:wifi', 'mdi:wifi-off', 'simple-icons:wifi'];
+        const sets = url.searchParams.get('prefixes').split(',');
+        return route.fulfill({ json: { icons: q === 'nothing' ? [] : all.filter((id) => sets.includes(id.split(':')[0])) } });
+      }
+      if (url.pathname.endsWith('/wifi-off.svg')) return route.fulfill({ status: 404, body: 'Not found' });
+      return route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 24 24"><path fill="#000" d="M12 3L2 21h20z"/></svg>',
+      });
+    });
     const coverage = browserName === 'chromium';
     if (coverage) await page.coverage.startJSCoverage({ resetOnNavigation: false });
     await use(page);
