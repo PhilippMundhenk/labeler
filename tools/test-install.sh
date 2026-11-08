@@ -31,5 +31,17 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -euc '
   echo "$status" | grep -q "\"max_copies\":3"
   echo "$status" | grep -q "No printer found"
   curl -fsS http://127.0.0.1:8080/api.php?action=fonts | grep -q "Test.ttf"
+
+  # printer agent: only the API, token generated once and kept on update
+  sh deploy/install.sh --agent --zip build/labeler-agent-0.0.0-test.zip --no-service --skip-ptouch > /tmp/agent.txt
+  token=$(sed -n "s/.*LABELER_PRINTER_TOKEN=//p" /tmp/agent.txt)
+  [ ${#token} -eq 48 ]
+  test ! -e /opt/labeler-agent/public/index.html
+  test "$(stat -c %a /opt/labeler-agent/config.php)" = 640
+  sh deploy/install.sh --agent --zip build/labeler-agent-0.0.0-test.zip --no-service --skip-ptouch | grep -q "TOKEN=$token"
+  su -s /bin/sh labeler -c "php -S 127.0.0.1:8631 -t /opt/labeler-agent/public" >/dev/null 2>&1 &
+  for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8631/api.php?action=health >/dev/null 2>&1 && break; sleep 0.3; done
+  test "$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8631/api.php?action=status)" = 401
+  curl -fsS -H "Authorization: Bearer $token" http://127.0.0.1:8631/api.php?action=status | grep -q "No printer found"
   echo "install test passed"
 '

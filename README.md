@@ -78,6 +78,19 @@ Or by hand:
 4. Open `http://<raspberry-pi>:8080/`. The badge in the top right corner shows the printer and the
    tape; click it for details and the print log.
 
+### Printer on another computer
+
+The printer can hang on a small computer anywhere in the house while the interface runs on a
+server, for example in Docker. On the computer with the printer, install only the printer agent
+(the API, protected by an access token it generates):
+
+```sh
+sudo sh install.sh --agent
+```
+
+It prints the two settings for the interface: `LABELER_PRINTER_URL=http://<pi>:8631` and
+`LABELER_PRINTER_TOKEN=...`. Status, printing and the print log then go through the agent.
+
 Already running a web server with PHP? Point it at `/opt/labeler/public` instead of step 3's
 service; [docs/INSTALL.md](docs/INSTALL.md) has nginx and lighttpd examples, updates and
 troubleshooting.
@@ -97,9 +110,12 @@ set the environment variable (in `labeler.service`: `Environment=`).
 | `max_upload_bytes` | `LABELER_MAX_UPLOAD_BYTES` | `2000000` | Largest label image |
 | `max_copies` | `LABELER_MAX_COPIES` | `50` | Most copies per print |
 | `log_entries` | `LABELER_LOG_ENTRIES` | `50` | Entries kept in the print log |
+| `token` | `LABELER_TOKEN` | empty | Access token for the API (`Authorization: Bearer`); set by `install.sh --agent` |
+| `printer_url` | `LABELER_PRINTER_URL` | empty | Printer agent to print with, e.g. `http://printer-pi:8631`; empty prints on this computer |
+| `printer_token` | `LABELER_PRINTER_TOKEN` | empty | Access token of that agent |
 | `icon_api` | `LABELER_ICON_API` | `https://api.iconify.design` | Iconify API the browser searches icons with; your own Iconify server, or empty to switch icons off |
 
-Labeler has no login: anyone who can open the page can print. Keep it on your home network; see
+The interface has no login: anyone who can open the page can print. Keep it on your home network; see
 [SECURITY.md](SECURITY.md).
 
 ## Screenshots
