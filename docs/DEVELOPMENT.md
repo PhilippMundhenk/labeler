@@ -10,7 +10,7 @@ tools/contract/    contract test against the real ptouch-print, built from upstr
 tools/dev/         development image: PHP + pcov, Composer, Node, Playwright
 tests/php/         PHPUnit: API, ptouch-print wrapper, PNG checks, config, log, simulator
 tests/js/          node:test: PNG encoder, bitmaps, Code 128, QR, label model, API client
-tests/e2e/         Playwright: the real UI against PHP's built-in server and the simulator
+tests/e2e/         Playwright: the real UI against PHP's built-in server, the simulator and a fake Iconify API
 deploy/            systemd unit, udev rule, nginx and lighttpd examples
 ```
 

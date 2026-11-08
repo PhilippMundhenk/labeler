@@ -56,6 +56,7 @@ final class ApiTest extends TestCase
         $this->assertTrue($body['printer']['ready']);
         $this->assertSame(76, $body['printer']['tape_px']);
         $this->assertSame(5, $body['max_copies']);
+        $this->assertSame('https://api.iconify.design', $body['icon_api']);
         $this->assertTrue($body['features']['precut']);
     }
 
@@ -134,6 +135,20 @@ final class ApiTest extends TestCase
         $this->assertStringContainsString('the tape takes 76 px', $body['error']);
         $gif = (string) json_encode(['png' => base64_encode('GIF89a' . str_repeat("\0", 50))]);
         $this->assertSame(422, $this->call('POST', 'print', $gif)[0]);
+    }
+
+    public function testErrorsDuringPrintingAreNoticed(): void
+    {
+        $state = $this->tmp . '/state.json';
+        file_put_contents($state, '{"fail": "jam"}');
+        $this->simulate(['state' => $state]);
+        [$status, $body] = $this->call('POST', 'print', $this->printBody());
+        $this->assertSame(502, $status);
+        $this->assertFalse($body['ok']);
+        $this->assertSame('After printing, the printer reports: Cutter jam: open the cover and remove the jammed tape.', $body['error']);
+        $this->assertCount(1, $this->printed(), 'the label went out, the jam came after');
+        [, $after] = $this->call('GET', 'status');
+        $this->assertSame([0x0004], [$after['printer']['error_code']]);
     }
 
     public function testPrintFailureIsReported(): void

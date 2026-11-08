@@ -1,7 +1,7 @@
 # Labeler
 
 Design and print labels on a Brother P-Touch printer from any browser on your network: text in
-any font, QR codes, barcodes and images, with a live preview that shows exactly what the printer
+any font, thousands of icons, QR codes, barcodes and images, with a live preview that shows exactly what the printer
 will print.
 
 [![CI](https://github.com/PhilippMundhenk/labeler/actions/workflows/ci.yml/badge.svg)](https://github.com/PhilippMundhenk/labeler/actions/workflows/ci.yml)
@@ -25,18 +25,25 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 ## Features
 
 - **Live preview** at the printer's resolution, in the colours of the inserted tape.
-- **Blocks** side by side on one label: text, QR code, Code 128 barcode, image, space. Move,
-  duplicate and remove them.
+- **Blocks** side by side on one label: text, icon, QR code, Code 128 barcode, image, space.
+  Move, duplicate and remove them.
+- **Icons** with search: about 7,400 [Material Design Icons](https://pictogrammers.com/library/mdi/)
+  and 3,500 brand logos from [Simple Icons](https://simpleicons.org/), loaded on demand from the
+  [Iconify API](https://iconify.design/); the chosen icon is stored in the label.
 - **Text**: one to several lines, any font (built-in list, fonts you put on the Pi, or the fonts of
   your computer in Chrome and Edge), automatic or fixed size, bold, italic, alignment, white on
   black.
-- **QR codes** with selectable error correction, **barcodes** with or without text below.
+- **QR codes** for links, text, Wi-Fi access, contacts, e-mail and phone numbers, with selectable error correction, **barcodes** (Code 128, EAN-13, UPC-A, Code 39) with or without text below.
+- **Placeholders**: {date}, {time} and a counter {n} that gives every copy its own number.
+- **Batch printing**: paste a list or load a CSV file and print one label per row, with {1} or
+  {column name} in any block.
 - **Images** (PNG, JPEG, SVG): black and white or dithered, adjustable threshold, invert.
 - **Layout**: margins, gap, minimum length with position, frame.
 - **Printing**: copies, chain printing and cut before the label where the installed ptouch-print
   supports them; download the label as PNG.
 - **Printer status** with tape width and colour, clear messages for a missing printer, missing
-  tape, P-Lite mode or missing USB permissions, and a log of the last print jobs.
+  tape, open cover, cutter jam, overheating, weak batteries, P-Lite mode or missing USB permissions,
+  a check after every print job (ptouch-print itself does not notice a jam during printing), and a log of the last print jobs.
 - **Saved labels** in the browser; the current label is kept between visits.
 - Light and dark mode, works on phones, can be added to the home screen.
 
@@ -90,6 +97,7 @@ set the environment variable (in `labeler.service`: `Environment=`).
 | `max_upload_bytes` | `LABELER_MAX_UPLOAD_BYTES` | `2000000` | Largest label image |
 | `max_copies` | `LABELER_MAX_COPIES` | `50` | Most copies per print |
 | `log_entries` | `LABELER_LOG_ENTRIES` | `50` | Entries kept in the print log |
+| `icon_api` | `LABELER_ICON_API` | `https://api.iconify.design` | Iconify API the browser searches icons with; your own Iconify server, or empty to switch icons off |
 
 Labeler has no login: anyone who can open the page can print. Keep it on your home network; see
 [SECURITY.md](SECURITY.md).

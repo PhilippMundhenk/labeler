@@ -127,6 +127,19 @@ final class SimulatorTest extends TestCase
         $this->assertCount(3, $records);
     }
 
+    public function testJamReportsSuccessThenAnError(): void
+    {
+        file_put_contents($this->tmp . '/a.png', self::labelPng(8, 8));
+        file_put_contents($this->tmp . '/state.json', '{"fail": "jam", "tape_mm": 12}');
+        $sim = new Simulator(['out' => $this->tmp . '/out', 'fail' => 'jam'], $this->tmp . '/state.json');
+        $this->assertSame(0, $sim->run(['--image', $this->tmp . '/a.png'])['code']);
+        $this->assertEquals(['error' => 4, 'fail' => '', 'tape_mm' => 12], json_decode((string) file_get_contents($this->tmp . '/state.json'), true));
+        file_put_contents($this->tmp . '/state.json', 'broken');
+        (new Simulator(['fail' => 'jam'], $this->tmp . '/state.json'))->run(['--image', $this->tmp . '/a.png']);
+        $this->assertSame(['error' => 4, 'fail' => ''], json_decode((string) file_get_contents($this->tmp . '/state.json'), true));
+        $this->assertSame(0, (new Simulator(['fail' => 'jam']))->run(['--image', $this->tmp . '/a.png'])['code'], 'without a state file nothing is written');
+    }
+
     public function testStateFromEnvironmentAndFile(): void
     {
         file_put_contents($this->tmp . '/state.json', '{"tape_mm": "24", "printer": "PT-P750W"}');

@@ -47,9 +47,13 @@ final class Simulator
     private array $err = [];
 
     /** @param array<string, mixed> $state */
-    public function __construct(array $state)
+    private string $stateFile;
+
+    /** @param string $stateFile JSON state file that a "jam" writes the error into */
+    public function __construct(array $state, string $stateFile = '')
     {
         $this->state = $state + self::defaults();
+        $this->stateFile = $stateFile;
     }
 
     /** @return array<string, mixed> */
@@ -64,10 +68,11 @@ final class Simulator
             'media_type' => 1,       // 1 laminated
             'tape_color' => 1,       // 1 white
             'text_color' => 8,       // 8 black
-            'error' => 0,            // status error bits, e.g. 0x0010 cover open
+            'error' => 0,            // status error bits, e.g. 0x1000 cover open, 0x0004 cutter jam
             'out' => '',             // folder for printed labels, empty = discard
             'delay_ms' => 0,         // time a print takes
-            'fail' => '',            // "print" makes the next print fail with a USB write error
+            'fail' => '',            // "print": USB write error; "jam": the print looks fine (exit 0, like
+                                     // the real tool) but the printer then reports a cutter jam
         ];
     }
 
@@ -227,6 +232,11 @@ final class Simulator
         for ($i = 0; $i < $args['copies']; $i++) {
             $this->say(sprintf('image size (%dpx x %dpx)', $label['width'], $label['height']));
             $this->store($label, $args, $i, $tapePx, $dpi);
+        }
+        if ($this->state['fail'] === 'jam' && $this->stateFile !== '') {
+            $saved = json_decode((string) @file_get_contents($this->stateFile), true);
+            $saved = is_array($saved) ? $saved : [];
+            file_put_contents($this->stateFile, (string) json_encode(['error' => 0x0004, 'fail' => ''] + $saved));
         }
         return 0;
     }

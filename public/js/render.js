@@ -1,7 +1,8 @@
 // Renders a label into a black and white bitmap of the tape's printable height.
 import { Bitmap, luminance, threshold, dither } from './bitmap.js';
 import { qrMatrix } from './qr.js';
-import { modules } from './code128.js';
+import { buildQrContent } from './qrcontent.js';
+import { encodeBarcode } from './barcodes.js';
 import { layout, fitFontSize, ptToPx, mmToPx, cssFont } from './label.js';
 
 const MEASURE = 'ÁHgjy|';
@@ -62,7 +63,7 @@ async function renderText(b, H, dpi) {
 }
 
 function renderQr(b, H) {
-  const qr = qrMatrix(b.content, b.level);
+  const qr = qrMatrix(buildQrContent(b), b.level);
   const n = qr.size + 2 * b.quiet;
   const module = Math.floor((H * b.scale) / 100 / n);
   if (module < 1) throw new Error(`the QR code needs ${n} px, the tape has ${H} px: shorten the content or lower the error correction`);
@@ -78,22 +79,25 @@ function renderQr(b, H) {
 }
 
 function renderBarcode(b, H) {
-  const mods = modules(b.content, 10);
+  const code = encodeBarcode(b.format, b.content);
+  const mods = code.modules;
   const W = mods.length * b.bar;
   const avail = Math.floor((H * b.scale) / 100);
   const textH = b.text ? Math.round(avail * 0.24) : 0;
   const barH = avail - textH;
   const y0 = Math.floor((H - avail) / 2);
   const bm = new Bitmap(W, H);
+  // EAN/UPC guard bars reach into the text line
+  const guard = (i) => code.guards.some(([from, to]) => i >= from && i < to);
   mods.forEach((bar, i) => {
-    if (bar) bm.fillRect(i * b.bar, y0, b.bar, barH);
+    if (bar) bm.fillRect(i * b.bar, y0, b.bar, barH + (textH && guard(i) ? Math.round(textH / 2) : 0));
   });
   if (textH >= 6) {
     const ctx = context(W, textH);
     ctx.font = `${Math.round(textH * 0.95)}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText(b.content, W / 2, textH);
+    ctx.fillText(code.text, W / 2, textH);
     bm.blit(toBitmap(ctx, W, textH), 0, y0 + barH);
   }
   return bm;
@@ -112,7 +116,7 @@ export function loadImage(src) {
 }
 
 async function renderImage(b, H) {
-  if (!b.src) throw new Error('choose an image file');
+  if (!b.src) throw new Error(b.type === 'icon' ? 'search for an icon and choose one' : 'choose an image file');
   const img = await loadImage(b.src);
   const h = Math.max(1, Math.floor((H * b.scale) / 100));
   const w = Math.max(1, Math.min(4000, Math.round(((img.naturalWidth || h) * h) / (img.naturalHeight || h))));
@@ -131,6 +135,7 @@ async function renderBlock(b, H, dpi) {
     case 'qr': return renderQr(b, H);
     case 'barcode': return renderBarcode(b, H);
     case 'image': return renderImage(b, H);
+    case 'icon': return renderImage({ ...b, mode: 'threshold', level: 128 }, H);
     default: return new Bitmap(mmToPx(b.width, dpi), H);
   }
 }
