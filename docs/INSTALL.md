@@ -4,6 +4,51 @@ Labeler runs where the printer is plugged in, typically a Raspberry Pi (a Zero W
 Raspberry Pi OS. It needs PHP 7.4 or newer and ptouch-print 1.5 or newer. The steps below assume
 Raspberry Pi OS or Debian; other Linux distributions work the same way with their package names.
 
+## Install script
+
+[`deploy/install.sh`](../deploy/install.sh) does steps 1 to 4a below: installs the packages, builds
+ptouch-print, downloads the newest release to `/opt/labeler`, creates the user `labeler`, installs
+the udev rule and the systemd service. Run it again to update; `config.php` and the fonts are
+kept, the previous version stays in `/opt/labeler.old`.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh -o install.sh
+sudo sh install.sh                       # newest release, port 8080
+sudo sh install.sh --port 80 --skip-ptouch
+sudo sh install.sh --zip labeler-1.0.0.zip --version 1.0.0
+sh install.sh --help
+```
+
+Building ptouch-print takes a few minutes on a Pi Zero. CI runs the script on Debian bookworm and
+trixie for every change.
+
+## Printer agent: printer and interface on different computers
+
+The interface can run on a server (for example in Docker) while the printer hangs on a small
+computer elsewhere. That computer only runs the printer agent: Labeler's API without the
+interface, protected by an access token.
+
+```sh
+sudo sh install.sh --agent
+```
+
+installs ptouch-print, the agent in `/opt/labeler-agent`, the udev rule and the service
+`labeler-agent` on port 8631, generates a token (kept in `/opt/labeler-agent/config.php`, readable
+only by root and the service) and prints:
+
+```
+LABELER_PRINTER_URL=http://192.0.2.10:8631
+LABELER_PRINTER_TOKEN=3f9c...
+```
+
+Set both on the interface (`config.php` keys `printer_url` and `printer_token`, or environment
+variables). The printer badge and the details dialog then show the agent; when it cannot be
+reached or the token is wrong, they say so. Running the script again with `--agent` updates the
+agent and keeps the token. Without `--no-service`, `systemctl status labeler-agent` shows it.
+
+The token travels in plain HTTP. On your own network that is usually fine; across networks you
+do not trust, put the agent behind a reverse proxy with TLS or a VPN.
+
 ## 1. ptouch-print
 
 Debian and Raspberry Pi OS only package the CUPS driver, not ptouch-print, so build it from the
