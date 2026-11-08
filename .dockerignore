@@ -1,0 +1,15 @@
+.git
+.github
+node_modules
+vendor
+build
+coverage
+test-results
+playwright-report
+tests
+docs
+data
+config.php
+fonts
+*.md
+!tools/ptouch-sim/README.md

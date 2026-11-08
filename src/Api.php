@@ -21,19 +21,23 @@ final class Api
     private Config $config;
     private PtouchPrint $printer;
     private Log $log;
+    private ?Remote $remote;
 
     public function __construct(Config $config, ?PtouchPrint $printer = null, ?Log $log = null)
     {
         $this->config = $config;
         $this->log = $log ?? new Log((string) $config->get('data_dir'), (int) $config->get('log_entries'));
         $this->printer = $printer ?? PtouchPrint::fromConfig($config, $this->log);
+        $url = (string) $config->get('printer_url');
+        $this->remote = $url === '' ? null : new Remote($url, (string) $config->get('printer_token'), (int) $config->get('timeout'));
     }
 
     /**
      * @param array<string, string> $query
+     * @param string $authorization value of the Authorization header
      * @return Response
      */
-    public function handle(string $method, array $query, string $body, string $contentType): Response
+    public function handle(string $method, array $query, string $body, string $contentType, string $authorization = ''): Response
     {
         $action = $query['action'] ?? '';
         $routes = [
@@ -51,6 +55,13 @@ final class Api
         if ($method !== $allowed && !($method === 'HEAD' && $allowed === 'GET')) {
             return Response::json(405, ['error' => "use $allowed"], ['Allow' => $allowed]);
         }
+        $token = (string) $this->config->get('token');
+        if ($token !== '' && $action !== 'health') {
+            $given = preg_match('/^Bearer\s+(\S+)$/i', trim($authorization), $m) ? $m[1] : '';
+            if (!hash_equals($token, $given)) {
+                return Response::json(401, ['error' => 'access token missing or wrong'], ['WWW-Authenticate' => 'Bearer']);
+            }
+        }
         if ($handler === 'print') {
             return $this->print($body, $contentType);
         }
@@ -67,6 +78,9 @@ final class Api
 
     private function status(): Response
     {
+        if ($this->remote !== null) {
+            return $this->remoteStatus($this->remote);
+        }
         $version = $this->printer->version();
         $info = $version === null
             ? PtouchPrint::parseInfo('', 127)
@@ -78,7 +92,59 @@ final class Api
             'max_copies' => (int) $this->config->get('max_copies'),
             'icon_api' => (string) $this->config->get('icon_api'),
             'printer' => $info,
+            'agent' => null,
         ]);
+    }
+
+    private function remoteStatus(Remote $remote): Response
+    {
+        $result = $remote->call('GET', 'status');
+        $data = $result['data'] ?? [];
+        if ($result['status'] === 200 && isset($data['printer']) && is_array($data['printer'])) {
+            $printer = $data['printer'];
+            $version = $data['ptouch_version'] ?? null;
+            $features = $data['features'] ?? [];
+            $maxCopies = min((int) $this->config->get('max_copies'), (int) ($data['max_copies'] ?? PHP_INT_MAX));
+        } else {
+            $printer = PtouchPrint::parseInfo('', 1);
+            $printer['message'] = $this->remoteProblem($remote, $result);
+            $version = null;
+            $features = array_fill_keys(array_keys(PtouchPrint::FEATURES), false);
+            $maxCopies = (int) $this->config->get('max_copies');
+        }
+        return Response::json(200, [
+            'app_version' => Config::VERSION,
+            'ptouch_version' => $version,
+            'features' => $features,
+            'max_copies' => $maxCopies,
+            'icon_api' => (string) $this->config->get('icon_api'),
+            'printer' => $printer,
+            'agent' => ['url' => $remote->url(), 'version' => $data['app_version'] ?? null, 'reachable' => $result['status'] !== 0],
+        ]);
+    }
+
+    /** @param array{status: int, data: array<string, mixed>|null, error: string} $result */
+    private function remoteProblem(Remote $remote, array $result): string
+    {
+        if ($result['status'] === 0) {
+            return "The printer agent at {$remote->url()} cannot be reached: {$result['error']}.";
+        }
+        if ($result['status'] === 401) {
+            return 'The printer agent refused the access token. Set printer_token to the token of the agent.';
+        }
+        $error = is_array($result['data']) && isset($result['data']['error']) ? (string) $result['data']['error'] : $result['error'];
+        return "The printer agent answered HTTP {$result['status']}: {$error}.";
+    }
+
+    private function forward(string $method, string $action, string $body = ''): Response
+    {
+        $remote = $this->remote;
+        assert($remote !== null);
+        $result = $remote->call($method, $action, $body);
+        if ($result['status'] === 0 || $result['status'] === 401 || $result['data'] === null) {
+            return Response::json(502, ['ok' => false, 'error' => $this->remoteProblem($remote, $result), 'output' => '']);
+        }
+        return Response::json($result['status'], $result['data']);
     }
 
     private function print(string $body, string $contentType): Response
@@ -95,6 +161,9 @@ final class Api
         $request = json_decode($body, true);
         if (!is_array($request) || !isset($request['png']) || !is_string($request['png'])) {
             return Response::json(400, ['error' => 'expected {"png": "<base64>"}']);
+        }
+        if ($this->remote !== null) {
+            return $this->forward('POST', 'print', $body);
         }
         $png = base64_decode(preg_replace('/^data:image\/png;base64,/', '', $request['png']), true);
         if ($png === false || $png === '') {
@@ -203,6 +272,9 @@ final class Api
 
     private function log(): Response
     {
+        if ($this->remote !== null) {
+            return $this->forward('GET', 'log');
+        }
         return Response::json(200, ['enabled' => $this->log->enabled(), 'entries' => $this->log->entries()]);
     }
 }

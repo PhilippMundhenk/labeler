@@ -787,6 +787,7 @@ async function openDetails() {
   const rows = [
     ['Labeler', s ? s.app_version : '?'],
     ['ptouch-print', s && s.ptouch_version ? s.ptouch_version : 'not found'],
+    ['Printer agent', s && s.agent ? `${s.agent.url}${s.agent.reachable ? '' : ' (not reachable)'}` : 'none, this computer prints'],
     ['Printer', p && p.model ? p.model : 'none'],
     ['Serial', p && p.serial ? p.serial : '–'],
     ['Tape', p && p.media_width_mm ? `${p.media_width_mm} mm, ${p.tape_px} px, ${p.dpi} dpi` : '–'],
