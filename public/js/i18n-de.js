@@ -88,6 +88,7 @@ export const DE = {
   '{mm} mm, {px} px, {dpi} dpi': '{mm} mm, {px} px, {dpi} dpi',
   '{text} on {tape}': '{text} auf {tape}',
   'Recent prints': 'Letzte Drucke',
+  'Print log': 'Druckprotokoll',
   'Nothing printed yet.': 'Noch nichts gedruckt.',
   'The print log is off: the data folder is not writable.': 'Das Druckprotokoll ist aus: Der Datenordner ist nicht beschreibbar.',
   '{when} · exit {code} · {ms} ms': '{when} · Exit {code} · {ms} ms',
