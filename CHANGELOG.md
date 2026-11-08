@@ -38,6 +38,7 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - Contract test against ptouch-print 1.6 to 1.9 built from the upstream sources, weekly run
   against upstream (#11).
 - CI, release zip, Dependabot, secret scanning (#12).
+- Install and update script for Raspberry Pi OS and Debian, tested in CI (#33).
 - Documentation, release package, systemd unit, udev rule, nginx and lighttpd examples (#13, #14).
 
 ### Fixed

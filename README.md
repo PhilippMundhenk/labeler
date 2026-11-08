@@ -49,6 +49,17 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 
 ## Quick start on a Raspberry Pi
 
+The install script sets up everything below in one go (packages, ptouch-print, Labeler, printer
+access, service) and updates an existing installation when run again:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh -o install.sh
+less install.sh       # read what it does
+sudo sh install.sh    # options: sh install.sh --help
+```
+
+Or by hand:
+
 1. Install PHP (`sudo apt install php-cli`) and build ptouch-print from its sources, which takes a
    few minutes even on a Pi Zero: [docs/INSTALL.md](docs/INSTALL.md#1-ptouch-print). Debian and
    Raspberry Pi OS do not package it.

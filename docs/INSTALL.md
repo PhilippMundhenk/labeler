@@ -4,6 +4,24 @@ Labeler runs where the printer is plugged in, typically a Raspberry Pi (a Zero W
 Raspberry Pi OS. It needs PHP 7.4 or newer and ptouch-print 1.5 or newer. The steps below assume
 Raspberry Pi OS or Debian; other Linux distributions work the same way with their package names.
 
+## Install script
+
+[`deploy/install.sh`](../deploy/install.sh) does steps 1 to 4a below: installs the packages, builds
+ptouch-print, downloads the newest release to `/opt/labeler`, creates the user `labeler`, installs
+the udev rule and the systemd service. Run it again to update; `config.php` and the fonts are
+kept, the previous version stays in `/opt/labeler.old`.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh -o install.sh
+sudo sh install.sh                       # newest release, port 8080
+sudo sh install.sh --port 80 --skip-ptouch
+sudo sh install.sh --zip labeler-1.0.0.zip --version 1.0.0
+sh install.sh --help
+```
+
+Building ptouch-print takes a few minutes on a Pi Zero. CI runs the script on Debian bookworm and
+trixie for every change.
+
 ## 1. ptouch-print
 
 Debian and Raspberry Pi OS only package the CUPS driver, not ptouch-print, so build it from the
