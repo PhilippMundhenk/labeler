@@ -1,7 +1,7 @@
 // Ready-made labels to start from. Sample content only; everything can be changed afterwards.
 
 const text = (t, extra = {}) => ({ type: 'text', text: t, font: 'sans-serif', size: 0, bold: true, italic: false, align: 'center', invert: false, ...extra });
-const layout = (extra = {}) => ({ margin: 2, gap: 3, length: 0, align: 'center', frame: false, frameWidth: 2, counter: 1, ...extra });
+const layout = (extra) => ({ margin: 2, gap: 3, length: 0, align: 'center', frame: false, frameWidth: 2, counter: 1, ...extra });
 
 export const TEMPLATES = [
   {
@@ -58,5 +58,5 @@ export const TEMPLATES = [
 ];
 
 export function findTemplate(id) {
-  return TEMPLATES.find((t) => t.id === id) || null;
+  return TEMPLATES.find((t) => t.id === id);
 }
