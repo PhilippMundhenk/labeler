@@ -1,0 +1,14 @@
+{
+  "include": ["public/js/**/*.js"],
+  "exclude": ["public/lib/**"],
+  "reporter": ["text", "lcov", "json-summary"],
+  "reports-dir": "coverage/js",
+  "temp-directory": "coverage/v8",
+  "all": true,
+  "check-coverage": true,
+  "per-file": true,
+  "lines": 95,
+  "statements": 95,
+  "functions": 90,
+  "branches": 85
+}

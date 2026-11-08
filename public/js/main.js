@@ -1,0 +1,620 @@
+// Labeler user interface.
+import { getStatus, getFonts, getLog, fontUrl, printLabel } from './api.js';
+import {
+  BLOCK_NAMES, FONTS, TAPES, defaultLabel, newBlock, newId, normalizeLabel, pxToMm, tapePx,
+} from './label.js';
+import { renderLabel, drawPreview } from './render.js';
+import { encodePng, toBase64 } from './png.js';
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const STORE_LABEL = 'labeler.label';
+const STORE_SAVED = 'labeler.saved';
+const STORE_TAPE = 'labeler.tape';
+
+const TAPE_COLORS = {
+  White: '#fafaf7', 'Matte White': '#f3f3ef', Clear: '#e4ebf0', 'Matte Clear': '#e4ebf0', Red: '#d8342c',
+  Blue: '#2160c4', Yellow: '#f5d327', Green: '#2e9d4f', Black: '#1d1d1d', 'Matte Silver': '#b9bdc3',
+  'Satin Gold': '#c9a648', 'Satin Silver': '#c4c7cc', 'Fluorescent Orange': '#ff7a1a',
+  'Fluorescent Yellow': '#e9f53b', 'Berry Pink': '#d6478a', 'Light Gray': '#cfd2d6', 'Lime Green': '#9ccc3c',
+  Pink: '#f4a3c0',
+};
+const INK_COLORS = { Black: '#111111', White: '#ffffff', Red: '#c62828', Blue: '#1a4fa8', Gold: '#b8902e' };
+
+const ICONS = {
+  up: '<path d="M12 5l-7 7h4v7h6v-7h4z"/>',
+  down: '<path d="M12 19l7-7h-4V5H9v7H5z"/>',
+  copy: '<path d="M8 8h11v11H8zM5 5h11v2H7v9H5z"/>',
+  trash: '<path d="M6 7h12l-1 13H7zM9 4h6l1 2H8z"/>',
+};
+const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
+
+const FIELDS = {
+  text: [
+    { k: 'text', type: 'textarea', label: 'Text', hint: 'Each line of the box is a line on the label.' },
+    { k: 'font', type: 'font', label: 'Font' },
+    { k: 'size', type: 'number', label: 'Size (pt)', min: 0, max: 200, step: 1, hint: '0 fits the text to the tape.' },
+    { k: 'align', type: 'choice', label: 'Align', options: [['left', 'Left'], ['center', 'Center'], ['right', 'Right']] },
+    { k: 'bold', type: 'check', label: 'Bold' },
+    { k: 'italic', type: 'check', label: 'Italic' },
+    { k: 'invert', type: 'check', label: 'White on black' },
+  ],
+  qr: [
+    { k: 'content', type: 'textarea', label: 'Content', hint: 'A link, a text, a Wi-Fi string (WIFI:S:name;T:WPA;P:password;;).' },
+    { k: 'level', type: 'choice', label: 'Error correction', options: [['L', 'L 7 %'], ['M', 'M 15 %'], ['Q', 'Q 25 %'], ['H', 'H 30 %']] },
+    { k: 'scale', type: 'range', label: 'Height', min: 20, max: 100, unit: '%' },
+    { k: 'quiet', type: 'number', label: 'Quiet zone (modules)', min: 0, max: 4, step: 1 },
+  ],
+  barcode: [
+    { k: 'content', type: 'text', label: 'Content', hint: 'Code 128: letters, digits and punctuation.' },
+    { k: 'bar', type: 'number', label: 'Bar width (px)', min: 1, max: 6, step: 1 },
+    { k: 'scale', type: 'range', label: 'Height', min: 20, max: 100, unit: '%' },
+    { k: 'text', type: 'check', label: 'Show text below' },
+  ],
+  image: [
+    { k: 'src', type: 'file', label: 'Image', hint: 'PNG, JPEG, SVG or GIF. Logos work best in high contrast.' },
+    { k: 'mode', type: 'choice', label: 'Conversion', options: [['threshold', 'Black and white'], ['dither', 'Dithered']] },
+    { k: 'level', type: 'range', label: 'Threshold', min: 1, max: 254, unit: '' },
+    { k: 'scale', type: 'range', label: 'Height', min: 10, max: 100, unit: '%' },
+    { k: 'invert', type: 'check', label: 'Invert' },
+  ],
+  spacer: [{ k: 'width', type: 'number', label: 'Width (mm)', min: 0, max: 500, step: 0.5 }],
+};
+
+const state = {
+  label: defaultLabel(),
+  status: null,
+  tape: { mm: 12, px: 76, dpi: 180, tapeColor: 'White', inkColor: 'Black', live: false },
+  fonts: { server: [], local: [] },
+  bitmap: null,
+  errors: {},
+  rendering: null,
+  dirty: false,
+  printing: false,
+};
+
+function load(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function store(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/* ---------- printer status ---------- */
+
+async function refreshStatus() {
+  const chip = $('#status');
+  chip.dataset.state = 'busy';
+  $('#status-text').textContent = 'Checking printer…';
+  const res = await getStatus();
+  state.status = res.ok ? res.data : null;
+  const p = state.status && state.status.printer;
+  if (p && p.ready) {
+    state.tape = {
+      mm: p.media_width_mm,
+      px: p.tape_px,
+      dpi: p.dpi,
+      tapeColor: (p.tape_color && p.tape_color.name) || 'White',
+      inkColor: (p.text_color && p.text_color.name) || 'Black',
+      live: true,
+    };
+    chip.dataset.state = 'ok';
+    $('#status-text').textContent = `${p.model || 'Printer'} · ${p.media_width_mm} mm`;
+  } else {
+    const manual = load(STORE_TAPE, 12);
+    state.tape = { mm: manual, px: tapePx(manual, 180), dpi: 180, tapeColor: 'White', inkColor: 'Black', live: false };
+    chip.dataset.state = p && p.connected ? 'warn' : 'bad';
+    $('#status-text').textContent = p && p.connected ? 'Printer not ready' : 'No printer';
+  }
+  const message = res.ok ? (p && !p.ready ? p.message : '') : res.data.error;
+  const notice = $('#printer-notice');
+  notice.hidden = !message;
+  $('#printer-message').textContent = message || '';
+  $('#manual-tape').hidden = state.tape.live;
+  $('#tape-select').value = String(state.tape.mm);
+  updateFeatures();
+  scheduleRender();
+}
+
+function updateFeatures() {
+  const f = (state.status && state.status.features) || {};
+  for (const [id, key, min] of [['chain', 'chain', '1.6'], ['precut', 'precut', '1.8']]) {
+    const input = $(`#${id}`);
+    input.disabled = !f[key];
+    input.closest('label').title = f[key] ? '' : `needs ptouch-print ${min} or newer`;
+    if (!f[key]) input.checked = false;
+  }
+  const max = (state.status && state.status.max_copies) || 50;
+  $('#copies').max = String(max);
+  updatePrintButton();
+}
+
+function updatePrintButton() {
+  const btn = $('#print');
+  const errors = Object.keys(state.errors).length;
+  const empty = !state.bitmap || state.bitmap.countBlack() === 0;
+  btn.disabled = state.printing || !state.tape.live || errors > 0 || empty;
+  btn.title = !state.tape.live ? 'No printer ready' : errors ? 'Fix the marked blocks first' : empty ? 'The label is empty' : 'Print (Ctrl+Enter)';
+}
+
+/* ---------- fonts ---------- */
+
+async function loadServerFonts() {
+  const res = await getFonts();
+  if (!res.ok) return;
+  for (const font of res.data.fonts) {
+    try {
+      const face = new FontFace(font.name, `url("${fontUrl(font.file)}")`);
+      document.fonts.add(face);
+      face.load().then(() => scheduleRender(), () => {});
+      state.fonts.server.push(font.name);
+    } catch {
+      // an unusable file is skipped
+    }
+  }
+  renderBlocks();
+}
+
+async function loadLocalFonts() {
+  try {
+    const fonts = await window.queryLocalFonts();
+    state.fonts.local = [...new Set(fonts.map((f) => f.family))].sort();
+    $('#local-fonts').hidden = true;
+    renderBlocks();
+  } catch {
+    $('#local-fonts').textContent = 'Fonts of this device are not available';
+    $('#local-fonts').disabled = true;
+  }
+}
+
+function fontOptions(current) {
+  const groups = [
+    ['Server', state.fonts.server],
+    ['Common', FONTS],
+    ['This device', state.fonts.local],
+  ];
+  const known = groups.some(([, list]) => list.includes(current));
+  let html = known ? '' : `<option>${esc(current)}</option>`;
+  for (const [name, list] of groups) {
+    if (!list.length) continue;
+    html += `<optgroup label="${name}">${list.map((f) => `<option${f === current ? ' selected' : ''}>${esc(f)}</option>`).join('')}</optgroup>`;
+  }
+  return html;
+}
+
+/* ---------- editor ---------- */
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+
+function fieldHtml(block, f) {
+  const id = `${block.id}-${f.k}`;
+  const v = block[f.k];
+  const hint = f.hint ? `<small class="hint">${esc(f.hint)}</small>` : '';
+  switch (f.type) {
+    case 'textarea':
+      return `<label class="field wide" for="${id}">${f.label}<textarea id="${id}" data-k="${f.k}" rows="${f.k === 'text' ? 2 : 2}" spellcheck="false">${esc(v)}</textarea>${hint}</label>`;
+    case 'text':
+      return `<label class="field wide" for="${id}">${f.label}<input id="${id}" data-k="${f.k}" type="text" value="${esc(v)}" spellcheck="false">${hint}</label>`;
+    case 'number':
+      return `<label class="field" for="${id}">${f.label}<input id="${id}" data-k="${f.k}" type="number" inputmode="decimal" min="${f.min}" max="${f.max}" step="${f.step}" value="${v}">${hint}</label>`;
+    case 'range':
+      return `<label class="field" for="${id}">${f.label} <output>${v}${f.unit}</output><input id="${id}" data-k="${f.k}" data-unit="${f.unit}" type="range" min="${f.min}" max="${f.max}" value="${v}"></label>`;
+    case 'check':
+      return `<label class="check"><input data-k="${f.k}" type="checkbox"${v ? ' checked' : ''}> ${f.label}</label>`;
+    case 'choice':
+      return `<fieldset class="field segmented"><legend>${f.label}</legend>${f.options.map(([val, text]) =>
+        `<label><input type="radio" name="${id}" data-k="${f.k}" value="${val}"${val === v ? ' checked' : ''}><span>${text}</span></label>`).join('')}</fieldset>`;
+    case 'font':
+      return `<label class="field" for="${id}">${f.label}<select id="${id}" data-k="${f.k}">${fontOptions(v)}</select></label>`;
+    default: // file
+      return `<label class="field wide" for="${id}">${f.label}<input id="${id}" data-k="${f.k}" type="file" accept="image/*">${block.name ? `<small class="hint">${esc(block.name)}</small>` : hint}</label>`;
+  }
+}
+
+function renderBlocks() {
+  const list = $('#blocks');
+  const focused = document.activeElement && document.activeElement.id;
+  list.innerHTML = state.label.blocks.map((b, i) => `
+    <li class="block" data-id="${b.id}" data-type="${b.type}">
+      <div class="block-head">
+        <span class="block-title">${BLOCK_NAMES[b.type]}</span>
+        <span class="block-error" role="alert"></span>
+        <span class="tools">
+          <button type="button" class="icon" data-act="up" aria-label="Move ${BLOCK_NAMES[b.type]} up"${i === 0 ? ' disabled' : ''}>${icon('up')}</button>
+          <button type="button" class="icon" data-act="down" aria-label="Move ${BLOCK_NAMES[b.type]} down"${i === state.label.blocks.length - 1 ? ' disabled' : ''}>${icon('down')}</button>
+          <button type="button" class="icon" data-act="copy" aria-label="Duplicate ${BLOCK_NAMES[b.type]}">${icon('copy')}</button>
+          <button type="button" class="icon" data-act="delete" aria-label="Remove ${BLOCK_NAMES[b.type]}">${icon('trash')}</button>
+        </span>
+      </div>
+      <div class="fields">${FIELDS[b.type].map((f) => fieldHtml(b, f)).join('')}</div>
+    </li>`).join('');
+  $('#empty-hint').hidden = state.label.blocks.length > 0;
+  if (focused && document.getElementById(focused)) document.getElementById(focused).focus();
+  showErrors();
+}
+
+function blockOf(el) {
+  const li = el.closest('.block');
+  return li && state.label.blocks.find((b) => b.id === li.dataset.id);
+}
+
+function onBlockInput(e) {
+  const el = e.target;
+  const block = blockOf(el);
+  if (!block || !el.dataset.k) return;
+  const k = el.dataset.k;
+  if (el.type === 'file') return;
+  if (el.type === 'checkbox') block[k] = el.checked;
+  else if (el.type === 'number' || el.type === 'range') {
+    const n = Number(el.value);
+    if (el.value === '' || !Number.isFinite(n)) return;
+    block[k] = n;
+    const out = el.parentElement.querySelector('output');
+    if (out) out.textContent = `${n}${el.dataset.unit}`;
+  } else block[k] = el.value;
+  changed();
+}
+
+function readImage(file, maxHeight) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('the file cannot be read'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('this is not an image the browser can show'));
+      img.onload = () => {
+        // keep at most twice the tallest tape, so the label still fits into browser storage
+        const scale = Math.min(1, maxHeight / (img.naturalHeight || maxHeight));
+        const w = Math.max(1, Math.round((img.naturalWidth || maxHeight) * scale));
+        const h = Math.max(1, Math.round((img.naturalHeight || maxHeight) * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function onBlockChange(e) {
+  const el = e.target;
+  const block = blockOf(el);
+  if (!block) return;
+  if (el.type === 'file' && el.files[0]) {
+    const file = el.files[0];
+    try {
+      block.src = await readImage(file, 908);
+      block.name = file.name;
+      delete state.errors[block.id];
+    } catch (err) {
+      state.errors[block.id] = err.message;
+    }
+    renderBlocks();
+    changed();
+    return;
+  }
+  if (el.type === 'radio' || el.tagName === 'SELECT') {
+    block[el.dataset.k] = el.value;
+    changed();
+  }
+}
+
+function onBlockClick(e) {
+  const btn = e.target.closest('button[data-act]');
+  if (!btn) return;
+  const blocks = state.label.blocks;
+  const i = blocks.findIndex((b) => b.id === btn.closest('.block').dataset.id);
+  const act = btn.dataset.act;
+  let focusId = blocks[i].id;
+  if (act === 'delete') blocks.splice(i, 1);
+  if (act === 'copy') {
+    focusId = newId();
+    blocks.splice(i + 1, 0, { ...blocks[i], id: focusId });
+  }
+  if (act === 'up' && i > 0) [blocks[i - 1], blocks[i]] = [blocks[i], blocks[i - 1]];
+  if (act === 'down' && i < blocks.length - 1) [blocks[i + 1], blocks[i]] = [blocks[i], blocks[i + 1]];
+  renderBlocks();
+  changed();
+  // keep the keyboard focus on the block that was acted on
+  const target = act === 'delete' ? $('#add-text') : $(`.block[data-id="${focusId}"] [data-act="${act}"]`);
+  if (target && !target.disabled) target.focus();
+  else if (target) $(`.block[data-id="${focusId}"] [data-act="copy"]`).focus();
+}
+
+function addBlock(type) {
+  const block = newBlock(type);
+  state.label.blocks.push(block);
+  renderBlocks();
+  changed();
+  const first = document.querySelector(`.block[data-id="${block.id}"] textarea, .block[data-id="${block.id}"] input`);
+  if (first) first.focus();
+}
+
+/* ---------- layout settings ---------- */
+
+function renderSettings() {
+  const l = state.label;
+  $('#margin').value = l.margin;
+  $('#gap').value = l.gap;
+  $('#length').value = l.length;
+  $('#frame').checked = l.frame;
+  $('#frame-width').value = l.frameWidth;
+  for (const r of document.querySelectorAll('input[name="label-align"]')) r.checked = r.value === l.align;
+}
+
+function onSettingsInput(e) {
+  const el = e.target;
+  const l = state.label;
+  if (el.name === 'label-align') l.align = el.value;
+  else if (el.id === 'frame') l.frame = el.checked;
+  else if (el.id === 'frame-width') l.frameWidth = Number(el.value) || 1;
+  else if (['margin', 'gap', 'length'].includes(el.id)) {
+    if (el.value === '' || !Number.isFinite(Number(el.value))) return;
+    l[el.id] = Number(el.value);
+  } else return;
+  changed();
+}
+
+/* ---------- saved labels ---------- */
+
+function renderSaved() {
+  const saved = load(STORE_SAVED, {});
+  const names = Object.keys(saved).sort((a, b) => a.localeCompare(b));
+  $('#saved-list').innerHTML = names.length
+    ? names.map((n) => `<li><button type="button" class="link" data-load="${esc(n)}">${esc(n)}</button><button type="button" class="icon" data-remove="${esc(n)}" aria-label="Delete saved label ${esc(n)}">${icon('trash')}</button></li>`).join('')
+    : '<li class="muted">No saved labels yet.</li>';
+}
+
+function onSave(e) {
+  e.preventDefault();
+  const name = $('#save-name').value.trim();
+  if (!name) return;
+  const saved = load(STORE_SAVED, {});
+  saved[name] = state.label;
+  if (!store(STORE_SAVED, saved)) {
+    toast('Not saved: the browser storage is full (large images?)', 'bad');
+    return;
+  }
+  $('#save-name').value = '';
+  renderSaved();
+  toast(`Saved "${name}"`, 'ok');
+}
+
+function onSavedClick(e) {
+  const saved = load(STORE_SAVED, {});
+  const loadName = e.target.closest('[data-load]')?.dataset.load;
+  const removeName = e.target.closest('[data-remove]')?.dataset.remove;
+  if (loadName && saved[loadName]) {
+    state.label = normalizeLabel(saved[loadName]);
+    renderSettings();
+    renderBlocks();
+    changed();
+    toast(`Loaded "${loadName}"`, 'ok');
+  }
+  if (removeName) {
+    delete saved[removeName];
+    store(STORE_SAVED, saved);
+    renderSaved();
+  }
+}
+
+/* ---------- preview and print ---------- */
+
+let renderTimer = null;
+let persistTimer = null;
+
+function changed() {
+  scheduleRender();
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    if (!store(STORE_LABEL, state.label)) toast('The label is too large to be kept in this browser', 'warn');
+  }, 300);
+}
+
+function scheduleRender() {
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(render, 40);
+}
+
+async function render() {
+  if (state.rendering) {
+    state.dirty = true;
+    return;
+  }
+  state.rendering = (async () => {
+    const { bitmap, errors } = await renderLabel(state.label, state.tape);
+    state.bitmap = bitmap;
+    state.errors = errors;
+    const colors = { tape: TAPE_COLORS[state.tape.tapeColor] || TAPE_COLORS.White, ink: INK_COLORS[state.tape.inkColor] || INK_COLORS.Black };
+    drawPreview($('#preview'), bitmap, state.tape, colors);
+    $('#preview').dataset.width = bitmap.width;
+    $('#preview').dataset.height = bitmap.height;
+    $('#tape-info').textContent = `${state.tape.mm} mm tape · ${state.tape.px} px at ${state.tape.dpi} dpi`;
+    $('#length-info').textContent = `${pxToMm(bitmap.width, state.tape.dpi)} mm long`;
+    showErrors();
+    updatePrintButton();
+  })();
+  try {
+    await state.rendering;
+  } finally {
+    state.rendering = null;
+  }
+  if (state.dirty) {
+    state.dirty = false;
+    render();
+  }
+}
+
+function showErrors() {
+  for (const li of document.querySelectorAll('.block')) {
+    const message = state.errors[li.dataset.id] || '';
+    li.classList.toggle('has-error', Boolean(message));
+    $('.block-error', li).textContent = message;
+  }
+}
+
+async function labelPng() {
+  return encodePng(state.bitmap, undefined, state.tape.dpi);
+}
+
+async function onPrint() {
+  if ($('#print').disabled) return;
+  state.printing = true;
+  updatePrintButton();
+  $('#print').classList.add('busy');
+  try {
+    await (state.rendering || Promise.resolve());
+    const png = toBase64(await labelPng());
+    const res = await printLabel(png, {
+      copies: Number($('#copies').value) || 1,
+      chain: $('#chain').checked,
+      precut: $('#precut').checked,
+    });
+    if (res.ok) {
+      const copies = res.data.copies > 1 ? `${res.data.copies} labels` : 'Label';
+      toast(`${copies} printed · ${res.data.length_mm} mm`, 'ok');
+      for (const note of res.data.notes || []) toast(note, 'warn');
+    } else {
+      toast(res.data.error || 'Printing failed', 'bad', res.data.output);
+      if (res.status === 503) refreshStatus();
+    }
+  } finally {
+    state.printing = false;
+    $('#print').classList.remove('busy');
+    updatePrintButton();
+  }
+}
+
+async function onDownload() {
+  const png = await labelPng();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([png], { type: 'image/png' }));
+  a.download = 'label.png';
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function toast(message, kind = 'ok', details = '') {
+  const box = $('#toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${kind}`;
+  el.textContent = message;
+  if (details) {
+    const pre = document.createElement('pre');
+    pre.textContent = details;
+    el.append(pre);
+  }
+  box.append(el);
+  setTimeout(() => el.remove(), kind === 'bad' ? 12000 : 4000);
+}
+
+/* ---------- details dialog ---------- */
+
+async function openDetails() {
+  const dialog = $('#details');
+  const s = state.status;
+  const p = s && s.printer;
+  const rows = [
+    ['Labeler', s ? s.app_version : '?'],
+    ['ptouch-print', s && s.ptouch_version ? s.ptouch_version : 'not found'],
+    ['Printer', p && p.model ? p.model : 'none'],
+    ['Serial', p && p.serial ? p.serial : '–'],
+    ['Tape', p && p.media_width_mm ? `${p.media_width_mm} mm, ${p.tape_px} px, ${p.dpi} dpi` : '–'],
+    ['Colours', p && p.tape_color ? `${p.text_color ? p.text_color.name : '?'} on ${p.tape_color.name}` : '–'],
+    ['Status', p ? (p.ready ? 'ready' : p.message) : 'server not reachable'],
+  ];
+  $('#details-info').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
+  const res = await getLog();
+  const entries = res.ok ? res.data.entries : [];
+  $('#details-log').innerHTML = entries.length
+    ? entries.map((e) => `<li class="${e.code === 0 ? '' : 'failed'}"><div><time>${esc(new Date(e.time).toLocaleString())}</time> · exit ${e.code} · ${e.ms} ms</div><code>ptouch-print ${esc(e.args.join(' '))}</code><pre>${esc(e.output)}</pre></li>`).join('')
+    : `<li class="muted">${res.ok && !res.data.enabled ? 'The print log is off: the data folder is not writable.' : 'Nothing printed yet.'}</li>`;
+  dialog.showModal();
+}
+
+/* ---------- start ---------- */
+
+function init() {
+  state.label = normalizeLabel(load(STORE_LABEL, null) || defaultLabel());
+
+  const select = $('#tape-select');
+  select.innerHTML = Object.keys(TAPES).map((mm) => `<option value="${mm}">${mm} mm</option>`).join('');
+  select.addEventListener('change', () => {
+    store(STORE_TAPE, Number(select.value));
+    state.tape = { ...state.tape, mm: Number(select.value), px: tapePx(Number(select.value), 180) };
+    scheduleRender();
+  });
+
+  const blocks = $('#blocks');
+  blocks.addEventListener('input', onBlockInput);
+  blocks.addEventListener('change', onBlockChange);
+  blocks.addEventListener('click', onBlockClick);
+  for (const btn of document.querySelectorAll('[data-add]')) btn.addEventListener('click', () => addBlock(btn.dataset.add));
+  $('#settings').addEventListener('input', onSettingsInput);
+  $('#save-form').addEventListener('submit', onSave);
+  $('#saved-list').addEventListener('click', onSavedClick);
+  $('#print').addEventListener('click', onPrint);
+  $('#download').addEventListener('click', onDownload);
+  $('#status').addEventListener('click', openDetails);
+  $('#retry').addEventListener('click', refreshStatus);
+  $('#details-refresh').addEventListener('click', async () => {
+    await refreshStatus();
+    $('#details').close();
+    openDetails();
+  });
+  $('#details-close').addEventListener('click', () => $('#details').close());
+  $('#clear').addEventListener('click', () => {
+    state.label = defaultLabel();
+    renderSettings();
+    renderBlocks();
+    changed();
+  });
+  if ('queryLocalFonts' in window) {
+    $('#local-fonts').hidden = false;
+    $('#local-fonts').addEventListener('click', loadLocalFonts);
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      onPrint();
+    }
+  });
+  window.addEventListener('resize', scheduleRender);
+  // keep focused and scrolled-to elements out from under the sticky preview
+  const card = $('.preview-card');
+  new ResizeObserver(() => {
+    const sticky = getComputedStyle(card).position === 'sticky';
+    document.documentElement.style.scrollPaddingTop = sticky ? `${Math.round(card.getBoundingClientRect().height + 72)}px` : '';
+  }).observe(card);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshStatus();
+  });
+
+  renderSettings();
+  renderBlocks();
+  renderSaved();
+  refreshStatus();
+  loadServerFonts();
+}
+
+init();
+
+// for the browser tests
+window.labeler = { state, render: () => render(), labelPng };

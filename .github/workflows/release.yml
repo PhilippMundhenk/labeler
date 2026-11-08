@@ -1,0 +1,27 @@
+name: Release
+
+# On a tag vX.Y.Z: build labeler-X.Y.Z.zip (what goes onto the device) and publish a
+# GitHub release with it and generated notes.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build the package
+        run: sh tools/package.sh "${GITHUB_REF_NAME#v}"
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          generate_release_notes: true
+          files: build/labeler-*.zip
+          body: |
+            Install or update on the device: see [docs/INSTALL.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/docs/INSTALL.md).

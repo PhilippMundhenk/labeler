@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, unit, browser tests and coverage gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The same image as tools/dev.sh: PHP with pcov, Composer, Node, Playwright's Chromium.
+      - name: Build the development image
+        run: docker build -t labeler-dev tools/dev
+      - name: Install dependencies
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work -e HOME=/tmp labeler-dev sh -c 'npm ci && composer install --no-progress'
+      - name: PHP tests with 95 % line coverage per file
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work -e HOME=/tmp labeler-dev composer coverage
+      - name: JS lint, unit and browser tests with 95 % line coverage per file
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work -e HOME=/tmp -e CI=true labeler-dev npm test
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports
+          path: |
+            coverage/
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  php-versions:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # 7.4: Raspberry Pi OS bullseye, 8.2: bookworm, 8.4: trixie
+        php: ["7.4", "8.2", "8.4"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install dependencies (lock file is resolved for PHP 7.4)
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/app" -w /app -e COMPOSER_HOME=/tmp composer:2 install --no-progress --ignore-platform-reqs
+      - name: Lint and unit tests
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work php:${{ matrix.php }}-cli sh -c '
+            for f in src/*.php public/*.php tools/ptouch-sim/*.php tools/ptouch-sim/ptouch-print; do php -l "$f" >/dev/null || exit 1; done
+            vendor/bin/phpunit'
+
+  contract:
+    name: Real ptouch-print ${{ matrix.ref }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        ref: [v1.6, v1.7, v1.8, v1.9]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build ptouch-print ${{ matrix.ref }} from the upstream sources
+        run: docker build -t labeler-contract --build-arg PTOUCH_REF=${{ matrix.ref }} tools/contract
+      - name: Contract test
+        run: docker run --rm -v "$PWD:/work" labeler-contract
+
+  package:
+    name: Release package
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build and smoke-test the zip
+        run: |
+          sh tools/package.sh 0.0.0-ci
+          mkdir /tmp/pkg && cd /tmp/pkg && unzip -q "$GITHUB_WORKSPACE/build/labeler-0.0.0-ci.zip"
+          cd labeler
+          test ! -e tests && test ! -e node_modules && test ! -e vendor
+          LABELER_PTOUCH_BIN=$GITHUB_WORKSPACE/tools/ptouch-sim/ptouch-print php -S 127.0.0.1:8080 -t public >/tmp/php.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/api.php?action=health && break; sleep 0.5; done
+          echo
+          curl -fsS http://127.0.0.1:8080/api.php?action=status | grep -q '"ready":true'
+          curl -fsS http://127.0.0.1:8080/ | grep -q '<title>Labeler</title>'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -d x=1 http://127.0.0.1:8080/api.php?action=print)" = 415

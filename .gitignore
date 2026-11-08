@@ -1,0 +1,13 @@
+/vendor/
+node_modules/
+/data/
+/config.php
+/fonts/*
+!/fonts/README.md
+test-results/
+playwright-report/
+coverage/
+/build/
+.phpunit.result.cache
+*.log
+.DS_Store
