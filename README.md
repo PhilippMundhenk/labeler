@@ -1,7 +1,7 @@
 # Labeler
 
 Design and print labels on a Brother P-Touch printer from any browser on your network: text in
-any font, QR codes, barcodes and images, with a live preview that shows exactly what the printer
+any font, thousands of icons, QR codes, barcodes and images, with a live preview that shows exactly what the printer
 will print.
 
 [![CI](https://github.com/PhilippMundhenk/labeler/actions/workflows/ci.yml/badge.svg)](https://github.com/PhilippMundhenk/labeler/actions/workflows/ci.yml)
@@ -25,8 +25,11 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 ## Features
 
 - **Live preview** at the printer's resolution, in the colours of the inserted tape.
-- **Blocks** side by side on one label: text, QR code, Code 128 barcode, image, space. Move,
-  duplicate and remove them.
+- **Blocks** side by side on one label: text, icon, QR code, Code 128 barcode, image, space.
+  Move, duplicate and remove them.
+- **Icons** with search: about 7,400 [Material Design Icons](https://pictogrammers.com/library/mdi/)
+  and 3,500 brand logos from [Simple Icons](https://simpleicons.org/), loaded on demand from the
+  [Iconify API](https://iconify.design/); the chosen icon is stored in the label.
 - **Text**: one to several lines, any font (built-in list, fonts you put on the Pi, or the fonts of
   your computer in Chrome and Edge), automatic or fixed size, bold, italic, alignment, white on
   black.
@@ -79,6 +82,7 @@ set the environment variable (in `labeler.service`: `Environment=`).
 | `max_upload_bytes` | `LABELER_MAX_UPLOAD_BYTES` | `2000000` | Largest label image |
 | `max_copies` | `LABELER_MAX_COPIES` | `50` | Most copies per print |
 | `log_entries` | `LABELER_LOG_ENTRIES` | `50` | Entries kept in the print log |
+| `icon_api` | `LABELER_ICON_API` | `https://api.iconify.design` | Iconify API the browser searches icons with; your own Iconify server, or empty to switch icons off |
 
 Labeler has no login: anyone who can open the page can print. Keep it on your home network; see
 [SECURITY.md](SECURITY.md).

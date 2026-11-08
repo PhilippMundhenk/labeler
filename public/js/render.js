@@ -112,7 +112,7 @@ export function loadImage(src) {
 }
 
 async function renderImage(b, H) {
-  if (!b.src) throw new Error('choose an image file');
+  if (!b.src) throw new Error(b.type === 'icon' ? 'search for an icon and choose one' : 'choose an image file');
   const img = await loadImage(b.src);
   const h = Math.max(1, Math.floor((H * b.scale) / 100));
   const w = Math.max(1, Math.min(4000, Math.round(((img.naturalWidth || h) * h) / (img.naturalHeight || h))));
@@ -131,6 +131,7 @@ async function renderBlock(b, H, dpi) {
     case 'qr': return renderQr(b, H);
     case 'barcode': return renderBarcode(b, H);
     case 'image': return renderImage(b, H);
+    case 'icon': return renderImage({ ...b, mode: 'threshold', level: 128 }, H);
     default: return new Bitmap(mmToPx(b.width, dpi), H);
   }
 }

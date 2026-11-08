@@ -25,8 +25,9 @@ test('text styles change the rendering', async ({ page }) => {
   await settled(page);
   await text.locator('select').selectOption('monospace');
   await settled(page);
+  await expect(text.getByLabel('Size (pt)')).toHaveAttribute('placeholder', 'Auto');
   expect(await page.evaluate(() => window.labeler.state.label.blocks[0])).toMatchObject({
-    font: 'monospace', size: 8, italic: true, bold: false, invert: true, align: 'right',
+    font: 'monospace', size: 0, italic: true, bold: false, invert: true, align: 'right',
   });
 });
 
@@ -36,6 +37,7 @@ test('an empty text gives an empty label that cannot be printed', async ({ page 
   await settled(page);
   await expect(page.locator('#print')).toBeDisabled();
   await expect(page.locator('#print')).toHaveAttribute('title', 'The label is empty');
+  await expect(page.locator('#print-hint')).toHaveText('The label is empty');
 });
 
 test('blocks can be added, moved, duplicated and removed', async ({ page }) => {
@@ -136,8 +138,12 @@ test('layout: margins, gap, minimum length, position and frame', async ({ page }
   expect(margins.width - tight.width).toBe(2 * 35);
   await page.locator('#length').fill('100');
   await expect(page.locator('#length-info')).toHaveText('100 mm long');
+  await page.locator('#length').fill('');
+  await expect(page.locator('#length-info')).not.toHaveText('100 mm long');
+  await page.locator('#length').fill('100');
   await page.getByText('Left', { exact: true }).last().click();
   await page.locator('#margin').fill('');
+  await expect(page.locator('#frame-width')).toBeDisabled();
   await page.locator('#frame').check();
   await page.locator('#frame-width').fill('4');
   const framed = await previewSize(page);

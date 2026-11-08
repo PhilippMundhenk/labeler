@@ -76,6 +76,7 @@ final class Api
             'ptouch_version' => $version,
             'features' => $this->printer->features(),
             'max_copies' => (int) $this->config->get('max_copies'),
+            'icon_api' => (string) $this->config->get('icon_api'),
             'printer' => $info,
         ]);
     }

@@ -26,6 +26,9 @@ final class ConfigProcessLogTest extends TestCase
         $this->assertSame(7, $config->get('timeout'));
         $this->assertSame('/opt/pt', $config->get('ptouch_bin'));
         $this->assertSame('A1', $config->get('serial'));
+        $this->assertSame('https://api.iconify.design', $config->get('icon_api'));
+        $this->assertSame('', Config::load($this->tmp, null, ['LABELER_ICON_API' => 'javascript:alert(1)'])->get('icon_api'));
+        $this->assertSame('http://icons.lan:3000', Config::load($this->tmp, null, ['LABELER_ICON_API' => 'http://icons.lan:3000'])->get('icon_api'));
         $this->assertSame(0, $config->get('max_copies'));
         $this->assertArrayNotHasKey('unknown', $config->all());
     }
