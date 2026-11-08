@@ -1,0 +1,27 @@
+name: Bug report
+description: Something does not print or does not work as described
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The label content can usually be described ("two lines of text and a QR code") instead of shared.
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Shown in the printer details (click the badge in the top right corner).
+      placeholder: "Labeler 1.0.0, ptouch-print 1.9, PHP 8.2"
+  - type: textarea
+    id: log
+    attributes:
+      label: Print log or status message
+      description: From the printer details dialog. Remove anything you do not want to share.
+      render: text
