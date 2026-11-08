@@ -55,6 +55,7 @@ test('normalizeLabel survives garbage and limits the block count', () => {
   assert.equal(many.frameWidth, 10);
   assert.equal(normalizeLabel({ mirror: 1 }).mirror, true);
   assert.equal(normalizeLabel({}).mirror, false);
+  assert.equal(normalizeLabel({ cutMarks: 'yes' }).cutMarks, true);
 });
 
 test('layout places blocks with margins, gaps, minimum length and alignment', () => {

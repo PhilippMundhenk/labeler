@@ -49,6 +49,12 @@ test('invert, frame and ink columns', () => {
   assert.deepEqual(rows(new Bitmap(6, 5).frame(1, 1)), ['......', '.####.', '.#..#.', '.####.', '......']);
 });
 
+test('dashed cut mark column', () => {
+  const bm = new Bitmap(3, 10).dashedColumn(2, 2);
+  assert.deepEqual(rows(bm).map((r) => r[2]).join(''), '##..##..##');
+  assert.equal(new Bitmap(2, 8).dashedColumn(0).countBlack(), 4);
+});
+
 test('mirror flips every row', () => {
   const bm = new Bitmap(3, 2);
   bm.set(0, 0);
