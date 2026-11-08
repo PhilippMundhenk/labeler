@@ -31,6 +31,20 @@ final class PtouchPrint
         0x90 => 'White', 0x91 => 'Yellow', 0xf0 => 'Cleaning', 0xf1 => 'Stencil', 0xff => 'Incompatible',
     ];
 
+    /**
+     * Error bits of the status, as ptouch-print prints them: low byte = Brother's "error
+     * information 1", high byte = "error information 2" (raster command reference, ESC i S).
+     */
+    public const ERRORS = [
+        0x0001 => 'No tape: insert a tape cassette.',
+        0x0004 => 'Cutter jam: open the cover and remove the jammed tape.',
+        0x0008 => 'The batteries are weak: connect the AC adapter.',
+        0x0040 => 'Wrong AC adapter: the voltage is too high.',
+        0x0100 => 'Replace the tape cassette: it is empty or does not fit.',
+        0x1000 => 'The cover is open: close it.',
+        0x2000 => 'The printer is overheated: let it cool down.',
+    ];
+
     private const TEXT_COLORS = [
         0x01 => 'White', 0x02 => 'Other', 0x04 => 'Red', 0x05 => 'Blue', 0x08 => 'Black',
         0x0a => 'Gold', 0x62 => 'Blue', 0xf0 => 'Cleaning', 0xf1 => 'Stencil', 0xff => 'Incompatible',
@@ -123,6 +137,7 @@ final class PtouchPrint
             'tape_color' => null,
             'text_color' => null,
             'error_code' => null,
+            'errors' => [],
             'message' => '',
         ];
         if ($code === 127) {
@@ -188,7 +203,8 @@ final class PtouchPrint
             return $info;
         }
         if ($info['error_code']) {
-            $info['message'] = sprintf('The printer reports error 0x%04x (cover open, tape empty or jammed?).', $info['error_code']);
+            $info['errors'] = self::decodeErrors((int) $info['error_code']);
+            $info['message'] = implode(' ', $info['errors']);
             return $info;
         }
         $info['ready'] = true;
@@ -262,6 +278,18 @@ final class PtouchPrint
             $this->log->add($args, $result['code'], $result['output'], $result['ms']);
         }
         return $result;
+    }
+
+    /** @return list<string> one message per error bit, unknown bits named by their value */
+    public static function decodeErrors(int $code): array
+    {
+        $messages = [];
+        for ($bit = 1; $bit <= 0x8000; $bit <<= 1) {
+            if ($code & $bit) {
+                $messages[] = self::ERRORS[$bit] ?? sprintf('The printer reports error 0x%04x.', $bit);
+            }
+        }
+        return $messages;
     }
 
     /** @param array<int, string> $names */

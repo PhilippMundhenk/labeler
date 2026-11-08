@@ -112,7 +112,7 @@ with the exact ptouch-print command and output.
 | A printer is attached, but the web server may not use it | udev rule and group (step 3); unplug and plug in the printer; restart the service. |
 | The printer is in P-Lite mode | Mode switch from EL to E, or hold the PLite button for two seconds. |
 | No tape cassette inserted | Insert tape; close the cover. |
-| The printer reports error 0x… | Cover open, tape empty or jammed. |
+| The cover is open / Cutter jam / Replace the tape cassette / overheated / batteries weak | What the printer reports about itself; the message says what to do. Unknown error bits are shown as `error 0x…`. |
 | Chain printing / cut before the label is greyed out | The installed ptouch-print is too old: chain needs 1.6, cut before the label 1.8. |
 
 Run ptouch-print as the service user to see what the service sees:
