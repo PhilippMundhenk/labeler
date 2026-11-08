@@ -59,12 +59,27 @@ export const test = base.extend({
       });
     });
     const coverage = browserName === 'chromium';
+    // V8 drops a page's counters when it navigates, so take a snapshot before every
+    // goto() and reload() and write them all at the end
+    const snapshots = [];
+    const snapshot = async () => {
+      if (!coverage) return;
+      snapshots.push(...await page.coverage.stopJSCoverage());
+      await page.coverage.startJSCoverage({ resetOnNavigation: false });
+    };
+    for (const name of ['goto', 'reload']) {
+      const original = page[name].bind(page);
+      page[name] = async (...args) => {
+        await snapshot();
+        return original(...args);
+      };
+    }
     if (coverage) await page.coverage.startJSCoverage({ resetOnNavigation: false });
     await use(page);
     expect(errors, 'no script errors on the page').toEqual([]);
     if (!coverage) return;
-    const entries = await page.coverage.stopJSCoverage();
-    const result = entries
+    await snapshot();
+    const result = snapshots
       .filter((e) => /\/js\/[\w-]+\.js$/.test(new URL(e.url).pathname))
       .map((e) => ({
         scriptId: e.scriptId,
