@@ -29,6 +29,7 @@ const TAPE_COLORS = {
 const INK_COLORS = { Black: '#111111', White: '#ffffff', Red: '#c62828', Blue: '#1a4fa8', Gold: '#b8902e' };
 
 const ICONS = {
+  grip: '<path d="M9 5h2v2H9zm4 0h2v2h-2zM9 11h2v2H9zm4 0h2v2h-2zm-4 6h2v2H9zm4 0h2v2h-2z"/>',
   up: '<path d="M12 5l-7 7h4v7h6v-7h4z"/>',
   down: '<path d="M12 19l7-7h-4V5H9v7H5z"/>',
   copy: '<path d="M8 8h11v11H8zM5 5h11v2H7v9H5z"/>',
@@ -351,6 +352,7 @@ function renderBlocks() {
   list.innerHTML = state.label.blocks.map((b, i) => `
     <li class="block" data-id="${b.id}" data-type="${b.type}">
       <div class="block-head">
+        <span class="grip" draggable="true" title="Drag to move" aria-hidden="true">${icon('grip')}</span>
         <span class="block-title">${BLOCK_NAMES[b.type]}</span>
         <span class="tools">
           <button type="button" class="icon" data-act="up" aria-label="Move ${BLOCK_NAMES[b.type]} up"${i === 0 ? ' disabled' : ''}>${icon('up')}</button>
@@ -484,6 +486,79 @@ function addBlock(type) {
   commit();
   const first = document.querySelector(`.block[data-id="${block.id}"] textarea, .block[data-id="${block.id}"] input`);
   if (first) first.focus();
+}
+
+/* ---------- drag and drop ---------- */
+
+let dragged = null;
+
+function onDragStart(e) {
+  const li = e.target.closest && e.target.closest('.grip') && e.target.closest('.block');
+  if (!li) return;
+  dragged = li.dataset.id;
+  li.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragged);
+  e.dataTransfer.setDragImage(li, 20, 20);
+}
+
+function onDragOver(e) {
+  const li = dragged && e.target.closest('.block');
+  if (!li) return;
+  e.preventDefault();
+  for (const other of document.querySelectorAll('.block.drop-target')) other.classList.remove('drop-target');
+  if (li.dataset.id !== dragged) li.classList.add('drop-target');
+}
+
+function onDrop(e) {
+  const li = dragged && e.target.closest('.block');
+  if (!li) return;
+  e.preventDefault();
+  const blocks = state.label.blocks;
+  const from = blocks.findIndex((b) => b.id === dragged);
+  const to = blocks.findIndex((b) => b.id === li.dataset.id);
+  dragged = null;
+  if (from === to) {
+    renderBlocks();
+    return;
+  }
+  persist();
+  const [moved] = blocks.splice(from, 1);
+  blocks.splice(to, 0, moved);
+  renderBlocks();
+  commit();
+}
+
+function onDragEnd() {
+  dragged = null;
+  for (const el of document.querySelectorAll('.block.dragging, .block.drop-target')) el.classList.remove('dragging', 'drop-target');
+}
+
+const hasFiles = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+
+/** Image files dropped anywhere on the page become image blocks. */
+async function onFileDrop(e) {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  $('#drop-overlay').hidden = true;
+  const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith('image/'));
+  if (!files.length) {
+    toast('Only image files can be dropped here', 'warn');
+    return;
+  }
+  persist();
+  for (const file of files) {
+    const block = newBlock('image');
+    try {
+      block.src = await readImage(file, 908);
+      block.name = file.name;
+      state.label.blocks.push(block);
+    } catch (err) {
+      toast(`${file.name}: ${err.message}`, 'bad');
+    }
+  }
+  renderBlocks();
+  commit();
 }
 
 /* ---------- layout settings ---------- */
@@ -878,6 +953,19 @@ function init() {
   blocks.addEventListener('input', onBlockInput);
   blocks.addEventListener('change', onBlockChange);
   blocks.addEventListener('click', onBlockClick);
+  blocks.addEventListener('dragstart', onDragStart);
+  blocks.addEventListener('dragover', onDragOver);
+  blocks.addEventListener('drop', onDrop);
+  blocks.addEventListener('dragend', onDragEnd);
+  document.addEventListener('dragover', (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    $('#drop-overlay').hidden = false;
+  });
+  document.addEventListener('dragleave', (e) => {
+    if (e.relatedTarget === null) $('#drop-overlay').hidden = true;
+  });
+  document.addEventListener('drop', onFileDrop);
   for (const btn of document.querySelectorAll('[data-add]')) btn.addEventListener('click', () => addBlock(btn.dataset.add));
   $('#settings').addEventListener('input', onSettingsInput);
   $('#counter').addEventListener('input', (e) => {

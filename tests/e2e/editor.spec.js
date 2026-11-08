@@ -87,6 +87,52 @@ test('blocks can be added, moved, duplicated and removed', async ({ page }) => {
   expect(await types()).toEqual(['text']);
 });
 
+test('drag blocks to reorder, drop image files to add them (#26)', async ({ page }) => {
+  await ready(page);
+  await page.locator('[data-add="qr"]').click();
+  await page.locator('[data-add="spacer"]').click();
+  const types = () => page.locator('.block').evaluateAll((els) => els.map((e) => e.dataset.type));
+  // the drag events themselves, so the sticky preview cannot get in the way of a mouse drag
+  const dragBlock = (from, to) => page.evaluate(([f, t]) => {
+    const dt = new DataTransfer();
+    const grip = document.querySelector(`.block[data-type="${f}"] .grip`);
+    const target = document.querySelector(`.block[data-type="${t}"]`);
+    grip.dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true }));
+    target.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true, cancelable: true }));
+    target.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+    grip.dispatchEvent(new DragEvent('dragend', { dataTransfer: dt, bubbles: true }));
+  }, [from, to]);
+  await dragBlock('spacer', 'text');
+  expect(await types()).toEqual(['spacer', 'text', 'qr']);
+  await dragBlock('qr', 'qr');
+  expect(await types()).toEqual(['spacer', 'text', 'qr']);
+  await page.locator('#undo').click();
+  expect(await types()).toEqual(['text', 'qr', 'spacer']);
+
+  const drop = (files) => page.evaluate((list) => {
+    const dt = new DataTransfer();
+    for (const [name, type, body] of list) dt.items.add(new File([body], name, { type }));
+    document.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true }));
+    document.querySelector('main').dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+  }, files);
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="20" height="20"/></svg>';
+  await drop([['a.svg', 'image/svg+xml', svg], ['b.svg', 'image/svg+xml', svg]]);
+  await expect(page.locator('.block[data-type="image"]')).toHaveCount(2);
+  await expect(page.locator('#drop-overlay')).toBeHidden();
+  await drop([['notes.txt', 'text/plain', 'hi']]);
+  await expect(page.locator('.toast.warn')).toContainText('Only image files');
+  await drop([['broken.png', 'image/png', 'not a png']]);
+  await expect(page.locator('.toast.bad')).toContainText('broken.png');
+  await page.evaluate(() => {
+    const dt = new DataTransfer();
+    dt.items.add(new File(['x'], 'x.png', { type: 'image/png' }));
+    document.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true }));
+  });
+  await expect(page.locator('#drop-overlay')).toBeVisible();
+  await page.evaluate(() => document.dispatchEvent(new DragEvent('dragleave', { relatedTarget: null })));
+  await expect(page.locator('#drop-overlay')).toBeHidden();
+});
+
 test('QR code options and errors', async ({ page }) => {
   await ready(page);
   await page.locator('[data-add="qr"]').click();

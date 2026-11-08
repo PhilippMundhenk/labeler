@@ -15,6 +15,7 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - Font selection (built-in list, fonts in the server's `fonts/` folder, fonts of the device),
   size, bold, italic, alignment, white on black, any number of lines (#4).
 - QR codes and Code 128 barcodes (#5).
+- Drag and drop: move blocks by their handle, drop image files onto the page to add them (#26).
 - Cable flags: the content twice with the cable's circumference between, the second half turned
   so both sides read upright; the cable label template uses it (#20).
 - Text: a size per line (e.g. a large first and a small second line), underline, letter
