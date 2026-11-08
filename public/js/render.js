@@ -3,7 +3,7 @@ import { Bitmap, luminance, threshold, dither } from './bitmap.js';
 import { qrMatrix } from './qr.js';
 import { buildQrContent } from './qrcontent.js';
 import { encodeBarcode } from './barcodes.js';
-import { layout, fitFontSize, ptToPx, mmToPx, cssFont } from './label.js';
+import { layout, ptToPx, mmToPx, cssFont, lineScales, fitScaledFontSize } from './label.js';
 
 const MEASURE = 'ÁHgjy|';
 const images = new Map();
@@ -40,24 +40,41 @@ async function renderText(b, H, dpi) {
   if (!lines.join('').trim()) return new Bitmap(0, H);
   const metrics = await fontMetrics(b);
   const vpad = b.invert ? Math.round(H * 0.08) : 0;
-  const size = b.size > 0 ? ptToPx(b.size, dpi) : fitFontSize(lines.length, H - 2 * vpad, metrics.ratio);
-  const font = cssFont(b, size);
-  await document.fonts.load(font, b.text).catch(() => {});
-  const lineH = metrics.ratio * size;
-  const gap = lineH * 0.15;
+  const scales = lineScales(b.lineSizes, lines.length);
+  const base = b.size > 0 ? ptToPx(b.size, dpi) : fitScaledFontSize(scales, H - 2 * vpad, metrics.ratio);
+  const sizes = scales.map((s) => Math.max(4, Math.round(base * s)));
+  await document.fonts.load(cssFont(b, base), b.text).catch(() => {});
+  const style = (ctx, size) => {
+    ctx.font = cssFont(b, size);
+    // letter spacing in percent of the font size (canvas letterSpacing; ignored where unsupported)
+    if ('letterSpacing' in ctx) ctx.letterSpacing = `${Math.round((b.spacing / 100) * size)}px`;
+  };
   const probe = context(1, 1);
-  probe.font = font;
-  const textW = Math.ceil(Math.max(...lines.map((l) => probe.measureText(l).width)));
-  const hpad = b.invert ? Math.round(lineH * 0.3) : 0;
-  const W = Math.max(1, textW + 2 * hpad);
+  const widths = lines.map((l, i) => {
+    style(probe, sizes[i]);
+    return probe.measureText(l).width;
+  });
+  const heights = sizes.map((s) => metrics.ratio * s);
+  const gaps = heights.map((h) => h * 0.15);
+  const hpad = b.invert ? Math.round(heights[0] * 0.3) : 0;
+  const W = Math.max(1, Math.ceil(Math.max(...widths)) + 2 * hpad);
   const ctx = context(W, H);
-  ctx.font = font;
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = b.align;
   const x = b.align === 'left' ? hpad : b.align === 'right' ? W - hpad : W / 2;
-  const total = lines.length * lineH + (lines.length - 1) * gap;
-  const top = (H - total) / 2;
-  lines.forEach((line, i) => ctx.fillText(line, x, top + i * (lineH + gap) + metrics.ascent * size));
+  const total = heights.reduce((s, h) => s + h, 0) + gaps.slice(0, -1).reduce((s, g) => s + g, 0);
+  let y = (H - total) / 2;
+  lines.forEach((line, i) => {
+    style(ctx, sizes[i]);
+    const baseline = y + metrics.ascent * sizes[i];
+    ctx.fillText(line, x, baseline);
+    if (b.underline && line.trim()) {
+      const thick = Math.max(1, Math.round(sizes[i] * 0.06));
+      const left = b.align === 'left' ? x : b.align === 'right' ? x - widths[i] : x - widths[i] / 2;
+      ctx.fillRect(Math.round(left), Math.round(baseline + sizes[i] * 0.08), Math.ceil(widths[i]), thick);
+    }
+    y += heights[i] + gaps[i];
+  });
   const bm = toBitmap(ctx, W, H);
   return b.invert ? bm.invert() : bm;
 }

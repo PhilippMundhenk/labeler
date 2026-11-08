@@ -42,7 +42,9 @@ const FIELDS = {
     { k: 'font', type: 'font', label: 'Font' },
     { k: 'size', type: 'number', label: 'Size (pt)', min: 0, max: 200, step: 1, auto: true, hint: 'Empty fits the text to the tape.' },
     { k: 'align', type: 'choice', label: 'Align', options: [['left', 'Left'], ['center', 'Center'], ['right', 'Right']] },
-    { type: 'toggles', label: 'Style', items: [['bold', 'Bold'], ['italic', 'Italic'], ['invert', 'White on black']] },
+    { k: 'lineSizes', type: 'text', label: 'Line sizes (%)', hint: 'One value per line, e.g. 100, 60 for a smaller second line. Empty: all the same.' },
+    { k: 'spacing', type: 'number', label: 'Letter spacing (%)', min: -10, max: 100, step: 5 },
+    { type: 'toggles', label: 'Style', items: [['bold', 'Bold'], ['italic', 'Italic'], ['underline', 'Underline'], ['invert', 'White on black']] },
     { k: 'rotate', type: 'choice', label: 'Rotation', options: [[0, '0°'], [90, '90°'], [180, '180°'], [270, '270°']] },
   ],
   qr: [

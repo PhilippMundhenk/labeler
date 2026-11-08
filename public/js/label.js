@@ -21,7 +21,7 @@ export function tapePx(mm, dpi = 180, maxPx = Infinity) {
 }
 
 export const BLOCK_DEFAULTS = {
-  text: { type: 'text', text: 'Label', font: 'sans-serif', size: 0, bold: true, italic: false, align: 'center', invert: false, rotate: 0 },
+  text: { type: 'text', text: 'Label', font: 'sans-serif', size: 0, bold: true, italic: false, align: 'center', invert: false, rotate: 0, lineSizes: '', underline: false, spacing: 0 },
   qr: {
     type: 'qr', kind: 'text', content: 'https://example.com', level: 'M', scale: 100, quiet: 1,
     wifiSsid: '', wifiPassword: '', wifiType: 'WPA', wifiHidden: false,
@@ -73,6 +73,9 @@ export function normalizeBlock(raw) {
         italic: Boolean(raw.italic),
         align: oneOf(raw.align, ['left', 'center', 'right'], d.align),
         invert: Boolean(raw.invert),
+        lineSizes: str(raw.lineSizes, 60),
+        underline: Boolean(raw.underline),
+        spacing: num(raw.spacing, -10, 100, 0),
       });
       break;
     case 'qr':
@@ -171,6 +174,23 @@ export function layout(widths, label, dpi) {
 export function fitFontSize(lines, height, ratio, lineGap = 0.15) {
   const n = Math.max(1, lines);
   return Math.max(4, Math.floor(height / (ratio * (n + (n - 1) * lineGap))));
+}
+
+/**
+ * Relative size of each line from a list like "100, 60" (percent); lines without a value take
+ * the last one. Values outside 20..300 are clamped.
+ */
+export function lineScales(spec, lines) {
+  const values = String(spec || '').split(/[,;\s]+/).map(Number).filter((v) => Number.isFinite(v) && v > 0)
+    .map((v) => Math.min(300, Math.max(20, v)) / 100);
+  if (!values.length) values.push(1);
+  return Array.from({ length: Math.max(1, lines) }, (_, i) => values[Math.min(i, values.length - 1)]);
+}
+
+/** Base font size in px so that lines with these scales fill `height` px. */
+export function fitScaledFontSize(scales, height, ratio, lineGap = 0.15) {
+  const total = scales.reduce((s, v) => s + v, 0) + lineGap * scales.slice(0, -1).reduce((s, v) => s + v, 0);
+  return Math.max(4, Math.floor(height / (ratio * total)));
 }
 
 const GENERIC_FAMILIES = ['sans-serif', 'serif', 'monospace', 'system-ui', 'cursive', 'fantasy'];
