@@ -81,4 +81,7 @@ See the [architecture decision records](adr/README.md):
   when a font is missing on one of them. Fonts in the server's `fonts/` folder avoid that.
 - Anti-aliased text is cut at 50 % grey. Very small text (below about 6 pt at 180 dpi) is better
   set in bold.
+- A P-Touch printer cannot be switched on over USB (no such command in Brother's raster command
+  reference; USB remote wakeup only goes from the device to the host). Labeler explains a printer
+  that switched itself off; INSTALL.md lists what helps.
 - One printer per installation (the `serial` setting picks one when several are attached).
