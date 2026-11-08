@@ -242,6 +242,27 @@ export function drawPreview(canvas, bitmap, tape, colors, maxScale = 6) {
   ctx.drawImage(off, 0, y, canvas.width, Math.round(bitmap.height * scale));
 }
 
+/** A small PNG data URL of the bitmap, for lists. */
+export function thumbnail(bitmap, height = 36) {
+  const scale = Math.min(1, height / Math.max(1, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const full = document.createElement('canvas');
+  full.width = Math.max(1, bitmap.width);
+  full.height = Math.max(1, bitmap.height);
+  const fctx = full.getContext('2d');
+  const img = fctx.createImageData(full.width, full.height);
+  for (let i = 0; i < bitmap.data.length; i++) {
+    const v = bitmap.data[i] ? 0 : 255;
+    img.data.set([v, v, v, 255], i * 4);
+  }
+  fctx.putImageData(img, 0, 0);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(full, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/png');
+}
+
 function hex(color) {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color) || [0, '00', '00', '00'];
   return [1, 2, 3].map((i) => parseInt(m[i], 16));
