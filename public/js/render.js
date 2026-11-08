@@ -2,7 +2,7 @@
 import { Bitmap, luminance, threshold, dither } from './bitmap.js';
 import { qrMatrix } from './qr.js';
 import { buildQrContent } from './qrcontent.js';
-import { modules } from './code128.js';
+import { encodeBarcode } from './barcodes.js';
 import { layout, fitFontSize, ptToPx, mmToPx, cssFont } from './label.js';
 
 const MEASURE = 'ÁHgjy|';
@@ -79,22 +79,25 @@ function renderQr(b, H) {
 }
 
 function renderBarcode(b, H) {
-  const mods = modules(b.content, 10);
+  const code = encodeBarcode(b.format, b.content);
+  const mods = code.modules;
   const W = mods.length * b.bar;
   const avail = Math.floor((H * b.scale) / 100);
   const textH = b.text ? Math.round(avail * 0.24) : 0;
   const barH = avail - textH;
   const y0 = Math.floor((H - avail) / 2);
   const bm = new Bitmap(W, H);
+  // EAN/UPC guard bars reach into the text line
+  const guard = (i) => code.guards.some(([from, to]) => i >= from && i < to);
   mods.forEach((bar, i) => {
-    if (bar) bm.fillRect(i * b.bar, y0, b.bar, barH);
+    if (bar) bm.fillRect(i * b.bar, y0, b.bar, barH + (textH && guard(i) ? Math.round(textH / 2) : 0));
   });
   if (textH >= 6) {
     const ctx = context(W, textH);
     ctx.font = `${Math.round(textH * 0.95)}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText(b.content, W / 2, textH);
+    ctx.fillText(code.text, W / 2, textH);
     bm.blit(toBitmap(ctx, W, textH), 0, y0 + barH);
   }
   return bm;
