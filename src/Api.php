@@ -22,6 +22,7 @@ final class Api
     private PtouchPrint $printer;
     private Log $log;
     private ?Remote $remote;
+    private string $serial = '';
 
     public function __construct(Config $config, ?PtouchPrint $printer = null, ?Log $log = null)
     {
@@ -47,6 +48,7 @@ final class Api
             'fonts' => ['GET', 'fonts'],
             'font' => ['GET', 'font'],
             'log' => ['GET', 'log'],
+            'printers' => ['GET', 'printers'],
         ];
         if (!isset($routes[$action])) {
             return Response::json(404, ['error' => 'unknown action']);
@@ -61,6 +63,14 @@ final class Api
             if (!hash_equals($token, $given)) {
                 return Response::json(401, ['error' => 'access token missing or wrong'], ['WWW-Authenticate' => 'Bearer']);
             }
+        }
+        $serial = (string) ($query['serial'] ?? '');
+        if ($serial !== '' && !preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/', $serial)) {
+            return Response::json(400, ['error' => 'invalid printer serial number']);
+        }
+        if ($serial !== '') {
+            $this->serial = $serial;
+            $this->printer = $this->printer->withSerial($serial);
         }
         if ($handler === 'print') {
             return $this->print($body, $contentType);
@@ -98,7 +108,7 @@ final class Api
 
     private function remoteStatus(Remote $remote): Response
     {
-        $result = $remote->call('GET', 'status');
+        $result = $remote->call('GET', 'status', '', $this->serial);
         $data = $result['data'] ?? [];
         if ($result['status'] === 200 && isset($data['printer']) && is_array($data['printer'])) {
             $printer = $data['printer'];
@@ -140,7 +150,7 @@ final class Api
     {
         $remote = $this->remote;
         assert($remote !== null);
-        $result = $remote->call($method, $action, $body);
+        $result = $remote->call($method, $action, $body, $this->serial);
         if ($result['status'] === 0 || $result['status'] === 401 || $result['data'] === null) {
             return Response::json(502, ['ok' => false, 'error' => $this->remoteProblem($remote, $result), 'output' => '']);
         }
@@ -268,6 +278,15 @@ final class Api
             }
         }
         return Response::json(404, ['error' => 'no such font']);
+    }
+
+    private function printers(): Response
+    {
+        if ($this->remote !== null) {
+            return $this->forward('GET', 'printers');
+        }
+        $printers = $this->printer->connected();
+        return Response::json(200, ['supported' => $printers !== null, 'printers' => $printers ?? []]);
     }
 
     private function log(): Response

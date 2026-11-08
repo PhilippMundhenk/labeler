@@ -1,5 +1,5 @@
 // Labeler user interface.
-import { getStatus, getFonts, getLog, fontUrl, printLabel } from './api.js';
+import { getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel } from './api.js';
 import {
   BLOCK_NAMES, FONTS, TAPES, defaultLabel, newBlock, newId, normalizeLabel, pxToMm, tapePx,
 } from './label.js';
@@ -19,6 +19,7 @@ const STORE_SAVED = 'labeler.saved';
 const STORE_TAPE = 'labeler.tape';
 const STORE_BATCH = 'labeler.batch';
 const STORE_HISTORY = 'labeler.history';
+const STORE_SERIAL = 'labeler.serial';
 const HISTORY_MAX = 20;
 
 const TAPE_COLORS = {
@@ -959,8 +960,21 @@ function toast(message, kind = 'ok', details = '') {
 
 /* ---------- details dialog ---------- */
 
+async function renderPrinterChoice() {
+  const choice = $('#printer-choice');
+  const res = await getPrinters();
+  const printers = res.ok ? res.data.printers || [] : [];
+  choice.hidden = printers.length < 2;
+  if (choice.hidden) return;
+  const current = load(STORE_SERIAL, '');
+  $('#printer-select').innerHTML = printers.map((p) =>
+    `<option value="${esc(p.serial)}"${p.serial === current ? ' selected' : ''}${p.usable ? '' : ' disabled'}>${esc(p.model)} · ${esc(p.serial)}${p.usable ? '' : ' (not usable)'}</option>`).join('');
+  if (!printers.some((p) => p.serial === current)) $('#printer-select').selectedIndex = -1;
+}
+
 async function openDetails() {
   const dialog = $('#details');
+  renderPrinterChoice();
   const s = state.status;
   const p = s && s.printer;
   const rows = [
@@ -1033,6 +1047,14 @@ function init() {
     openDetails();
   });
   $('#details-close').addEventListener('click', () => $('#details').close());
+  setSerial(load(STORE_SERIAL, ''));
+  $('#printer-select').addEventListener('change', async (e) => {
+    store(STORE_SERIAL, e.target.value);
+    setSerial(e.target.value);
+    await refreshStatus();
+    $('#details').close();
+    openDetails();
+  });
   $('#clear').addEventListener('click', () => {
     persist();
     state.label = defaultLabel();

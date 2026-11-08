@@ -154,6 +154,29 @@ test('the details dialog shows the printer and the print log', async ({ page }) 
   await expect(page.locator('#details')).toBeHidden();
 });
 
+test('choosing one of several printers (#28)', async ({ page }) => {
+  setSim({ others: [{ printer: 'PT-P750W', serial: 'B2', tape_mm: 24 }, { printer: 'PT-P700', serial: 'C3', mode: 'plite' }] });
+  await ready(page);
+  await page.locator('#status').click();
+  await expect(page.locator('#printer-choice')).toBeVisible();
+  await expect(page.locator('#printer-select option')).toHaveText(['PT-P700 · 000F1Z401234', 'PT-P750W · B2', 'PT-P700 · C3 (not usable)']);
+  await page.locator('#printer-select').selectOption('B2');
+  await expect(page.locator('#status-text')).toHaveText('PT-P750W · 24 mm');
+  await page.locator('#details-close').click();
+  await page.locator('#print').click();
+  await expect(page.locator('.toast.ok')).toBeVisible();
+  expect(printed()[0]).toMatchObject({ tape_px: 128 });
+  await page.reload();
+  await expect(page.locator('#status-text')).toHaveText('PT-P750W · 24 mm');
+});
+
+test('one printer: no choice shown', async ({ page }) => {
+  await ready(page);
+  await page.locator('#status').click();
+  await expect(page.locator('#details-info')).toContainText('PT-P700');
+  await expect(page.locator('#printer-choice')).toBeHidden();
+});
+
 test('download the label as PNG', async ({ page }) => {
   await ready(page);
   await page.locator('summary').click();

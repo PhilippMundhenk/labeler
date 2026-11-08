@@ -166,6 +166,21 @@ final class PtouchPrintTest extends TestCase
         $this->assertCount(0, $this->printed());
     }
 
+    public function testSeveralPrinters(): void
+    {
+        $this->simulate(['version' => '1.9', 'others' => '[{"printer": "PT-P750W", "serial": "B2", "tape_mm": 24}]']);
+        $printer = $this->printer();
+        $this->assertSame([
+            ['model' => 'PT-P700', 'serial' => '000F1Z401234', 'usable' => true],
+            ['model' => 'PT-P750W', 'serial' => 'B2', 'usable' => true],
+        ], $printer->connected());
+        $this->assertSame($printer, $printer->withSerial(''));
+        $this->assertSame(128, $printer->withSerial('B2')->info()['tape_px']);
+        $this->assertSame(76, $printer->info()['tape_px'], 'the original keeps its printer');
+        $this->simulate(['version' => '1.8']);
+        $this->assertNull($this->printer()->connected(), '--list-connected needs 1.9');
+    }
+
     public function testFromConfig(): void
     {
         $config = \Labeler\Config::load($this->tmp, null, ['LABELER_PTOUCH_BIN' => self::simBin()]);

@@ -51,7 +51,13 @@ final class SimulatorTest extends TestCase
     public function testListCommands(): void
     {
         $this->assertStringContainsString('PT-P700', $this->sim(['--list-supported'])['stdout']);
-        $this->assertSame("PT-P700 serial 000F1Z401234\n", $this->sim(['--list-connected'])['stdout']);
+        $this->assertSame("PT-P700\tserial 000F1Z401234\t(USB bus 1, device 4)\n", $this->sim(['--list-connected'])['stdout']);
+        $others = '[{"printer": "PT-P750W", "serial": "B2", "tape_mm": 24}, {"printer": "PT-P700", "serial": "C3", "mode": "plite"}, "junk"]';
+        $this->assertSame("PT-P700\tserial 000F1Z401234\t(USB bus 1, device 4)\nPT-P750W\tserial B2\t(USB bus 1, device 5)\n"
+            . "PT-P700\tserial C3\t(USB bus 1, device 6) - in P-Lite mode, unsupported\n", $this->sim(['--list-connected'], ['others' => $others])['stdout']);
+        $info = $this->sim(['--serial', 'B2', '--info'], ['others' => json_decode($others, true)]);
+        $this->assertStringContainsString('PT-P750W found', $info['stderr']);
+        $this->assertStringContainsString('media width = 24 mm', $info['stdout']);
         $this->assertSame(5, $this->sim(['--list-connected'], ['printer' => 'none'])['code']);
     }
 

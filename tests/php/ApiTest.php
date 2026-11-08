@@ -181,6 +181,20 @@ final class ApiTest extends TestCase
         $this->assertSame(404, $this->call('GET', 'font')[0]);
     }
 
+    public function testPrinterChoice(): void
+    {
+        $this->simulate(['version' => '1.9', 'others' => '[{"printer": "PT-P750W", "serial": "B2", "tape_mm": 24}]']);
+        [$status, $body] = $this->call('GET', 'printers');
+        $this->assertSame([200, true, 2], [$status, $body['supported'], count($body['printers'])]);
+        [, $body] = $this->call('GET', 'status', '', '', [], ['serial' => 'B2']);
+        $this->assertSame([128, 'PT-P750W'], [$body['printer']['tape_px'], $body['printer']['model']]);
+        $this->assertSame(400, $this->call('GET', 'status', '', '', [], ['serial' => '--info'])[0]);
+        [$status] = $this->call('POST', 'print', $this->printBody(60, 128), 'application/json', [], ['serial' => 'B2']);
+        $this->assertSame(200, $status, '128 px fit the 24 mm tape of the second printer');
+        $this->simulate(['version' => '1.7']);
+        $this->assertSame(['supported' => false, 'printers' => []], $this->call('GET', 'printers')[1]);
+    }
+
     public function testAccessToken(): void
     {
         $this->simulate(['version' => '1.9']);

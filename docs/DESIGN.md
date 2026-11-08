@@ -84,4 +84,4 @@ See the [architecture decision records](adr/README.md):
 - A P-Touch printer cannot be switched on over USB (no such command in Brother's raster command
   reference; USB remote wakeup only goes from the device to the host). Labeler explains a printer
   that switched itself off; INSTALL.md lists what helps.
-- One printer per installation (the `serial` setting picks one when several are attached).
+- Several printers on one computer need ptouch-print 1.9 (`--list-connected`, `--serial`); the browser picks one, the `serial` setting is the default. Printers on different computers each need a printer agent; one interface talks to one agent.

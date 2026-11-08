@@ -128,6 +128,16 @@ final class AgentTest extends TestCase
         $this->assertSame(400, $status, 'the agent has the stricter copy limit');
     }
 
+    public function testPrinterChoiceGoesThroughTheAgent(): void
+    {
+        self::state(['others' => [['printer' => 'PT-P750W', 'serial' => 'B2', 'tape_mm' => 24]]]);
+        [, $body] = self::json($this->ui()->handle('GET', ['action' => 'printers'], '', ''));
+        $this->assertCount(2, $body['printers']);
+        [, $body] = self::json($this->ui()->handle('GET', ['action' => 'status', 'serial' => 'B2'], '', ''));
+        $this->assertSame('PT-P750W', $body['printer']['model']);
+        self::state([]);
+    }
+
     public function testWrongToken(): void
     {
         [, $body] = self::json($this->ui('wrong')->handle('GET', ['action' => 'status'], '', ''));
