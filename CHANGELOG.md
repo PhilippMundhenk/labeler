@@ -15,6 +15,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - Font selection (built-in list, fonts in the server's `fonts/` folder, fonts of the device),
   size, bold, italic, alignment, white on black, any number of lines (#4).
 - QR codes and Code 128 barcodes (#5).
+- Accessibility: axe-core checks every screen in light and dark mode, on phones and in dialogs;
+  contrast of blue text and the printer badge fixed; keyboard-only walkthrough as a test (#31).
 - Faster loading on small computers: PHP's built-in server now sends ETag and Last-Modified (304
   on reload) and gzip for text files; a service worker keeps the app shell for offline starts on
   HTTPS or localhost (#32).

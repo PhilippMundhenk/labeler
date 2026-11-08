@@ -2,6 +2,7 @@
 :root {
   --primary: #2a6fdb;
   --on-primary: #ffffff;
+  --link: #1d5bc4; /* blue text on light surfaces: at least 4.5:1 also on tinted notices */
   --bg: #f3f4f6;
   --card: #ffffff;
   --field: #f7f7f7;
@@ -18,6 +19,7 @@
   :root {
     --primary: #8ab4f8;
     --on-primary: #0b2a5b;
+    --link: #8ab4f8;
     --bg: #121212;
     --card: #1e1e1e;
     --field: #262626;
@@ -56,7 +58,7 @@ body {
 .chip {
   display: inline-flex; align-items: center; gap: 8px; max-width: 60vw;
   padding: 6px 12px; border: 1px solid color-mix(in srgb, var(--on-primary) 40%, transparent); border-radius: 999px;
-  background: color-mix(in srgb, var(--on-primary) 12%, transparent); color: inherit; font: inherit; font-size: 14px; cursor: pointer;
+  background: color-mix(in srgb, #000 18%, transparent); color: inherit; font: inherit; font-size: 14px; cursor: pointer;
 }
 .chip span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dot { width: 10px; height: 10px; flex: none; border-radius: 50%; background: #bbb; box-shadow: 0 0 0 2px #fff6; }
@@ -116,9 +118,9 @@ button { font: inherit; }
 #print { min-width: 140px; }
 .primary:disabled { opacity: .45; cursor: not-allowed; }
 .primary.busy { cursor: progress; }
-.secondary { background: transparent; color: var(--primary); border: 1px solid var(--line); }
+.secondary { background: transparent; color: var(--link); border: 1px solid var(--line); }
 .secondary:hover, .link:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
-.link { background: none; border: 0; color: var(--primary); cursor: pointer; padding: 4px; border-radius: 6px; text-align: left; }
+.link { background: none; border: 0; color: var(--link); cursor: pointer; padding: 4px; border-radius: 6px; text-align: left; }
 .icon {
   display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0;
   border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer;
@@ -138,7 +140,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--primary); }
 input[type="file"] { font: inherit; font-size: 14px; max-width: 100%; color: var(--muted); }
 input[type="file"]::file-selector-button {
   margin-right: 12px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px;
-  background: var(--field); color: var(--primary); font: inherit; font-weight: 600; cursor: pointer;
+  background: var(--field); color: var(--link); font: inherit; font-weight: 600; cursor: pointer;
 }
 .row { display: flex; gap: 8px; align-items: center; }
 .row.wrap { flex-wrap: wrap; gap: 8px 16px; }
@@ -223,7 +225,7 @@ fieldset.segmented { border: 0; padding: 0; grid-column: 1 / -1; }
 .saved li { display: flex; justify-content: space-between; align-items: center; }
 
 footer { max-width: 1180px; margin: 8px auto 32px; padding: 0 16px; color: var(--muted); font-size: 13px; }
-footer a { color: var(--primary); }
+footer a { color: var(--link); }
 footer .link { font-size: 13px; }
 #login-dialog { width: min(380px, calc(100vw - 32px)); }
 #login-dialog .field { margin: 12px 0; }
