@@ -76,6 +76,33 @@ jobs:
       - name: Contract test
         run: docker run --rm -v "$PWD:/work" labeler-contract
 
+  install:
+    name: Install script on ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # Raspberry Pi OS is Debian: bookworm (PHP 8.2) and trixie (PHP 8.4). bullseye's security
+        # mirror no longer serves all packages its index lists; PHP 7.4 is tested in php-versions.
+        image: ["debian:bookworm", "debian:trixie"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: sh tools/test-install.sh ${{ matrix.image }}
+
+  docker:
+    name: Docker image builds and works as interface and agent
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build
+        run: docker build -t labeler:ci .
+      - name: Container smoke test
+        run: sh tools/container-smoke.sh labeler:ci
+      - name: Compose file is valid
+        run: docker compose config -q
+
   package:
     name: Release package
     runs-on: ubuntu-latest

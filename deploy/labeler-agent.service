@@ -1,0 +1,28 @@
+# Labeler printer agent: only the API, for an interface running elsewhere (Docker).
+# Installed by deploy/install.sh --agent; the access token is in /opt/labeler-agent/config.php.
+[Unit]
+Description=Labeler printer agent for P-Touch label printers
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=labeler
+Group=labeler
+SupplementaryGroups=lp
+WorkingDirectory=/opt/labeler-agent
+ExecStart=/usr/bin/php -S 0.0.0.0:8631 -t /opt/labeler-agent/public
+Environment=LABELER_DATA_DIR=/var/lib/labeler-agent
+StateDirectory=labeler-agent
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+
+[Install]
+WantedBy=multi-user.target
