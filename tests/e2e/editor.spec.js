@@ -151,6 +151,22 @@ test('layout: margins, gap, minimum length, position and frame', async ({ page }
   expect(await page.evaluate(() => window.labeler.state.label)).toMatchObject({ align: 'left', frame: true, frameWidth: 4, length: 100, margin: 5 });
 });
 
+test('mirrored printing flips the label (#50)', async ({ page }) => {
+  await ready(page);
+  await block(page, 'text').locator('textarea').fill('AB');
+  await page.locator('#margin').fill('0');
+  await settled(page);
+  const plain = await page.evaluate(() => Array.from(window.labeler.state.bitmap.data));
+  const width = (await previewSize(page)).width;
+  await page.locator('#mirror').check();
+  await settled(page);
+  const mirrored = await page.evaluate(() => Array.from(window.labeler.state.bitmap.data));
+  const flip = (data) => data.map((_, i) => data[Math.floor(i / width) * width + (width - 1 - (i % width))]);
+  expect(mirrored).toEqual(flip(plain));
+  await page.reload();
+  await expect(page.locator('#mirror')).toBeChecked();
+});
+
 test('the label survives a reload; saved labels', async ({ page }) => {
   await ready(page);
   await block(page, 'text').locator('textarea').fill('Kitchen');
