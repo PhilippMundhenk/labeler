@@ -92,7 +92,7 @@ h3 { font-size: 14px; margin: 16px 0 8px; }
 }
 #preview { display: block; max-width: 100%; height: auto; image-rendering: pixelated; box-shadow: 0 1px 4px #0003; border-radius: 3px; }
 .print-row { display: flex; gap: 12px; align-items: end; justify-content: flex-end; margin-top: 14px; }
-.copies input { width: 76px; }
+.copies input, input.narrow { width: 96px; }
 .print-hint { flex: 1; align-self: center; color: var(--muted); font-size: 13px; }
 input:disabled { opacity: .5; }
 .options { margin-top: 10px; font-size: 14px; }

@@ -6,6 +6,7 @@ import {
 import { renderLabel, drawPreview } from './render.js';
 import { encodePng, toBase64 } from './png.js';
 import { COLLECTIONS, searchIcons, fetchIcon, iconUrl, parseId } from './icons.js';
+import { resolveLabel, usesCounter } from './placeholders.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const STORE_LABEL = 'labeler.label';
@@ -31,7 +32,7 @@ const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name
 
 const FIELDS = {
   text: [
-    { k: 'text', type: 'textarea', label: 'Text', hint: 'Each line of the box is a line on the label.' },
+    { k: 'text', type: 'textarea', label: 'Text', hint: 'Each line of the box is a line on the label. Placeholders: {date}, {time}, {n} (counter).' },
     { k: 'font', type: 'font', label: 'Font' },
     { k: 'size', type: 'number', label: 'Size (pt)', min: 0, max: 200, step: 1, auto: true, hint: 'Empty fits the text to the tape.' },
     { k: 'align', type: 'choice', label: 'Align', options: [['left', 'Left'], ['center', 'Center'], ['right', 'Right']] },
@@ -453,6 +454,7 @@ function renderSettings() {
   $('#frame').checked = l.frame;
   $('#frame-width').value = l.frameWidth;
   $('#frame-width').disabled = !l.frame;
+  $('#counter').value = l.counter;
   for (const r of document.querySelectorAll('input[name="label-align"]')) r.checked = r.value === l.align;
 }
 
@@ -543,7 +545,7 @@ async function render() {
     return;
   }
   state.rendering = (async () => {
-    const { bitmap, errors } = await renderLabel(state.label, state.tape);
+    const { bitmap, errors } = await renderLabel(resolveLabel(state.label, previewContext()), state.tape);
     state.bitmap = bitmap;
     state.errors = errors;
     const colors = { tape: TAPE_COLORS[state.tape.tapeColor] || TAPE_COLORS.White, ink: INK_COLORS[state.tape.inkColor] || INK_COLORS.Black };
@@ -578,6 +580,20 @@ async function labelPng() {
   return encodePng(state.bitmap, undefined, state.tape.dpi);
 }
 
+function previewContext() {
+  return { n: state.label.counter };
+}
+
+/**
+ * The print jobs for the current label: one job with n copies, or one job per copy when the
+ * label contains the counter {n}, so every copy gets its own number.
+ */
+function printJobs(copies) {
+  const label = state.label;
+  if (!usesCounter(label)) return [{ ctx: previewContext(), copies }];
+  return Array.from({ length: copies }, (_, i) => ({ ctx: { n: label.counter + i }, copies: 1, counts: true }));
+}
+
 async function onPrint() {
   if ($('#print').disabled) return;
   state.printing = true;
@@ -585,19 +601,32 @@ async function onPrint() {
   $('#print').classList.add('busy');
   try {
     await (state.rendering || Promise.resolve());
-    const png = toBase64(await labelPng());
-    const res = await printLabel(png, {
-      copies: Number($('#copies').value) || 1,
-      chain: $('#chain').checked,
-      precut: $('#precut').checked,
-    });
-    if (res.ok) {
-      const copies = res.data.copies > 1 ? `${res.data.copies} labels` : 'Label';
-      toast(`${copies} printed · ${res.data.length_mm} mm`, 'ok');
-      for (const note of res.data.notes || []) toast(note, 'warn');
-    } else {
-      toast(res.data.error || 'Printing failed', 'bad', res.data.output);
-      if (res.status === 503) refreshStatus();
+    const jobs = printJobs(Number($('#copies').value) || 1);
+    let labels = 0;
+    let mm = 0;
+    for (let i = 0; i < jobs.length; i++) {
+      const job = jobs[i];
+      if (jobs.length > 1) $('#print-hint').textContent = `Printing ${i + 1} of ${jobs.length}…`;
+      const { bitmap } = await renderLabel(resolveLabel(state.label, job.ctx), state.tape);
+      const res = await printLabel(toBase64(await encodePng(bitmap, undefined, state.tape.dpi)), {
+        copies: job.copies,
+        chain: $('#chain').checked || i < jobs.length - 1,
+        precut: $('#precut').checked,
+      });
+      if (!res.ok) {
+        toast(res.data.error || 'Printing failed', 'bad', res.data.output);
+        if (res.status === 503) refreshStatus();
+        break;
+      }
+      labels += res.data.copies;
+      mm += res.data.length_mm * res.data.copies;
+      if (job.counts) state.label.counter += 1;
+      if (i === jobs.length - 1) for (const note of res.data.notes || []) toast(note, 'warn');
+    }
+    if (labels) {
+      toast(`${labels > 1 ? `${labels} labels` : 'Label'} printed · ${Math.round(mm * 10) / 10} mm`, 'ok');
+      renderSettings();
+      changed();
     }
   } finally {
     state.printing = false;
@@ -676,6 +705,12 @@ function init() {
   blocks.addEventListener('click', onBlockClick);
   for (const btn of document.querySelectorAll('[data-add]')) btn.addEventListener('click', () => addBlock(btn.dataset.add));
   $('#settings').addEventListener('input', onSettingsInput);
+  $('#counter').addEventListener('input', (e) => {
+    const n = Number(e.target.value);
+    if (e.target.value === '' || !Number.isInteger(n) || n < 0) return;
+    state.label.counter = n;
+    changed();
+  });
   $('#save-form').addEventListener('submit', onSave);
   $('#saved-list').addEventListener('click', onSavedClick);
   $('#print').addEventListener('click', onPrint);
