@@ -20,7 +20,7 @@ sh install.sh --help
 ```
 
 Building ptouch-print takes a few minutes on a Pi Zero. CI runs the script on Debian bookworm and
-bullseye for every change.
+trixie for every change.
 
 ## Printer agent: printer and interface on different computers
 
