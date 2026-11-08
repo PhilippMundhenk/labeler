@@ -58,7 +58,8 @@ Three layers plus a contract test, all in CI:
    simulator: every block type and option, layout, saved labels, fonts (server folder and device
    fonts), every printer state (missing, P-Lite, no tape, USB permission, 360 dpi, version 1.5),
    failing prints, and the printed PNG itself: the simulator stores it and the test scans its QR
-   code and barcode with zxing.
+   code and barcode with zxing. axe-core checks accessibility (WCAG 2.1 AA) of every screen
+   in light and dark mode, and a keyboard-only test walks from the page start to a print.
 4. **Contract test** (`tools/contract`). Builds ptouch-print 1.6, 1.7, 1.8 and 1.9 from the
    upstream sources and checks that the labels from our PNG encoder are read back pixel for pixel,
    that `--copies`, `--chain` and `--precut` are accepted where Labeler uses them, that our parser

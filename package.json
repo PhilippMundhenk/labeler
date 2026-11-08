@@ -23,6 +23,7 @@
     "demo": "sh tools/demo.sh"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.0",
     "@zxing/library": "^0.23.0",

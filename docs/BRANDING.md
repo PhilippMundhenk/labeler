@@ -20,6 +20,7 @@ One product, one surface: the web page in `public/`. Code references: `public/ap
 | --- | --- | --- | --- |
 | `--primary` | `#2A6FDB` | `#8AB4F8` | brand bar, primary button, links, selected segment |
 | `--on-primary` | `#FFFFFF` | `#0B2A5B` | text on primary |
+| `--link` | `#1D5BC4` | `#8AB4F8` | blue text: links, secondary and link buttons (4.5:1 on every surface) |
 | `--bg` | `#F3F4F6` | `#121212` | page background |
 | `--card` | `#FFFFFF` | `#1E1E1E` | cards, dialog |
 | `--field` | `#F7F7F7` | `#262626` | inputs, log entries |
