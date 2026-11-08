@@ -71,6 +71,7 @@ final class Simulator
             'error' => 0,            // status error bits, e.g. 0x1000 cover open, 0x0004 cutter jam
             'out' => '',             // folder for printed labels, empty = discard
             'delay_ms' => 0,         // time a print takes
+            'others' => [],          // more printers: list of {printer, serial, tape_mm}
             'fail' => '',            // "print": USB write error; "jam": the print looks fine (exit 0, like
                                      // the real tool) but the printer then reports a cutter jam
         ];
@@ -154,7 +155,12 @@ final class Simulator
                 $this->warn('No P-Touch printer found on USB (remember to put switch to position E)');
                 return 5;
             }
-            $this->say($this->state['printer'] . ' serial ' . $this->state['serial']);
+            // format of ptouch_list_connected() in libptouch.c
+            $device = 4;
+            foreach (array_merge([$this->state], $this->others()) as $p) {
+                $this->say(sprintf("%s\tserial %s\t(USB bus 1, device %d)%s", $p['printer'], $p['serial'], $device++,
+                    ($p['mode'] ?? 'normal') === 'plite' ? ' - in P-Lite mode, unsupported' : ''));
+            }
             return 0;
         }
 
@@ -241,6 +247,18 @@ final class Simulator
         return 0;
     }
 
+    /** @return list<array<string, mixed>> */
+    private function others(): array
+    {
+        $others = $this->state['others'];
+        if (is_string($others)) {
+            $others = json_decode($others, true);
+        }
+        return array_values(array_filter(is_array($others) ? $others : [], static function ($p): bool {
+            return is_array($p) && isset($p['printer'], $p['serial']);
+        }));
+    }
+
     private function tapePx(): int
     {
         $mm = (int) $this->state['tape_mm'];
@@ -259,8 +277,18 @@ final class Simulator
             return 5;
         }
         if ($serial !== null && $serial !== $this->state['serial']) {
-            $this->warn("No P-Touch printer with serial $serial found");
-            return 5;
+            $other = null;
+            foreach ($this->others() as $candidate) {
+                if ($candidate['serial'] === $serial) {
+                    $other = $candidate;
+                }
+            }
+            if ($other === null) {
+                $this->warn("No P-Touch printer with serial $serial found");
+                return 5;
+            }
+            $this->state = $other + $this->state;
+            $printer = (string) $this->state['printer'];
         }
         if ($this->state['mode'] === 'access') {
             $this->warn('libusb_open error :LIBUSB_ERROR_ACCESS');

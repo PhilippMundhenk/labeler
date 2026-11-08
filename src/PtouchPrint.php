@@ -113,6 +113,37 @@ final class PtouchPrint
      *
      * @return array<string, mixed>
      */
+    /** The same tool, talking to the printer with this USB serial number (empty: the configured one). */
+    public function withSerial(string $serial): self
+    {
+        if ($serial === '' || $serial === $this->serial) {
+            return $this;
+        }
+        $copy = clone $this;
+        $copy->serial = $serial;
+        return $copy;
+    }
+
+    /**
+     * Printers on USB from `ptouch-print --list-connected` (1.9+).
+     *
+     * @return list<array{model: string, serial: string, usable: bool}>|null null when not supported
+     */
+    public function connected(): ?array
+    {
+        if (!$this->supports('serial')) {
+            return null;
+        }
+        $result = $this->run(['--list-connected'], false);
+        $printers = [];
+        foreach (explode("\n", $result['output']) as $line) {
+            if (preg_match('/^(\S.*?)\tserial (\S+)\t\(USB bus \d+, device \d+\)(.*)$/', rtrim($line), $m)) {
+                $printers[] = ['model' => $m[1], 'serial' => $m[2], 'usable' => trim($m[3]) === ''];
+            }
+        }
+        return $printers;
+    }
+
     public function info(): array
     {
         $result = $this->run(array_merge($this->serialArgs(), ['--info']), false);

@@ -1,6 +1,6 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { getStatus, getFonts, getLog, fontUrl, printLabel } from '../../public/js/api.js';
+import { getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel } from '../../public/js/api.js';
 
 let calls;
 beforeEach(() => {
@@ -41,6 +41,17 @@ test('printLabel posts JSON', async () => {
   assert.equal(options.method, 'POST');
   assert.equal(options.headers['Content-Type'], 'application/json');
   assert.deepEqual(JSON.parse(options.body), { png: 'AAAA', copies: 2, chain: true });
+});
+
+test('the chosen printer goes with every call', async () => {
+  fake(() => new Response('{}', { status: 200 }));
+  setSerial('B 2');
+  await getPrinters();
+  await printLabel('AAAA', {});
+  setSerial('');
+  await getStatus();
+  assert.deepEqual(calls.map((c) => c.url), ['api.php?action=printers&serial=B%202', 'api.php?action=print&serial=B%202', 'api.php?action=status']);
+  setSerial(undefined);
 });
 
 test('fontUrl encodes the file name', () => {

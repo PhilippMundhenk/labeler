@@ -44,6 +44,7 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 - **Layout**: margins, gap, minimum length with position, frame, cut marks, cable flags (content on both sides of a cable), mirrored for clear tape.
 - **Printing**: copies, chain printing and auto cut where the installed ptouch-print and the
   printer support them; download the label as PNG.
+- **Several printers** on one computer (ptouch-print 1.9): pick one in the printer details.
 - **Printer status** with tape width and colour, clear messages for a missing printer, missing
   tape, open cover, cutter jam, overheating, weak batteries, P-Lite mode or missing USB permissions,
   a check after every print job (ptouch-print itself does not notice a jam during printing), a hint
