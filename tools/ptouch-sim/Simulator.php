@@ -64,7 +64,7 @@ final class Simulator
             'media_type' => 1,       // 1 laminated
             'tape_color' => 1,       // 1 white
             'text_color' => 8,       // 8 black
-            'error' => 0,            // status error bits, e.g. 0x0010 cover open
+            'error' => 0,            // status error bits, e.g. 0x1000 cover open, 0x0004 cutter jam
             'out' => '',             // folder for printed labels, empty = discard
             'delay_ms' => 0,         // time a print takes
             'fail' => '',            // "print" makes the next print fail with a USB write error

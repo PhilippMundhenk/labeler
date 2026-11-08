@@ -21,7 +21,7 @@ Printed labels are written to `PTSIM_OUT` as `label-NNNN.png` with a `label-NNNN
 | `PTSIM_MODE` | `normal` | `plite` (mode switch on EL), `unsupported`, `access` (no USB permission) |
 | `PTSIM_TAPE_MM` | `12` | inserted tape: 4, 6, 9, 12, 18, 21, 24, 36; `0` = no cassette |
 | `PTSIM_TAPE_COLOR`, `PTSIM_TEXT_COLOR` | `1`, `8` | colour codes as reported by the printer (white, black) |
-| `PTSIM_ERROR` | `0` | status error bits, e.g. `16` for an open cover |
+| `PTSIM_ERROR` | `0` | status error bits as ptouch-print prints them, e.g. `4096` (0x1000) cover open, `4` cutter jam, `8` weak batteries |
 | `PTSIM_FAIL` | empty | `print` makes printing fail with a USB write error |
 | `PTSIM_DELAY_MS` | `0` | how long a print takes |
 | `PTSIM_STATE` | unset | JSON file with the same keys in lower case; read on every call, so tests can change the state of a running server |
