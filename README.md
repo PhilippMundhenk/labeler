@@ -41,7 +41,7 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 - **Images** (PNG, JPEG, SVG): black and white or dithered, adjustable threshold, invert.
 - **Rotation** of text, barcodes, images and icons by 90, 180 or 270 degrees, e.g. for folder
   spines and shelf edges.
-- **Layout**: margins, gap, minimum length with position, frame, cut marks, mirrored for clear tape.
+- **Layout**: margins, gap, minimum length with position, frame, cut marks, cable flags (content on both sides of a cable), mirrored for clear tape.
 - **Printing**: copies, chain printing and auto cut where the installed ptouch-print and the
   printer support them; download the label as PNG.
 - **Printer status** with tape width and colour, clear messages for a missing printer, missing

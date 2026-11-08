@@ -35,7 +35,7 @@ export const BLOCK_DEFAULTS = {
 
 export const BLOCK_NAMES = { text: 'Text', icon: 'Icon', qr: 'QR code', barcode: 'Barcode', image: 'Image', spacer: 'Space' };
 
-export const LABEL_DEFAULTS = { margin: 2, gap: 2, length: 0, align: 'center', frame: false, frameWidth: 2, counter: 1, mirror: false, cutMarks: false };
+export const LABEL_DEFAULTS = { margin: 2, gap: 2, length: 0, align: 'center', frame: false, frameWidth: 2, counter: 1, mirror: false, cutMarks: false, flag: false, flagDiameter: 6 };
 
 let counter = 0;
 export function newId() {
@@ -142,6 +142,8 @@ export function normalizeLabel(raw) {
     frame: Boolean(r.frame),
     mirror: Boolean(r.mirror),
     cutMarks: Boolean(r.cutMarks),
+    flag: Boolean(r.flag),
+    flagDiameter: num(r.flagDiameter, 1, 50, LABEL_DEFAULTS.flagDiameter),
     frameWidth: num(r.frameWidth, 1, 10, LABEL_DEFAULTS.frameWidth),
     counter: Math.round(num(r.counter, 0, 999999999, LABEL_DEFAULTS.counter)),
     blocks,
@@ -169,6 +171,9 @@ export function layout(widths, label, dpi) {
   });
   return { width, xs };
 }
+
+/** Tape around a cable: the circumference, in px. */
+export const flagGap = (diameterMm, dpi) => mmToPx(Math.PI * diameterMm, dpi);
 
 /** Font size in px so that `lines` lines fill `height` px (ratio: glyph height / font size). */
 export function fitFontSize(lines, height, ratio, lineGap = 0.15) {

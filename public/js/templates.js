@@ -25,8 +25,8 @@ export const TEMPLATES = [
   {
     id: 'cable',
     name: 'Cable label',
-    description: 'Short label for both ends of a cable, white on black.',
-    label: layout({ margin: 1, blocks: [text('LAN 01', { invert: true })] }),
+    description: 'Cable flag: the name twice, folded around a 6 mm cable, white on black.',
+    label: layout({ margin: 1, flag: true, flagDiameter: 6, blocks: [text('LAN 01', { invert: true })] }),
   },
   {
     id: 'spine',

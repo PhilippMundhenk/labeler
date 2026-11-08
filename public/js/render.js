@@ -3,7 +3,7 @@ import { Bitmap, luminance, threshold, dither } from './bitmap.js';
 import { qrMatrix } from './qr.js';
 import { buildQrContent } from './qrcontent.js';
 import { encodeBarcode } from './barcodes.js';
-import { layout, ptToPx, mmToPx, cssFont, lineScales, fitScaledFontSize } from './label.js';
+import { layout, ptToPx, mmToPx, cssFont, lineScales, fitScaledFontSize, flagGap } from './label.js';
 
 const MEASURE = 'ÁHgjy|';
 const images = new Map();
@@ -192,10 +192,19 @@ export async function renderLabel(label, tape) {
     }
   }
   const { width, xs } = layout(parts.map((p) => p.width), label, tape.dpi);
-  const bitmap = new Bitmap(width, H);
+  let bitmap = new Bitmap(width, H);
   parts.forEach((p, i) => bitmap.blit(p, xs[i], 0));
   if (label.frame) bitmap.frame(label.frameWidth);
-  if (label.cutMarks) bitmap.dashedColumn(0).dashedColumn(width - 1);
+  if (label.flag) {
+    // cable flag: the content twice, the second turned, with the cable's circumference between;
+    // folded around the cable, both sides read upright
+    const gap = flagGap(label.flagDiameter, tape.dpi);
+    const flag = new Bitmap(2 * width + gap, H);
+    flag.blit(bitmap, 0, 0);
+    flag.blit(bitmap.cropColumns(0, width).rotate180(), width + gap, 0);
+    bitmap = flag;
+  }
+  if (label.cutMarks) bitmap.dashedColumn(0).dashedColumn(bitmap.width - 1);
   if (label.mirror) bitmap.mirror();
   return { bitmap, errors };
 }
