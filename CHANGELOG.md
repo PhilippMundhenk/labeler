@@ -17,6 +17,7 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - QR codes and Code 128 barcodes (#5).
 - Icon blocks with search over Material Design Icons and Simple Icons through the Iconify API,
   `icon_api` setting (#16).
+- Placeholders {date}, {time}, {datetime} and a counter {n} that numbers every copy (#17).
 - Images: PNG, JPEG, SVG, black and white or dithered, threshold, invert (#6).
 - Labels made of several blocks; margins, gap, minimum length, position, frame; copies, chain
   printing, cut before the label; saved labels; download as PNG (#7).
