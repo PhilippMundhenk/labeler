@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   TAPES, BLOCK_DEFAULTS, mmToPx, pxToMm, tapePx, newBlock, defaultLabel, normalizeBlock, normalizeLabel,
-  layout, fitFontSize, ptToPx, cssFont, newId, lineScales, fitScaledFontSize,
+  layout, fitFontSize, ptToPx, cssFont, newId, lineScales, fitScaledFontSize, flagGap,
 } from '../../public/js/label.js';
 
 test('unit conversions', () => {
@@ -59,6 +59,8 @@ test('normalizeLabel survives garbage and limits the block count', () => {
   assert.equal(normalizeLabel({ mirror: 1 }).mirror, true);
   assert.equal(normalizeLabel({}).mirror, false);
   assert.equal(normalizeLabel({ cutMarks: 'yes' }).cutMarks, true);
+  assert.deepEqual([normalizeLabel({ flag: 1, flagDiameter: 99 }).flag, normalizeLabel({ flagDiameter: 99 }).flagDiameter], [true, 50]);
+  assert.equal(flagGap(6, 180), 134);
 });
 
 test('layout places blocks with margins, gaps, minimum length and alignment', () => {

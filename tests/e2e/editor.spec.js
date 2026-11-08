@@ -217,6 +217,30 @@ test('rotated blocks (#23)', async ({ page }) => {
   await expect(block(page, 'spacer').getByText('90°')).toHaveCount(0);
 });
 
+test('cable flag: content twice around the cable (#20)', async ({ page }) => {
+  await ready(page);
+  await block(page, 'text').locator('textarea').fill('LAN 7');
+  const single = await previewSize(page);
+  await expect(page.locator('#flag-diameter')).toBeDisabled();
+  await page.locator('#flag').check();
+  await page.locator('#flag-diameter').fill('6');
+  const flag = await previewSize(page);
+  expect(flag.width).toBe(2 * single.width + 134);
+  expect(flag.black).toBe(2 * single.black);
+  const halves = await page.evaluate((w) => {
+    const b = window.labeler.state.bitmap;
+    let same = true;
+    for (let y = 0; y < b.height; y++) {
+      for (let x = 0; x < w; x++) if (b.get(x, y) !== b.get(b.width - 1 - x, b.height - 1 - y)) same = false;
+    }
+    return same;
+  }, single.width);
+  expect(halves, 'the second half is the first turned by 180 degrees').toBe(true);
+  await page.locator('#flag-diameter').fill('0');
+  await page.locator('#flag-diameter').fill('10');
+  expect((await previewSize(page)).width).toBe(2 * single.width + 223);
+});
+
 test('mirrored printing flips the label (#50)', async ({ page }) => {
   await ready(page);
   await block(page, 'text').locator('textarea').fill('AB');

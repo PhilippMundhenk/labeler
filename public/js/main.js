@@ -498,6 +498,9 @@ function renderSettings() {
   $('#frame-width').disabled = !l.frame;
   $('#mirror').checked = l.mirror;
   $('#cut-marks').checked = l.cutMarks;
+  $('#flag').checked = l.flag;
+  $('#flag-diameter').value = l.flagDiameter;
+  $('#flag-diameter').disabled = !l.flag;
   $('#counter').value = l.counter;
   for (const r of document.querySelectorAll('input[name="label-align"]')) r.checked = r.value === l.align;
 }
@@ -513,6 +516,13 @@ function onSettingsInput(e) {
   else if (el.id === 'frame-width') l.frameWidth = Number(el.value) || 1;
   else if (el.id === 'mirror') l.mirror = el.checked;
   else if (el.id === 'cut-marks') l.cutMarks = el.checked;
+  else if (el.id === 'flag') {
+    l.flag = el.checked;
+    $('#flag-diameter').disabled = !l.flag;
+  } else if (el.id === 'flag-diameter') {
+    if (!(Number(el.value) > 0)) return;
+    l.flagDiameter = Number(el.value);
+  }
   else if (el.id === 'length' && el.value === '') l.length = 0;
   else if (['margin', 'gap', 'length'].includes(el.id)) {
     if (el.value === '' || !Number.isFinite(Number(el.value))) return;
