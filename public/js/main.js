@@ -3,7 +3,7 @@ import { getStatus, getFonts, getLog, fontUrl, printLabel } from './api.js';
 import {
   BLOCK_NAMES, FONTS, TAPES, defaultLabel, newBlock, newId, normalizeLabel, pxToMm, tapePx,
 } from './label.js';
-import { renderLabel, drawPreview } from './render.js';
+import { renderLabel, drawPreview, thumbnail } from './render.js';
 import { encodePng, toBase64 } from './png.js';
 import { COLLECTIONS, searchIcons, fetchIcon, iconUrl, parseId } from './icons.js';
 import { resolveLabel, usesCounter, usesColumns } from './placeholders.js';
@@ -18,6 +18,8 @@ const STORE_LABEL = 'labeler.label';
 const STORE_SAVED = 'labeler.saved';
 const STORE_TAPE = 'labeler.tape';
 const STORE_BATCH = 'labeler.batch';
+const STORE_HISTORY = 'labeler.history';
+const HISTORY_MAX = 20;
 
 const TAPE_COLORS = {
   White: '#fafaf7', 'Matte White': '#f3f3ef', Clear: '#e4ebf0', 'Matte Clear': '#e4ebf0', Red: '#d8342c',
@@ -608,6 +610,49 @@ function onSettingsInput(e) {
 
 /* ---------- saved labels ---------- */
 
+/* ---------- print history ---------- */
+
+function recordPrint(labels) {
+  const entry = {
+    time: new Date().toISOString(),
+    labels,
+    label: JSON.parse(JSON.stringify(state.label)),
+    thumb: state.bitmap ? thumbnail(state.bitmap) : '',
+  };
+  let list = [entry, ...load(STORE_HISTORY, [])].slice(0, HISTORY_MAX);
+  // labels with big images may not all fit into the browser storage: drop the oldest
+  while (list.length && !store(STORE_HISTORY, list)) list = list.slice(0, -1);
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = load(STORE_HISTORY, []);
+  $('#history-list').innerHTML = list.length
+    ? list.map((e, i) => `<li>
+        ${e.thumb ? `<img src="${esc(e.thumb)}" alt="">` : ''}
+        <span class="when">${esc(new Date(e.time).toLocaleString())} · ${e.labels} ${e.labels === 1 ? 'label' : 'labels'}</span>
+        <span class="actions">
+          <button type="button" class="link" data-history-load="${i}">Load</button>
+          <button type="button" class="link" data-history-print="${i}">Print again</button>
+        </span></li>`).join('')
+    : '<li class="muted">Nothing printed in this browser yet.</li>';
+}
+
+function onHistoryClick(e) {
+  const btn = e.target.closest('[data-history-load], [data-history-print]');
+  if (!btn) return;
+  const entry = load(STORE_HISTORY, [])[Number(btn.dataset.historyLoad ?? btn.dataset.historyPrint)];
+  if (!entry) return;
+  persist();
+  state.label = normalizeLabel(entry.label);
+  renderSettings();
+  renderBlocks();
+  commit();
+  if ('historyPrint' in btn.dataset) {
+    render().then(() => onPrint());
+  }
+}
+
 function renderSaved() {
   const saved = load(STORE_SAVED, {});
   const names = Object.keys(saved).sort((a, b) => a.localeCompare(b));
@@ -874,6 +919,7 @@ async function onPrint() {
     }
     if (labels) {
       toast(`${labels > 1 ? `${labels} labels` : 'Label'} printed · ${Math.round(mm * 10) / 10} mm`, 'ok');
+      recordPrint(labels);
       renderSettings();
       changed();
     }
@@ -976,6 +1022,7 @@ function init() {
   });
   $('#save-form').addEventListener('submit', onSave);
   $('#saved-list').addEventListener('click', onSavedClick);
+  $('#history-list').addEventListener('click', onHistoryClick);
   $('#print').addEventListener('click', onPrint);
   $('#download').addEventListener('click', onDownload);
   $('#status').addEventListener('click', openDetails);
@@ -1046,6 +1093,7 @@ function init() {
   renderSettings();
   renderBlocks();
   renderSaved();
+  renderHistory();
   initBatch();
   refreshStatus();
   loadServerFonts();

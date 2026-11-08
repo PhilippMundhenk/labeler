@@ -1,5 +1,5 @@
 // The label editor: blocks, styles, layout, saved labels.
-import { test, expect, ready, settled, previewSize, setSim } from './fixtures.js';
+import { test, expect, ready, settled, previewSize, setSim, printed } from './fixtures.js';
 
 const block = (page, type, n = 0) => page.locator(`.block[data-type="${type}"]`).nth(n);
 
@@ -320,6 +320,44 @@ test('the label survives a reload; saved labels', async ({ page }) => {
   await expect(block(page, 'text').locator('textarea')).toHaveValue('Kitchen');
   await page.locator('[data-remove="Room"]').click();
   await expect(page.locator('#saved-list')).toContainText('No saved labels yet');
+});
+
+test('print history: load and print again (#27)', async ({ page }) => {
+  await ready(page);
+  await expect(page.locator('#history-list')).toContainText('Nothing printed in this browser yet');
+  await block(page, 'text').locator('textarea').fill('Jar 1');
+  await settled(page);
+  await page.locator('#print').click();
+  await expect(page.locator('.toast.ok')).toContainText('printed');
+  await expect(page.locator('#history-list li')).toHaveCount(1);
+  await expect(page.locator('#history-list li')).toContainText('1 label');
+  await expect(page.locator('#history-list img')).toHaveAttribute('src', /^data:image\/png/);
+  await block(page, 'text').locator('textarea').fill('Something else');
+  await page.locator('[data-history-load="0"]').click();
+  await expect(block(page, 'text').locator('textarea')).toHaveValue('Jar 1');
+  await page.locator('[data-history-print="0"]').click();
+  await expect(page.locator('#history-list li')).toHaveCount(2);
+  expect(printed()).toHaveLength(2);
+  await page.reload();
+  await expect(page.locator('#history-list li')).toHaveCount(2);
+});
+
+test('the print history drops old entries when the storage is full', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function setItem(key, value) {
+      if (key === 'labeler.history' && JSON.parse(value).length > 1) throw new DOMException('full', 'QuotaExceededError');
+      return original.call(this, key, value);
+    };
+  });
+  await ready(page);
+  for (const text of ['One', 'Two']) {
+    await block(page, 'text').locator('textarea').fill(text);
+    await settled(page);
+    await page.locator('#print').click();
+    await expect(page.locator('#print')).toBeEnabled();
+  }
+  await expect(page.locator('#history-list li')).toHaveCount(1);
 });
 
 test('full browser storage is reported', async ({ page }) => {
