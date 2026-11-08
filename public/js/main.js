@@ -10,6 +10,7 @@ import { resolveLabel, usesCounter, usesColumns } from './placeholders.js';
 import { parseBatch } from './csv.js';
 import { KINDS } from './qrcontent.js';
 import { History } from './history.js';
+import { TEMPLATES, findTemplate } from './templates.js';
 import { FORMATS } from './barcodes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -892,6 +893,21 @@ function init() {
     $('#local-fonts').hidden = false;
     $('#local-fonts').addEventListener('click', loadLocalFonts);
   }
+  $('#template-list').innerHTML = TEMPLATES.map((t) =>
+    `<li><button type="button" data-template="${t.id}"><strong>${esc(t.name)}</strong><span>${esc(t.description)}</span></button></li>`).join('');
+  $('#templates').addEventListener('click', () => $('#template-dialog').showModal());
+  $('#template-close').addEventListener('click', () => $('#template-dialog').close());
+  $('#template-list').addEventListener('click', (e) => {
+    const t = findTemplate(e.target.closest('[data-template]')?.dataset.template);
+    if (!t) return;
+    persist();
+    state.label = normalizeLabel(JSON.parse(JSON.stringify(t.label)));
+    $('#template-dialog').close();
+    renderSettings();
+    renderBlocks();
+    commit();
+    toast(`Template "${t.name}"`, 'ok');
+  });
   $('#undo').addEventListener('click', undo);
   $('#redo').addEventListener('click', redo);
   document.addEventListener('keydown', (e) => {

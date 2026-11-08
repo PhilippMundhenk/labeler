@@ -15,6 +15,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - Font selection (built-in list, fonts in the server's `fonts/` folder, fonts of the device),
   size, bold, italic, alignment, white on black, any number of lines (#4).
 - QR codes and Code 128 barcodes (#5).
+- Templates to start from: asset tag, Wi-Fi guest access, cable label, folder spine, address,
+  name tag, shelf label with barcode (#19).
 - Undo and redo for every change (buttons, Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y); a typing burst is one step (#25).
 - A printer that switched itself off is explained, with how to turn auto power off off; the docs
   say why a P-Touch printer cannot be switched on over USB (#49).
