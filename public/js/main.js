@@ -1190,6 +1190,8 @@ function init() {
 
   history.reset(JSON.stringify(state.label));
   updateUndo();
+  // offline app shell; browsers only allow service workers on HTTPS and localhost
+  if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('sw.js').catch(() => {});
   renderSettings();
   renderBlocks();
   renderSaved();

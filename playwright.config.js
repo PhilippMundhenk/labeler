@@ -19,10 +19,11 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     viewport: { width: 1280, height: 900 },
+    serviceWorkers: 'block', // tests/e2e/offline.spec.js allows it where it is the subject
     trace: 'retain-on-failure',
   },
   webServer: [{
-    command: `php -S 127.0.0.1:${PORT} -t public`,
+    command: `php -S 127.0.0.1:${PORT} -t public src/router.php`,
     url: `http://127.0.0.1:${PORT}/api.php?action=health`,
     reuseExistingServer: false,
     env: {

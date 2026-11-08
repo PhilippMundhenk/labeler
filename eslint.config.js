@@ -13,6 +13,7 @@ export default [
     },
   },
   { files: ['public/js/**/*.js'], languageOptions: { globals: { ...globals.browser } } },
+  { files: ['public/sw.js'], languageOptions: { globals: { ...globals.serviceworker } } },
   // page.evaluate callbacks run in the browser
   { files: ['tests/e2e/**/*.js', 'tools/screenshots.js'], languageOptions: { globals: { ...globals.node, ...globals.browser } } },
 ];

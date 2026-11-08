@@ -15,6 +15,9 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - Font selection (built-in list, fonts in the server's `fonts/` folder, fonts of the device),
   size, bold, italic, alignment, white on black, any number of lines (#4).
 - QR codes and Code 128 barcodes (#5).
+- Faster loading on small computers: PHP's built-in server now sends ETag and Last-Modified (304
+  on reload) and gzip for text files; a service worker keeps the app shell for offline starts on
+  HTTPS or localhost (#32).
 - Saved labels are kept on the server when its data folder is writable, so every browser sees the
   same list; labels saved in a browser can be copied there (#34).
 - Optional password for the interface (`password`, plain or hashed): login dialog, signed

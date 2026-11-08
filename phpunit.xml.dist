@@ -19,6 +19,8 @@
         <exclude>
             <!-- loaded by the autoloader before coverage starts; only require_once lines -->
             <file>src/bootstrap.php</file>
+            <!-- runs inside php -S for every request; StaticFiles holds its logic -->
+            <file>src/router.php</file>
         </exclude>
     </coverage>
 </phpunit>
