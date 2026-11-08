@@ -35,7 +35,7 @@ export const BLOCK_DEFAULTS = {
 
 export const BLOCK_NAMES = { text: 'Text', icon: 'Icon', qr: 'QR code', barcode: 'Barcode', image: 'Image', spacer: 'Space' };
 
-export const LABEL_DEFAULTS = { margin: 2, gap: 2, length: 0, align: 'center', frame: false, frameWidth: 2, counter: 1, mirror: false };
+export const LABEL_DEFAULTS = { margin: 2, gap: 2, length: 0, align: 'center', frame: false, frameWidth: 2, counter: 1, mirror: false, cutMarks: false };
 
 let counter = 0;
 export function newId() {
@@ -137,6 +137,7 @@ export function normalizeLabel(raw) {
     align: oneOf(r.align, ['left', 'center', 'right'], LABEL_DEFAULTS.align),
     frame: Boolean(r.frame),
     mirror: Boolean(r.mirror),
+    cutMarks: Boolean(r.cutMarks),
     frameWidth: num(r.frameWidth, 1, 10, LABEL_DEFAULTS.frameWidth),
     counter: Math.round(num(r.counter, 0, 999999999, LABEL_DEFAULTS.counter)),
     blocks,

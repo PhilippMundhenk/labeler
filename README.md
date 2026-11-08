@@ -39,7 +39,7 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 - **Batch printing**: paste a list or load a CSV file and print one label per row, with {1} or
   {column name} in any block.
 - **Images** (PNG, JPEG, SVG): black and white or dithered, adjustable threshold, invert.
-- **Layout**: margins, gap, minimum length with position, frame, mirrored for clear tape.
+- **Layout**: margins, gap, minimum length with position, frame, cut marks, mirrored for clear tape.
 - **Printing**: copies, chain printing and auto cut where the installed ptouch-print and the
   printer support them; download the label as PNG.
 - **Printer status** with tape width and colour, clear messages for a missing printer, missing

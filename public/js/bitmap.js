@@ -50,6 +50,12 @@ export class Bitmap {
     return this;
   }
 
+  /** Dashed vertical line in column x, for cutting by hand. */
+  dashedColumn(x, dash = 4) {
+    for (let y = 0; y < this.height; y++) if (Math.floor(y / dash) % 2 === 0) this.set(x, y, 1);
+    return this;
+  }
+
   /** Flips the bitmap left to right, for clear tape read from the back. */
   mirror() {
     for (let y = 0; y < this.height; y++) {

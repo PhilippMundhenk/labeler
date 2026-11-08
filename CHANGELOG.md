@@ -16,6 +16,7 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
   size, bold, italic, alignment, white on black, any number of lines (#4).
 - QR codes and Code 128 barcodes (#5).
 - Mirrored printing for clear tape read from the back (#50).
+- Cut marks at both ends of a label, to cut chained labels by hand (#51).
 - "Cut before the label" is called "Auto cut", which is what ptouch-print's `--precut` switches on
   (`ESC i M 0x40` in Brother's raster command reference) (#48).
 - An error during printing (cutter jam, cover opened, tape ran out) is reported instead of

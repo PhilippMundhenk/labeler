@@ -151,6 +151,27 @@ test('layout: margins, gap, minimum length, position and frame', async ({ page }
   expect(await page.evaluate(() => window.labeler.state.label)).toMatchObject({ align: 'left', frame: true, frameWidth: 4, length: 100, margin: 5 });
 });
 
+test('cut marks at both ends (#51)', async ({ page }) => {
+  await ready(page);
+  await settled(page);
+  const edge = () => page.evaluate(() => {
+    const b = window.labeler.state.bitmap;
+    let left = 0;
+    let right = 0;
+    for (let y = 0; y < b.height; y++) {
+      left += b.get(0, y);
+      right += b.get(b.width - 1, y);
+    }
+    return [left, right];
+  });
+  expect(await edge()).toEqual([0, 0]);
+  await page.locator('#cut-marks').check();
+  await settled(page);
+  const [left, right] = await edge();
+  expect(left).toBe(40);
+  expect(right).toBe(40);
+});
+
 test('mirrored printing flips the label (#50)', async ({ page }) => {
   await ready(page);
   await block(page, 'text').locator('textarea').fill('AB');
