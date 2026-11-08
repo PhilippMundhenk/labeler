@@ -224,6 +224,9 @@ fieldset.segmented { border: 0; padding: 0; grid-column: 1 / -1; }
 
 footer { max-width: 1180px; margin: 8px auto 32px; padding: 0 16px; color: var(--muted); font-size: 13px; }
 footer a { color: var(--primary); }
+footer .link { font-size: 13px; }
+#login-dialog { width: min(380px, calc(100vw - 32px)); }
+#login-dialog .field { margin: 12px 0; }
 
 /* toasts */
 .toasts { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); display: grid; gap: 8px; z-index: 30; width: min(560px, calc(100vw - 32px)); }

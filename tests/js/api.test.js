@@ -1,6 +1,8 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel } from '../../public/js/api.js';
+import {
+  getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel, login, logout,
+} from '../../public/js/api.js';
 
 let calls;
 beforeEach(() => {
@@ -52,6 +54,26 @@ test('the chosen printer goes with every call', async () => {
   await getStatus();
   assert.deepEqual(calls.map((c) => c.url), ['api.php?action=printers&serial=B%202', 'api.php?action=print&serial=B%202', 'api.php?action=status']);
   setSerial(undefined);
+});
+
+test('login and logout post JSON', async () => {
+  fake(() => new Response('{"ok":true}', { status: 200 }));
+  await login('pw');
+  await logout();
+  assert.deepEqual(calls.map((c) => [c.url, c.options.method, c.options.body]), [
+    ['api.php?action=login', 'POST', '{"password":"pw"}'],
+    ['api.php?action=logout', 'POST', '{}'],
+  ]);
+});
+
+test('a 401 asking for a login raises an event, the login call itself does not', async () => {
+  const events = [];
+  globalThis.window = { dispatchEvent: (e) => events.push(e.type) };
+  fake(() => new Response('{"error":"please log in","login":true}', { status: 401 }));
+  await getStatus();
+  await login('wrong');
+  assert.deepEqual(events, ['labeler:login']);
+  delete globalThis.window;
 });
 
 test('fontUrl encodes the file name', () => {

@@ -16,6 +16,7 @@ async function call(action, options = {}) {
     } catch {
       data = { error: `unexpected answer from the server (HTTP ${res.status})` };
     }
+    if (res.status === 401 && data.login && action !== 'login') window.dispatchEvent(new CustomEvent('labeler:login'));
     return { ok: res.ok, status: res.status, data };
   } catch (e) {
     return { ok: false, status: 0, data: { error: 'the server cannot be reached' } };
@@ -26,6 +27,9 @@ export const getStatus = () => call('status');
 export const getFonts = () => call('fonts');
 export const getLog = () => call('log');
 export const getPrinters = () => call('printers');
+const post = (action, body) => call(action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+export const login = (password) => post('login', { password });
+export const logout = () => post('logout', {});
 export const fontUrl = (file) => `api.php?action=font&file=${encodeURIComponent(file)}`;
 
 export function printLabel(png, options) {

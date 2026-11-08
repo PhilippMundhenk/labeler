@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname);
 export const RUN = resolve(root, 'test-results/e2e-run');
 const PORT = 8099;
+export const PASSWORD_PORT = 8100;
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -20,7 +21,7 @@ export default defineConfig({
     viewport: { width: 1280, height: 900 },
     trace: 'retain-on-failure',
   },
-  webServer: {
+  webServer: [{
     command: `php -S 127.0.0.1:${PORT} -t public`,
     url: `http://127.0.0.1:${PORT}/api.php?action=health`,
     reuseExistingServer: false,
@@ -32,5 +33,17 @@ export default defineConfig({
       PTSIM_STATE: resolve(RUN, 'sim-state.json'),
       PTSIM_OUT: resolve(RUN, 'printed'),
     },
-  },
+  }, {
+    // the same with a password (#30)
+    command: `php -S 127.0.0.1:${PASSWORD_PORT} -t public`,
+    url: `http://127.0.0.1:${PASSWORD_PORT}/api.php?action=health`,
+    reuseExistingServer: false,
+    env: {
+      LABELER_PTOUCH_BIN: resolve(root, 'tools/ptouch-sim/ptouch-print'),
+      LABELER_DATA_DIR: resolve(RUN, 'data-password'),
+      LABELER_PASSWORD: 'correct horse',
+      PTSIM_STATE: resolve(RUN, 'sim-state.json'),
+      PTSIM_OUT: resolve(RUN, 'printed'),
+    },
+  }],
 });

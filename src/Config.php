@@ -48,6 +48,9 @@ final class Config
             // and its token. Empty: print locally.
             'printer_url' => '',
             'printer_token' => '',
+            // Password for the interface, plain text or a hash from PHP's password_hash()
+            // (php -r 'echo password_hash("secret", PASSWORD_DEFAULT);'). Empty: no login.
+            'password' => '',
             // Iconify API for the icon search (MDI, Simple Icons), queried by the browser.
             // Another Iconify server can be used; empty switches icons off.
             'icon_api' => 'https://api.iconify.design',

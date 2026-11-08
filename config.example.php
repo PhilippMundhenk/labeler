@@ -29,6 +29,11 @@ return [
     // Entries kept in the print log.
     'log_entries' => 50,
 
+    // Password for the interface: plain text or, better, a hash made with
+    //   php -r 'echo password_hash("your password", PASSWORD_DEFAULT);'
+    // Empty: no login (fine on a home network).
+    'password' => '',
+
     // Iconify API for the icon search (Material Design Icons, Simple Icons). The browser asks
     // it directly; the chosen icon is stored in the label. Use your own Iconify server, or ''
     // to switch icons off.
