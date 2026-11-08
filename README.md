@@ -33,7 +33,7 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 - **Text**: one to several lines, any font (built-in list, fonts you put on the Pi, or the fonts of
   your computer in Chrome and Edge), automatic or fixed size, bold, italic, alignment, white on
   black.
-- **QR codes** for links, text, Wi-Fi access, contacts, e-mail and phone numbers, with selectable error correction, **barcodes** with or without text below.
+- **QR codes** for links, text, Wi-Fi access, contacts, e-mail and phone numbers, with selectable error correction, **barcodes** (Code 128, EAN-13, UPC-A, Code 39) with or without text below.
 - **Placeholders**: {date}, {time} and a counter {n} that gives every copy its own number.
 - **Batch printing**: paste a list or load a CSV file and print one label per row, with {1} or
   {column name} in any block.

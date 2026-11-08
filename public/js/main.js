@@ -9,6 +9,7 @@ import { COLLECTIONS, searchIcons, fetchIcon, iconUrl, parseId } from './icons.j
 import { resolveLabel, usesCounter, usesColumns } from './placeholders.js';
 import { parseBatch } from './csv.js';
 import { KINDS } from './qrcontent.js';
+import { FORMATS } from './barcodes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const STORE_LABEL = 'labeler.label';
@@ -59,7 +60,8 @@ const FIELDS = {
     { k: 'quiet', type: 'number', label: 'Quiet zone (modules)', min: 0, max: 4, step: 1 },
   ],
   barcode: [
-    { k: 'content', type: 'text', label: 'Content', hint: 'Code 128: letters, digits and punctuation.' },
+    { k: 'format', type: 'select', label: 'Type', options: FORMATS.map(([v, t]) => [v, t]) },
+    { k: 'content', type: 'text', label: 'Content', hint: (b) => FORMATS.find(([v]) => v === b.format)[2] },
     { k: 'bar', type: 'number', label: 'Bar width (px)', min: 1, max: 6, step: 1 },
     { k: 'scale', type: 'range', label: 'Height', min: 20, max: 100, unit: '%' },
     { type: 'toggles', label: 'Options', items: [['text', 'Show text below']] },
@@ -225,7 +227,8 @@ function esc(s) {
 function fieldHtml(block, f) {
   const id = `${block.id}-${f.k}`;
   const v = block[f.k];
-  const hint = f.hint ? `<small class="hint">${esc(f.hint)}</small>` : '';
+  const hintText = typeof f.hint === 'function' ? f.hint(block) : f.hint;
+  const hint = hintText ? `<small class="hint">${esc(hintText)}</small>` : '';
   switch (f.type) {
     case 'textarea':
       return `<label class="field wide" for="${id}">${f.label}<textarea id="${id}" data-k="${f.k}" rows="${f.k === 'text' ? 2 : 2}" spellcheck="false">${esc(v)}</textarea>${hint}</label>`;

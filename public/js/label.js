@@ -27,7 +27,7 @@ export const BLOCK_DEFAULTS = {
     wifiSsid: '', wifiPassword: '', wifiType: 'WPA', wifiHidden: false,
     contactName: '', org: '', phone: '', email: '', url: '', subject: '',
   },
-  barcode: { type: 'barcode', content: '1234567890', text: true, bar: 2, scale: 100 },
+  barcode: { type: 'barcode', format: 'code128', content: '1234567890', text: true, bar: 2, scale: 100 },
   image: { type: 'image', src: '', name: '', mode: 'threshold', level: 128, invert: false, scale: 100 },
   icon: { type: 'icon', icon: '', src: '', invert: false, scale: 100 },
   spacer: { type: 'spacer', width: 5 },
@@ -96,6 +96,7 @@ export function normalizeBlock(raw) {
       break;
     case 'barcode':
       Object.assign(b, {
+        format: oneOf(raw.format, ['code128', 'ean13', 'upca', 'code39'], d.format),
         content: str(raw.content, 80, d.content),
         text: raw.text === undefined ? d.text : Boolean(raw.text),
         bar: num(raw.bar, 1, 6, d.bar),
