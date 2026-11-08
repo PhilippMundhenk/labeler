@@ -31,6 +31,28 @@ test('text styles change the rendering', async ({ page }) => {
   });
 });
 
+test('line sizes, underline and letter spacing (#24)', async ({ page }) => {
+  await ready(page);
+  const text = block(page, 'text');
+  await text.locator('textarea').fill('Title\nsmall print');
+  const even = await previewSize(page);
+  await text.getByLabel('Line sizes (%)').fill('100, 50');
+  const smaller = await previewSize(page);
+  expect(smaller.black).not.toBe(even.black);
+  await text.getByLabel('Underline').check();
+  const underlined = await previewSize(page);
+  expect(underlined.black).toBeGreaterThan(smaller.black);
+  await text.getByLabel('Letter spacing (%)').fill('30');
+  const spaced = await previewSize(page);
+  expect(spaced.width).toBeGreaterThan(underlined.width);
+  await text.getByText('Left', { exact: true }).click();
+  await settled(page);
+  await text.getByText('Right', { exact: true }).click();
+  await text.getByLabel('Size (pt)').fill('12');
+  await settled(page);
+  expect(await page.evaluate(() => window.labeler.state.errors)).toEqual({});
+});
+
 test('an empty text gives an empty label that cannot be printed', async ({ page }) => {
   await ready(page);
   await block(page, 'text').locator('textarea').fill('   ');

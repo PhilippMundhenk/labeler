@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   TAPES, BLOCK_DEFAULTS, mmToPx, pxToMm, tapePx, newBlock, defaultLabel, normalizeBlock, normalizeLabel,
-  layout, fitFontSize, ptToPx, cssFont, newId,
+  layout, fitFontSize, ptToPx, cssFont, newId, lineScales, fitScaledFontSize,
 } from '../../public/js/label.js';
 
 test('unit conversions', () => {
@@ -79,6 +79,18 @@ test('fitFontSize fills the height', () => {
   assert.equal(fitFontSize(2, 76, 1), Math.floor(76 / 2.15));
   assert.equal(fitFontSize(0, 76, 1), 76);
   assert.equal(fitFontSize(9, 10, 1), 4, 'never below 4 px');
+});
+
+test('line scales and scaled font size', () => {
+  assert.deepEqual(lineScales('100, 60', 3), [1, 0.6, 0.6]);
+  assert.deepEqual(lineScales('', 2), [1, 1]);
+  assert.deepEqual(lineScales('abc;5 900', 2), [0.2, 3]);
+  assert.deepEqual(lineScales(undefined, 0), [1]);
+  assert.equal(fitScaledFontSize([1], 76, 1), 76);
+  assert.equal(fitScaledFontSize([1, 0.5], 76, 1), Math.floor(76 / (1.5 + 0.15)));
+  assert.equal(fitScaledFontSize([1, 1], 1, 1), 4);
+  const t = normalizeBlock({ type: 'text', lineSizes: '100,50', underline: 1, spacing: 500 });
+  assert.deepEqual([t.lineSizes, t.underline, t.spacing], ['100,50', true, 100]);
 });
 
 test('cssFont quotes family names', () => {
