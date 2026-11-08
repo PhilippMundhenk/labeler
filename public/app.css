@@ -152,6 +152,15 @@ input[type="file"]::file-selector-button {
 .block.has-error { border-color: var(--bad); }
 .block-head { display: flex; align-items: center; gap: 8px; }
 .block-title { font-weight: 650; }
+.grip { display: inline-grid; place-items: center; width: 22px; height: 32px; margin-left: -6px; color: var(--muted); cursor: grab; }
+.grip svg { width: 18px; height: 18px; fill: currentColor; }
+.block.dragging { opacity: .45; }
+.block.drop-target { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent); }
+.drop-overlay {
+  position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; pointer-events: none;
+  background: color-mix(in srgb, var(--primary) 18%, transparent); border: 4px dashed var(--primary);
+}
+.drop-overlay p { padding: 14px 20px; border-radius: 12px; background: var(--card); color: var(--fg); font-weight: 600; box-shadow: 0 6px 24px #0003; }
 .block-error { margin: 0 0 8px; padding: 6px 10px; border-radius: 8px; color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, transparent); font-size: 13px; line-height: 1.35; }
 .block-error:empty { display: none; }
 .tools { display: flex; margin-left: auto; }

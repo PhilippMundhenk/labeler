@@ -27,7 +27,7 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 
 - **Live preview** at the printer's resolution, in the colours of the inserted tape.
 - **Blocks** side by side on one label: text, icon, QR code, Code 128 barcode, image, space.
-  Move, duplicate and remove them.
+  Drag them into order, duplicate and remove them; drop image files onto the page to add them.
 - **Icons** with search: about 7,400 [Material Design Icons](https://pictogrammers.com/library/mdi/)
   and 3,500 brand logos from [Simple Icons](https://simpleicons.org/), loaded on demand from the
   [Iconify API](https://iconify.design/); the chosen icon is stored in the label.
