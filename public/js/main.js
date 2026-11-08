@@ -8,6 +8,7 @@ import { encodePng, toBase64 } from './png.js';
 import { COLLECTIONS, searchIcons, fetchIcon, iconUrl, parseId } from './icons.js';
 import { resolveLabel, usesCounter, usesColumns } from './placeholders.js';
 import { parseBatch } from './csv.js';
+import { KINDS } from './qrcontent.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const STORE_LABEL = 'labeler.label';
@@ -41,7 +42,18 @@ const FIELDS = {
     { type: 'toggles', label: 'Style', items: [['bold', 'Bold'], ['italic', 'Italic'], ['invert', 'White on black']] },
   ],
   qr: [
-    { k: 'content', type: 'textarea', label: 'Content', hint: 'A link, a text, a Wi-Fi string (WIFI:S:name;T:WPA;P:password;;).' },
+    { k: 'kind', type: 'select', label: 'Content type', options: KINDS },
+    { k: 'content', type: 'textarea', label: 'Content', hint: 'A link or any text.', when: (b) => b.kind === 'text' },
+    { k: 'wifiSsid', type: 'text', label: 'Network name (SSID)', when: (b) => b.kind === 'wifi' },
+    { k: 'wifiType', type: 'select', label: 'Security', options: [['WPA', 'WPA/WPA2/WPA3'], ['WEP', 'WEP'], ['nopass', 'Open, no password']], when: (b) => b.kind === 'wifi' },
+    { k: 'wifiPassword', type: 'text', label: 'Password', when: (b) => b.kind === 'wifi' && b.wifiType !== 'nopass' },
+    { type: 'toggles', label: 'Network', items: [['wifiHidden', 'Hidden network']], when: (b) => b.kind === 'wifi' },
+    { k: 'contactName', type: 'text', label: 'Name', when: (b) => b.kind === 'contact' },
+    { k: 'org', type: 'text', label: 'Organisation', when: (b) => b.kind === 'contact' },
+    { k: 'phone', type: 'text', label: 'Phone', when: (b) => b.kind === 'contact' || b.kind === 'phone' },
+    { k: 'email', type: 'text', label: 'E-mail', when: (b) => b.kind === 'contact' || b.kind === 'email' },
+    { k: 'url', type: 'text', label: 'Website', when: (b) => b.kind === 'contact' },
+    { k: 'subject', type: 'text', label: 'Subject', when: (b) => b.kind === 'email' },
     { k: 'level', type: 'choice', label: 'Error correction', options: [['L', 'L 7 %'], ['M', 'M 15 %'], ['Q', 'Q 25 %'], ['H', 'H 30 %']] },
     { k: 'scale', type: 'range', label: 'Height', min: 20, max: 100, unit: '%' },
     { k: 'quiet', type: 'number', label: 'Quiet zone (modules)', min: 0, max: 4, step: 1 },
@@ -232,8 +244,12 @@ function fieldHtml(block, f) {
     case 'choice':
       return `<fieldset class="field segmented"><legend>${f.label}</legend>${f.options.map(([val, text]) =>
         `<label><input type="radio" name="${id}" data-k="${f.k}" value="${val}"${val === v ? ' checked' : ''}><span>${text}</span></label>`).join('')}</fieldset>`;
+    case 'select':
+      // label beside, not around, the select: otherwise its name includes every option
+      return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}" data-k="${f.k}" data-rerender>${f.options.map(([val, text]) =>
+        `<option value="${val}"${val === v ? ' selected' : ''}>${esc(text)}</option>`).join('')}</select></div>`;
     case 'font':
-      return `<label class="field" for="${id}">${f.label}<select id="${id}" data-k="${f.k}">${fontOptions(v)}</select></label>`;
+      return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}" data-k="${f.k}">${fontOptions(v)}</select></div>`;
     case 'icons':
       return pickerHtml(block);
     default: // file
@@ -325,7 +341,7 @@ function renderBlocks() {
         </span>
       </div>
       <p class="block-error" role="alert"></p>
-      <div class="fields">${FIELDS[b.type].map((f) => fieldHtml(b, f)).join('')}</div>
+      <div class="fields">${FIELDS[b.type].filter((f) => !f.when || f.when(b)).map((f) => fieldHtml(b, f)).join('')}</div>
     </li>`).join('');
   $('#empty-hint').hidden = state.label.blocks.length > 0;
   if (focused && document.getElementById(focused)) document.getElementById(focused).focus();
@@ -408,6 +424,7 @@ async function onBlockChange(e) {
   }
   if (el.type === 'radio' || el.tagName === 'SELECT') {
     block[el.dataset.k] = el.value;
+    if ('rerender' in el.dataset) renderBlocks();
     changed();
   }
 }

@@ -1,6 +1,7 @@
 // Renders a label into a black and white bitmap of the tape's printable height.
 import { Bitmap, luminance, threshold, dither } from './bitmap.js';
 import { qrMatrix } from './qr.js';
+import { buildQrContent } from './qrcontent.js';
 import { modules } from './code128.js';
 import { layout, fitFontSize, ptToPx, mmToPx, cssFont } from './label.js';
 
@@ -62,7 +63,7 @@ async function renderText(b, H, dpi) {
 }
 
 function renderQr(b, H) {
-  const qr = qrMatrix(b.content, b.level);
+  const qr = qrMatrix(buildQrContent(b), b.level);
   const n = qr.size + 2 * b.quiet;
   const module = Math.floor((H * b.scale) / 100 / n);
   if (module < 1) throw new Error(`the QR code needs ${n} px, the tape has ${H} px: shorten the content or lower the error correction`);
