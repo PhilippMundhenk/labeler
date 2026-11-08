@@ -1,5 +1,5 @@
 // The label editor: blocks, styles, layout, saved labels.
-import { test, expect, ready, settled, previewSize, setSim, printed } from './fixtures.js';
+import { test, expect, ready, settled, previewSize, setSim, printed, browserLabels } from './fixtures.js';
 
 const block = (page, type, n = 0) => page.locator(`.block[data-type="${type}"]`).nth(n);
 
@@ -303,6 +303,33 @@ test('mirrored printing flips the label (#50)', async ({ page }) => {
   await expect(page.locator('#mirror')).toBeChecked();
 });
 
+test('saved labels are shared through the server (#34)', async ({ page, browser }) => {
+  await page.addInitScript(() => localStorage.setItem('labeler.saved', JSON.stringify({ Local: { blocks: [{ type: 'text', text: 'from this browser' }] } })));
+  await ready(page);
+  await expect(page.locator('#saved-where')).toHaveText('Saved on the server, for every browser.');
+  await expect(page.locator('#saved-local')).toContainText('1 label is saved only in this browser.');
+  await page.locator('#copy-local').click();
+  await expect(page.locator('.toast.ok')).toContainText('Copied to the server');
+  await expect(page.locator('#saved-local')).toBeHidden();
+  await block(page, 'text').locator('textarea').fill('Shared');
+  await page.locator('#save-name').fill('Second');
+  await page.locator('#save-form button').click();
+  await expect(page.locator('#saved-list')).toContainText('Second');
+
+  const other = await browser.newPage();
+  await other.goto('/');
+  await expect(other.locator('[data-load="Local"]')).toBeVisible();
+  await other.locator('[data-load="Second"]').click();
+  await expect(other.locator('.block textarea')).toHaveValue('Shared');
+  await other.locator('[data-remove="Local"]').click();
+  await expect(other.locator('[data-load="Local"]')).toHaveCount(0);
+  await other.close();
+  await page.route('**/api.php?action=label-save', (route) => route.fulfill({ status: 422, json: { error: 'the label is too large (big images?)' } }));
+  await page.locator('#save-name').fill('Big');
+  await page.locator('#save-form button').click();
+  await expect(page.locator('.toast.bad')).toContainText('too large');
+});
+
 test('the label survives a reload; saved labels', async ({ page }) => {
   await ready(page);
   await block(page, 'text').locator('textarea').fill('Kitchen');
@@ -361,6 +388,7 @@ test('the print history drops old entries when the storage is full', async ({ pa
 });
 
 test('full browser storage is reported', async ({ page }) => {
+  await browserLabels(page);
   await page.addInitScript(() => {
     Storage.prototype.setItem = () => {
       throw new DOMException('full', 'QuotaExceededError');
@@ -375,6 +403,7 @@ test('full browser storage is reported', async ({ page }) => {
 });
 
 test('broken data in the browser storage is ignored', async ({ page }) => {
+  await browserLabels(page);
   await page.addInitScript(() => {
     localStorage.setItem('labeler.label', '{not json');
     localStorage.setItem('labeler.saved', JSON.stringify({ Old: { blocks: [{ type: 'teleporter' }, { type: 'text', text: 'kept' }] } }));

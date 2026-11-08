@@ -53,7 +53,8 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
   folder spine, address, name tag, shelf label with barcode.
 - **Undo and redo** for every change, also with Ctrl+Z and Ctrl+Shift+Z.
 - **Recent prints** with a small picture of each label, to load or print again.
-- **Saved labels** in the browser; the current label is kept between visits.
+- **Saved labels** on the server, shared by phone and computer (or in the browser when the server
+  cannot store them); the current label is kept between visits.
 - Optional password, light and dark mode, works on phones, can be added to the home screen.
 
 ## Try it in Docker

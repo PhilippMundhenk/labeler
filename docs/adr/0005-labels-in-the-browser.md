@@ -1,6 +1,7 @@
 # 0005. Saved labels live in the browser's storage
 
-Date: 2026-11-08 · Status: accepted
+Date: 2026-11-08 · Status: superseded for saved labels by #34 (server, when the data folder is
+writable); the current label and the print history stay in the browser
 
 ## Context
 

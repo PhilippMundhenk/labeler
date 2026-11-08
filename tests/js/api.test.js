@@ -1,7 +1,7 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel, login, logout,
+  getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel, login, logout, getLabels, saveLabel, deleteLabel,
 } from '../../public/js/api.js';
 
 let calls;
@@ -56,13 +56,19 @@ test('the chosen printer goes with every call', async () => {
   setSerial(undefined);
 });
 
-test('login and logout post JSON', async () => {
+test('login, logout and saved labels post JSON', async () => {
   fake(() => new Response('{"ok":true}', { status: 200 }));
   await login('pw');
   await logout();
-  assert.deepEqual(calls.map((c) => [c.url, c.options.method, c.options.body]), [
+  await getLabels();
+  await saveLabel('A', { blocks: [] });
+  await deleteLabel('A');
+  assert.deepEqual(calls.map((c) => [c.url, c.options.method || 'GET', c.options.body || '']), [
     ['api.php?action=login', 'POST', '{"password":"pw"}'],
     ['api.php?action=logout', 'POST', '{}'],
+    ['api.php?action=labels', 'GET', ''],
+    ['api.php?action=label-save', 'POST', '{"name":"A","label":{"blocks":[]}}'],
+    ['api.php?action=label-delete', 'POST', '{"name":"A"}'],
   ]);
 });
 
