@@ -8,7 +8,7 @@ declare(strict_types=1);
 require __DIR__ . '/Png.php';
 require __DIR__ . '/Simulator.php';
 
-$sim = new Labeler\Sim\Simulator(Labeler\Sim\Simulator::stateFromEnv(getenv()));
+$sim = new Labeler\Sim\Simulator(Labeler\Sim\Simulator::stateFromEnv(getenv()), (string) getenv('PTSIM_STATE'));
 $result = $sim->run(array_slice($argv, 1));
 fwrite(STDERR, $result['stderr']);
 fwrite(STDOUT, $result['stdout']);

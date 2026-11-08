@@ -137,6 +137,20 @@ final class ApiTest extends TestCase
         $this->assertSame(422, $this->call('POST', 'print', $gif)[0]);
     }
 
+    public function testErrorsDuringPrintingAreNoticed(): void
+    {
+        $state = $this->tmp . '/state.json';
+        file_put_contents($state, '{"fail": "jam"}');
+        $this->simulate(['state' => $state]);
+        [$status, $body] = $this->call('POST', 'print', $this->printBody());
+        $this->assertSame(502, $status);
+        $this->assertFalse($body['ok']);
+        $this->assertSame('After printing, the printer reports: Cutter jam: open the cover and remove the jammed tape.', $body['error']);
+        $this->assertCount(1, $this->printed(), 'the label went out, the jam came after');
+        [, $after] = $this->call('GET', 'status');
+        $this->assertSame([0x0004], [$after['printer']['error_code']]);
+    }
+
     public function testPrintFailureIsReported(): void
     {
         $this->simulate(['fail' => 'print']);

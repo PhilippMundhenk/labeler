@@ -134,10 +134,21 @@ final class Api
         } finally {
             @unlink($file);
         }
+        // ptouch-print does not notice errors during printing (exit code 0 after a cutter jam
+        // or an opened cover), so ask the printer once more
+        if ($result['ok']) {
+            $after = $this->printer->info();
+            if (!$after['ready']) {
+                $result['ok'] = false;
+                $result['output'] = trim($result['output'] . "
+" . $after['message']);
+                $result['problem'] = 'After printing, the printer reports: ' . $after['message'];
+            }
+        }
         $lengthMm = round($size['width'] / max(1, (int) $info['dpi']) * 25.4, 1);
         return Response::json($result['ok'] ? 200 : 502, [
             'ok' => $result['ok'],
-            'error' => $result['ok'] ? null : 'ptouch-print reported a problem',
+            'error' => $result['ok'] ? null : ($result['problem'] ?? 'ptouch-print reported a problem'),
             'output' => $result['output'],
             'notes' => $result['notes'],
             'width_px' => $size['width'],

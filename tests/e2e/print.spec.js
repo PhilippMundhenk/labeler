@@ -106,6 +106,14 @@ test('a failing print shows the output of ptouch-print', async ({ page }) => {
   await expect(page.locator('.toast.bad')).toHaveCount(0);
 });
 
+test('an error during printing is not reported as printed (#47)', async ({ page }) => {
+  await ready(page);
+  setSim({ fail: 'jam' });
+  await page.locator('#print').click();
+  await expect(page.locator('.toast.bad')).toContainText('After printing, the printer reports: Cutter jam');
+  await expect(page.locator('.toast.ok')).toHaveCount(0);
+});
+
 test('tape removed after the page loaded', async ({ page }) => {
   await ready(page);
   setSim({ tape_mm: 0 });
