@@ -15,6 +15,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - Font selection (built-in list, fonts in the server's `fonts/` folder, fonts of the device),
   size, bold, italic, alignment, white on black, any number of lines (#4).
 - QR codes and Code 128 barcodes (#5).
+- A printer that switched itself off is explained, with how to turn auto power off off; the docs
+  say why a P-Touch printer cannot be switched on over USB (#49).
 - Mirrored printing for clear tape read from the back (#50).
 - Cut marks at both ends of a label, to cut chained labels by hand (#51).
 - "Cut before the label" is called "Auto cut", which is what ptouch-print's `--precut` switches on

@@ -280,6 +280,17 @@ test('no printer: design for a chosen tape, then connect', async ({ page }) => {
   expect((await previewSize(page)).height).toBe(76);
 });
 
+test('a printer that switched itself off is explained (#49)', async ({ page }) => {
+  await ready(page);
+  setSim({ printer: 'none' });
+  // coming back to the tab checks the printer again
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await expect(page.locator('#printer-message')).toContainText('switched itself off (auto power off)');
+  setSim({});
+  await page.locator('#retry').click();
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ok');
+});
+
 test('tape colours from the printer are used in the preview', async ({ page }) => {
   setSim({ tape_color: 6, text_color: 1 });
   await ready(page);

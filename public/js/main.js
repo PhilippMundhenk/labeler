@@ -131,6 +131,7 @@ async function refreshStatus() {
       live: true,
     };
     chip.dataset.state = 'ok';
+    state.wasReady = true;
     $('#status-text').textContent = `${p.model || 'Printer'} · ${p.media_width_mm} mm`;
   } else {
     const manual = load(STORE_TAPE, 12);
@@ -138,7 +139,11 @@ async function refreshStatus() {
     chip.dataset.state = p && p.connected ? 'warn' : 'bad';
     $('#status-text').textContent = p && p.connected ? 'Printer not ready' : 'No printer';
   }
-  const message = res.ok ? (p && !p.ready ? p.message : '') : res.data.error;
+  let message = res.ok ? (p && !p.ready ? p.message : '') : res.data.error;
+  if (p && !p.connected && state.wasReady) {
+    // the printer was there a moment ago: P-Touch printers switch themselves off after a while
+    message = 'The printer was ready a moment ago and is gone now: it has probably switched itself off (auto power off) or was unplugged. Press its power button, then check again.';
+  }
   const notice = $('#printer-notice');
   notice.hidden = !message;
   $('#printer-message').textContent = message || '';

@@ -115,6 +115,21 @@ with the exact ptouch-print command and output.
 | The cover is open / Cutter jam / Replace the tape cassette / overheated / batteries weak | What the printer reports about itself; the message says what to do. Unknown error bits are shown as `error 0x…`. |
 | Chain printing / auto cut is greyed out | The installed ptouch-print is too old: chain needs 1.6, auto cut 1.8. Auto cut also needs a printer with a cutter. |
 
+### The printer switches itself off
+
+P-Touch printers switch themselves off after a while without use (auto power off). Switched off,
+they disappear from USB, so Labeler shows "No printer" and, if it saw the printer a moment
+before, says that it probably switched itself off. **A P-Touch printer cannot be switched on over
+USB**: Brother's raster command reference has no power command, and a computer can only wake a
+sleeping USB device, not one that is off. What helps:
+
+- Turn auto power off off: Brother's *Printer Setting Tool* (Windows, macOS), *Device Settings*,
+  *Auto Power Off* = *None* (separately for AC adapter and batteries). The printer keeps the
+  setting, so this is needed once.
+- Some models (PT-P900 series) have *Auto Power On*: they switch on when power is connected, so a
+  smart plug can switch them on and off.
+- Switching the USB port off and on (`uhubctl`) does not help: the printer has its own power supply.
+
 Run ptouch-print as the service user to see what the service sees:
 
 ```sh
