@@ -524,9 +524,12 @@ let persistTimer = null;
 function changed() {
   scheduleRender();
   clearTimeout(persistTimer);
-  persistTimer = setTimeout(() => {
-    if (!store(STORE_LABEL, state.label)) toast('The label is too large to be kept in this browser', 'warn');
-  }, 300);
+  persistTimer = setTimeout(persist, 300);
+}
+
+function persist() {
+  clearTimeout(persistTimer);
+  if (!store(STORE_LABEL, state.label)) toast('The label is too large to be kept in this browser', 'warn');
 }
 
 function scheduleRender() {
@@ -702,6 +705,8 @@ function init() {
     }
   });
   window.addEventListener('resize', scheduleRender);
+  // quick edits keep postponing the delayed save; save at once when the page goes away
+  window.addEventListener('pagehide', persist);
   // keep focused and scrolled-to elements out from under the sticky preview
   const card = $('.preview-card');
   new ResizeObserver(() => {
