@@ -15,10 +15,22 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - Font selection (built-in list, fonts in the server's `fonts/` folder, fonts of the device),
   size, bold, italic, alignment, white on black, any number of lines (#4).
 - QR codes and Code 128 barcodes (#5).
+- An error during printing (cutter jam, cover opened, tape ran out) is reported instead of
+  "printed": ptouch-print does not notice it, so the status is checked after every job (#47).
+- Printer errors are named with what to do: cover open, cutter jam, no or wrong tape, weak
+  batteries, wrong adapter, overheating (#46).
+- Barcode types EAN-13, UPC-A (check digit added or verified) and Code 39 (#22).
+- QR helpers for Wi-Fi, contacts (vCard), e-mail and phone numbers with correct escaping (#21).
+- Icon blocks with search over Material Design Icons and Simple Icons through the Iconify API,
+  `icon_api` setting (#16).
+- Placeholders {date}, {time}, {datetime} and a counter {n} that numbers every copy (#17).
+- Batch printing: one label per row of a list, CSV file or spreadsheet paste, with {1}, {2} or
+  {column name} in any block, a row preview and chained printing (#18).
 - Images: PNG, JPEG, SVG, black and white or dithered, threshold, invert (#6).
 - Labels made of several blocks; margins, gap, minimum length, position, frame; copies, chain
   printing, cut before the label; saved labels; download as PNG (#7).
-- Responsive interface with light and dark mode, printer badge, tape colours in the preview,
+- Responsive interface with light and dark mode, toggle chips, inline block errors, reasons
+  next to a disabled Print button, printer badge, tape colours in the preview,
   details dialog with the print log, web app manifest (#8).
 - JSON API (`status`, `print`, `fonts`, `font`, `log`, `health`), `config.php` and `LABELER_*`
   settings (#9).

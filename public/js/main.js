@@ -5,11 +5,17 @@ import {
 } from './label.js';
 import { renderLabel, drawPreview } from './render.js';
 import { encodePng, toBase64 } from './png.js';
+import { COLLECTIONS, searchIcons, fetchIcon, iconUrl, parseId } from './icons.js';
+import { resolveLabel, usesCounter, usesColumns } from './placeholders.js';
+import { parseBatch } from './csv.js';
+import { KINDS } from './qrcontent.js';
+import { FORMATS } from './barcodes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const STORE_LABEL = 'labeler.label';
 const STORE_SAVED = 'labeler.saved';
 const STORE_TAPE = 'labeler.tape';
+const STORE_BATCH = 'labeler.batch';
 
 const TAPE_COLORS = {
   White: '#fafaf7', 'Matte White': '#f3f3ef', Clear: '#e4ebf0', 'Matte Clear': '#e4ebf0', Red: '#d8342c',
@@ -30,32 +36,47 @@ const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name
 
 const FIELDS = {
   text: [
-    { k: 'text', type: 'textarea', label: 'Text', hint: 'Each line of the box is a line on the label.' },
+    { k: 'text', type: 'textarea', label: 'Text', hint: 'Each line of the box is a line on the label. Placeholders: {date}, {time}, {n} (counter).' },
     { k: 'font', type: 'font', label: 'Font' },
-    { k: 'size', type: 'number', label: 'Size (pt)', min: 0, max: 200, step: 1, hint: '0 fits the text to the tape.' },
+    { k: 'size', type: 'number', label: 'Size (pt)', min: 0, max: 200, step: 1, auto: true, hint: 'Empty fits the text to the tape.' },
     { k: 'align', type: 'choice', label: 'Align', options: [['left', 'Left'], ['center', 'Center'], ['right', 'Right']] },
-    { k: 'bold', type: 'check', label: 'Bold' },
-    { k: 'italic', type: 'check', label: 'Italic' },
-    { k: 'invert', type: 'check', label: 'White on black' },
+    { type: 'toggles', label: 'Style', items: [['bold', 'Bold'], ['italic', 'Italic'], ['invert', 'White on black']] },
   ],
   qr: [
-    { k: 'content', type: 'textarea', label: 'Content', hint: 'A link, a text, a Wi-Fi string (WIFI:S:name;T:WPA;P:password;;).' },
+    { k: 'kind', type: 'select', label: 'Content type', options: KINDS },
+    { k: 'content', type: 'textarea', label: 'Content', hint: 'A link or any text.', when: (b) => b.kind === 'text' },
+    { k: 'wifiSsid', type: 'text', label: 'Network name (SSID)', when: (b) => b.kind === 'wifi' },
+    { k: 'wifiType', type: 'select', label: 'Security', options: [['WPA', 'WPA/WPA2/WPA3'], ['WEP', 'WEP'], ['nopass', 'Open, no password']], when: (b) => b.kind === 'wifi' },
+    { k: 'wifiPassword', type: 'text', label: 'Password', when: (b) => b.kind === 'wifi' && b.wifiType !== 'nopass' },
+    { type: 'toggles', label: 'Network', items: [['wifiHidden', 'Hidden network']], when: (b) => b.kind === 'wifi' },
+    { k: 'contactName', type: 'text', label: 'Name', when: (b) => b.kind === 'contact' },
+    { k: 'org', type: 'text', label: 'Organisation', when: (b) => b.kind === 'contact' },
+    { k: 'phone', type: 'text', label: 'Phone', when: (b) => b.kind === 'contact' || b.kind === 'phone' },
+    { k: 'email', type: 'text', label: 'E-mail', when: (b) => b.kind === 'contact' || b.kind === 'email' },
+    { k: 'url', type: 'text', label: 'Website', when: (b) => b.kind === 'contact' },
+    { k: 'subject', type: 'text', label: 'Subject', when: (b) => b.kind === 'email' },
     { k: 'level', type: 'choice', label: 'Error correction', options: [['L', 'L 7 %'], ['M', 'M 15 %'], ['Q', 'Q 25 %'], ['H', 'H 30 %']] },
     { k: 'scale', type: 'range', label: 'Height', min: 20, max: 100, unit: '%' },
     { k: 'quiet', type: 'number', label: 'Quiet zone (modules)', min: 0, max: 4, step: 1 },
   ],
   barcode: [
-    { k: 'content', type: 'text', label: 'Content', hint: 'Code 128: letters, digits and punctuation.' },
+    { k: 'format', type: 'select', label: 'Type', options: FORMATS.map(([v, t]) => [v, t]) },
+    { k: 'content', type: 'text', label: 'Content', hint: (b) => FORMATS.find(([v]) => v === b.format)[2] },
     { k: 'bar', type: 'number', label: 'Bar width (px)', min: 1, max: 6, step: 1 },
     { k: 'scale', type: 'range', label: 'Height', min: 20, max: 100, unit: '%' },
-    { k: 'text', type: 'check', label: 'Show text below' },
+    { type: 'toggles', label: 'Options', items: [['text', 'Show text below']] },
   ],
   image: [
     { k: 'src', type: 'file', label: 'Image', hint: 'PNG, JPEG, SVG or GIF. Logos work best in high contrast.' },
     { k: 'mode', type: 'choice', label: 'Conversion', options: [['threshold', 'Black and white'], ['dither', 'Dithered']] },
     { k: 'level', type: 'range', label: 'Threshold', min: 1, max: 254, unit: '' },
     { k: 'scale', type: 'range', label: 'Height', min: 10, max: 100, unit: '%' },
-    { k: 'invert', type: 'check', label: 'Invert' },
+    { type: 'toggles', label: 'Options', items: [['invert', 'Invert']] },
+  ],
+  icon: [
+    { k: 'icon', type: 'icons', label: 'Icon' },
+    { k: 'scale', type: 'range', label: 'Height', min: 10, max: 100, unit: '%' },
+    { type: 'toggles', label: 'Options', items: [['invert', 'Invert']] },
   ],
   spacer: [{ k: 'width', type: 'number', label: 'Width (mm)', min: 0, max: 500, step: 0.5 }],
 };
@@ -70,6 +91,7 @@ const state = {
   rendering: null,
   dirty: false,
   printing: false,
+  batch: { text: '', header: false, on: false, index: 0, rows: [], headers: [] },
 };
 
 function load(key, fallback) {
@@ -122,6 +144,7 @@ async function refreshStatus() {
   $('#printer-message').textContent = message || '';
   $('#manual-tape').hidden = state.tape.live;
   $('#tape-select').value = String(state.tape.mm);
+  $('#add-icon').hidden = !iconApi();
   updateFeatures();
   scheduleRender();
 }
@@ -144,7 +167,10 @@ function updatePrintButton() {
   const errors = Object.keys(state.errors).length;
   const empty = !state.bitmap || state.bitmap.countBlack() === 0;
   btn.disabled = state.printing || !state.tape.live || errors > 0 || empty;
-  btn.title = !state.tape.live ? 'No printer ready' : errors ? 'Fix the marked blocks first' : empty ? 'The label is empty' : 'Print (Ctrl+Enter)';
+  const batch = batchActive() ? `${state.batch.rows.length} labels from the batch` : '';
+  const reason = !state.tape.live ? 'No printer ready' : errors ? 'Fix the marked blocks first' : empty ? 'The label is empty' : '';
+  btn.title = reason || 'Print (Ctrl+Enter)';
+  $('#print-hint').textContent = state.printing ? 'Printing…' : reason || batch;
 }
 
 /* ---------- fonts ---------- */
@@ -201,26 +227,106 @@ function esc(s) {
 function fieldHtml(block, f) {
   const id = `${block.id}-${f.k}`;
   const v = block[f.k];
-  const hint = f.hint ? `<small class="hint">${esc(f.hint)}</small>` : '';
+  const hintText = typeof f.hint === 'function' ? f.hint(block) : f.hint;
+  const hint = hintText ? `<small class="hint">${esc(hintText)}</small>` : '';
   switch (f.type) {
     case 'textarea':
       return `<label class="field wide" for="${id}">${f.label}<textarea id="${id}" data-k="${f.k}" rows="${f.k === 'text' ? 2 : 2}" spellcheck="false">${esc(v)}</textarea>${hint}</label>`;
     case 'text':
       return `<label class="field wide" for="${id}">${f.label}<input id="${id}" data-k="${f.k}" type="text" value="${esc(v)}" spellcheck="false">${hint}</label>`;
-    case 'number':
-      return `<label class="field" for="${id}">${f.label}<input id="${id}" data-k="${f.k}" type="number" inputmode="decimal" min="${f.min}" max="${f.max}" step="${f.step}" value="${v}">${hint}</label>`;
+    case 'number': {
+      const auto = f.auto ? ' data-auto placeholder="Auto"' : '';
+      const value = f.auto && v === 0 ? '' : v;
+      return `<label class="field" for="${id}">${f.label}<input id="${id}" data-k="${f.k}" type="number" inputmode="decimal" min="${f.min}" max="${f.max}" step="${f.step}" value="${value}"${auto}>${hint}</label>`;
+    }
     case 'range':
       return `<label class="field" for="${id}">${f.label} <output>${v}${f.unit}</output><input id="${id}" data-k="${f.k}" data-unit="${f.unit}" type="range" min="${f.min}" max="${f.max}" value="${v}"></label>`;
-    case 'check':
-      return `<label class="check"><input data-k="${f.k}" type="checkbox"${v ? ' checked' : ''}> ${f.label}</label>`;
+    case 'toggles':
+      return `<div class="field wide toggles" role="group" aria-label="${f.label}">${f.items.map(([k, text]) =>
+        `<label class="toggle"><input type="checkbox" data-k="${k}"${block[k] ? ' checked' : ''}><span>${text}</span></label>`).join('')}</div>`;
     case 'choice':
       return `<fieldset class="field segmented"><legend>${f.label}</legend>${f.options.map(([val, text]) =>
         `<label><input type="radio" name="${id}" data-k="${f.k}" value="${val}"${val === v ? ' checked' : ''}><span>${text}</span></label>`).join('')}</fieldset>`;
+    case 'select':
+      // label beside, not around, the select: otherwise its name includes every option
+      return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}" data-k="${f.k}" data-rerender>${f.options.map(([val, text]) =>
+        `<option value="${val}"${val === v ? ' selected' : ''}>${esc(text)}</option>`).join('')}</select></div>`;
     case 'font':
-      return `<label class="field" for="${id}">${f.label}<select id="${id}" data-k="${f.k}">${fontOptions(v)}</select></label>`;
+      return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}" data-k="${f.k}">${fontOptions(v)}</select></div>`;
+    case 'icons':
+      return pickerHtml(block);
     default: // file
       return `<label class="field wide" for="${id}">${f.label}<input id="${id}" data-k="${f.k}" type="file" accept="image/*">${block.name ? `<small class="hint">${esc(block.name)}</small>` : hint}</label>`;
   }
+}
+
+/* ---------- icon picker ---------- */
+
+const pickers = new Map(); // block id => { query, set, results, message }
+let searchTimer = null;
+
+const iconApi = () => (state.status && state.status.icon_api) || '';
+
+function picker(id) {
+  if (!pickers.has(id)) pickers.set(id, { query: '', set: 'all', results: [], message: '' });
+  return pickers.get(id);
+}
+
+function resultsHtml(block) {
+  const p = picker(block.id);
+  const api = iconApi();
+  const buttons = p.results.map((id) => `<button type="button" class="icon-result${id === block.icon ? ' selected' : ''}" data-icon-pick="${esc(id)}" title="${esc(id)}" aria-label="${esc(id)}"><img src="${esc(iconUrl(api, id, 32))}" alt="" width="32" height="32" loading="lazy"></button>`).join('');
+  return `${buttons}${p.message ? `<p class="muted small">${esc(p.message)}</p>` : ''}`;
+}
+
+function pickerHtml(block) {
+  const p = picker(block.id);
+  const sets = [['all', 'All'], ...Object.entries(COLLECTIONS).map(([k, c]) => [k, c.short])];
+  const chosen = parseId(block.icon);
+  return `<div class="field wide icon-picker">
+    <input type="search" id="${block.id}-icon-query" data-icon-query value="${esc(p.query)}" placeholder="Search icons: wifi, kitchen, github…" aria-label="Search icons" autocomplete="off">
+    <fieldset class="segmented"><legend class="sr-only">Icon collection</legend>${sets.map(([v, t]) =>
+      `<label><input type="radio" name="${block.id}-icon-set" data-icon-set value="${v}"${v === p.set ? ' checked' : ''}><span>${esc(t)}</span></label>`).join('')}</fieldset>
+    <div class="icon-results" data-icon-results>${resultsHtml(block)}</div>
+    <small class="hint">${chosen ? `${esc(block.icon)} · ${esc(COLLECTIONS[chosen.prefix].name)}, ${esc(COLLECTIONS[chosen.prefix].license)}` : 'Icons come from the Iconify API and are stored in the label.'}</small>
+  </div>`;
+}
+
+function updateResults(block) {
+  const box = $(`.block[data-id="${block.id}"] [data-icon-results]`);
+  if (box) box.innerHTML = resultsHtml(block);
+}
+
+async function runSearch(block) {
+  const p = picker(block.id);
+  const query = p.query;
+  try {
+    const results = await searchIcons(iconApi(), query, p.set);
+    if (query !== p.query) return; // a newer search is on its way
+    p.results = results;
+    p.message = query.trim().length < 2 ? '' : results.length ? '' : 'No icons found.';
+  } catch (err) {
+    p.results = [];
+    p.message = err.message;
+  }
+  updateResults(block);
+}
+
+function scheduleSearch(block) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => runSearch(block), 250);
+}
+
+async function pickIcon(block, id) {
+  try {
+    block.src = await fetchIcon(iconApi(), id);
+    block.icon = id;
+    delete state.errors[block.id];
+  } catch (err) {
+    picker(block.id).message = err.message;
+  }
+  renderBlocks();
+  changed();
 }
 
 function renderBlocks() {
@@ -230,7 +336,6 @@ function renderBlocks() {
     <li class="block" data-id="${b.id}" data-type="${b.type}">
       <div class="block-head">
         <span class="block-title">${BLOCK_NAMES[b.type]}</span>
-        <span class="block-error" role="alert"></span>
         <span class="tools">
           <button type="button" class="icon" data-act="up" aria-label="Move ${BLOCK_NAMES[b.type]} up"${i === 0 ? ' disabled' : ''}>${icon('up')}</button>
           <button type="button" class="icon" data-act="down" aria-label="Move ${BLOCK_NAMES[b.type]} down"${i === state.label.blocks.length - 1 ? ' disabled' : ''}>${icon('down')}</button>
@@ -238,7 +343,8 @@ function renderBlocks() {
           <button type="button" class="icon" data-act="delete" aria-label="Remove ${BLOCK_NAMES[b.type]}">${icon('trash')}</button>
         </span>
       </div>
-      <div class="fields">${FIELDS[b.type].map((f) => fieldHtml(b, f)).join('')}</div>
+      <p class="block-error" role="alert"></p>
+      <div class="fields">${FIELDS[b.type].filter((f) => !f.when || f.when(b)).map((f) => fieldHtml(b, f)).join('')}</div>
     </li>`).join('');
   $('#empty-hint').hidden = state.label.blocks.length > 0;
   if (focused && document.getElementById(focused)) document.getElementById(focused).focus();
@@ -253,13 +359,19 @@ function blockOf(el) {
 function onBlockInput(e) {
   const el = e.target;
   const block = blockOf(el);
+  if (block && 'iconQuery' in el.dataset) {
+    picker(block.id).query = el.value;
+    scheduleSearch(block);
+    return;
+  }
   if (!block || !el.dataset.k) return;
   const k = el.dataset.k;
   if (el.type === 'file') return;
   if (el.type === 'checkbox') block[k] = el.checked;
   else if (el.type === 'number' || el.type === 'range') {
-    const n = Number(el.value);
-    if (el.value === '' || !Number.isFinite(n)) return;
+    const auto = 'auto' in el.dataset;
+    const n = el.value === '' && auto ? 0 : Number(el.value);
+    if ((el.value === '' && !auto) || !Number.isFinite(n)) return;
     block[k] = n;
     const out = el.parentElement.querySelector('output');
     if (out) out.textContent = `${n}${el.dataset.unit}`;
@@ -308,13 +420,24 @@ async function onBlockChange(e) {
     changed();
     return;
   }
+  if ('iconSet' in el.dataset) {
+    picker(block.id).set = el.value;
+    runSearch(block);
+    return;
+  }
   if (el.type === 'radio' || el.tagName === 'SELECT') {
     block[el.dataset.k] = el.value;
+    if ('rerender' in el.dataset) renderBlocks();
     changed();
   }
 }
 
 function onBlockClick(e) {
+  const pick = e.target.closest('[data-icon-pick]');
+  if (pick) {
+    pickIcon(blockOf(pick), pick.dataset.iconPick);
+    return;
+  }
   const btn = e.target.closest('button[data-act]');
   if (!btn) return;
   const blocks = state.label.blocks;
@@ -351,9 +474,11 @@ function renderSettings() {
   const l = state.label;
   $('#margin').value = l.margin;
   $('#gap').value = l.gap;
-  $('#length').value = l.length;
+  $('#length').value = l.length || '';
   $('#frame').checked = l.frame;
   $('#frame-width').value = l.frameWidth;
+  $('#frame-width').disabled = !l.frame;
+  $('#counter').value = l.counter;
   for (const r of document.querySelectorAll('input[name="label-align"]')) r.checked = r.value === l.align;
 }
 
@@ -361,8 +486,12 @@ function onSettingsInput(e) {
   const el = e.target;
   const l = state.label;
   if (el.name === 'label-align') l.align = el.value;
-  else if (el.id === 'frame') l.frame = el.checked;
+  else if (el.id === 'frame') {
+    l.frame = el.checked;
+    $('#frame-width').disabled = !l.frame;
+  }
   else if (el.id === 'frame-width') l.frameWidth = Number(el.value) || 1;
+  else if (el.id === 'length' && el.value === '') l.length = 0;
   else if (['margin', 'gap', 'length'].includes(el.id)) {
     if (el.value === '' || !Number.isFinite(Number(el.value))) return;
     l[el.id] = Number(el.value);
@@ -419,11 +548,15 @@ let renderTimer = null;
 let persistTimer = null;
 
 function changed() {
+  if (state.batch.on) updateBatch(false);
   scheduleRender();
   clearTimeout(persistTimer);
-  persistTimer = setTimeout(() => {
-    if (!store(STORE_LABEL, state.label)) toast('The label is too large to be kept in this browser', 'warn');
-  }, 300);
+  persistTimer = setTimeout(persist, 300);
+}
+
+function persist() {
+  clearTimeout(persistTimer);
+  if (!store(STORE_LABEL, state.label)) toast('The label is too large to be kept in this browser', 'warn');
 }
 
 function scheduleRender() {
@@ -437,7 +570,7 @@ async function render() {
     return;
   }
   state.rendering = (async () => {
-    const { bitmap, errors } = await renderLabel(state.label, state.tape);
+    const { bitmap, errors } = await renderLabel(resolveLabel(state.label, previewContext()), state.tape);
     state.bitmap = bitmap;
     state.errors = errors;
     const colors = { tape: TAPE_COLORS[state.tape.tapeColor] || TAPE_COLORS.White, ink: INK_COLORS[state.tape.inkColor] || INK_COLORS.Black };
@@ -472,6 +605,95 @@ async function labelPng() {
   return encodePng(state.bitmap, undefined, state.tape.dpi);
 }
 
+/* ---------- batch ---------- */
+
+const batchActive = () => state.batch.on && state.batch.rows.length > 0;
+
+function updateBatch(persist = true) {
+  const b = state.batch;
+  const parsed = parseBatch(b.text, b.header);
+  b.rows = parsed.rows;
+  b.headers = parsed.headers;
+  b.index = Math.min(b.index, Math.max(0, b.rows.length - 1));
+  const cols = b.headers.length ? b.headers.map((h) => `{${h}}`).join(', ')
+    : b.rows.length ? Array.from({ length: Math.max(...b.rows.map((r) => r.length)) }, (_, i) => `{${i + 1}}`).join(', ') : '';
+  let info = b.rows.length ? `${b.rows.length} ${b.rows.length === 1 ? 'row' : 'rows'} · ${cols}` : 'No rows yet.';
+  if (b.on && b.rows.length && !usesColumns(state.label, b.headers)) info += ' · No block uses these placeholders yet, so all labels would look the same.';
+  $('#batch-info').textContent = info;
+  $('#batch-nav').hidden = !batchActive();
+  $('#batch-pos').textContent = `Row ${b.index + 1} of ${b.rows.length}`;
+  $('#batch-prev').disabled = b.index === 0;
+  $('#batch-next').disabled = b.index >= b.rows.length - 1;
+  if (persist) store(STORE_BATCH, { text: b.text, header: b.header, on: b.on });
+  scheduleRender();
+}
+
+function initBatch() {
+  const saved = load(STORE_BATCH, {}) || {};
+  Object.assign(state.batch, {
+    text: typeof saved.text === 'string' ? saved.text : '',
+    header: Boolean(saved.header),
+    on: Boolean(saved.on),
+  });
+  $('#batch-data').value = state.batch.text;
+  $('#batch-header').checked = state.batch.header;
+  $('#batch-on').checked = state.batch.on;
+  $('#batch-data').addEventListener('input', (e) => {
+    state.batch.text = e.target.value;
+    updateBatch();
+  });
+  $('#batch-header').addEventListener('change', (e) => {
+    state.batch.header = e.target.checked;
+    updateBatch();
+  });
+  $('#batch-on').addEventListener('change', (e) => {
+    state.batch.on = e.target.checked;
+    updateBatch();
+  });
+  $('#batch-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    state.batch.text = await file.text();
+    $('#batch-data').value = state.batch.text;
+    state.batch.on = true;
+    $('#batch-on').checked = true;
+    updateBatch();
+  });
+  $('#batch-prev').addEventListener('click', () => {
+    state.batch.index -= 1;
+    updateBatch(false);
+  });
+  $('#batch-next').addEventListener('click', () => {
+    state.batch.index += 1;
+    updateBatch(false);
+  });
+  updateBatch(false);
+}
+
+function previewContext() {
+  const b = state.batch;
+  return batchActive() ? { n: state.label.counter, row: b.rows[b.index], headers: b.headers } : { n: state.label.counter };
+}
+
+/**
+ * The print jobs for the current label: one job with n copies, or one job per copy when the
+ * label contains the counter {n}, so every copy gets its own number.
+ */
+function printJobs(copies) {
+  const label = state.label;
+  const b = state.batch;
+  const rows = batchActive() ? b.rows : [null];
+  const counter = usesCounter(label);
+  const jobs = [];
+  let n = label.counter;
+  for (const row of rows) {
+    const base = row ? { row, headers: b.headers } : {};
+    if (!counter) jobs.push({ ctx: { ...base, n }, copies });
+    else for (let c = 0; c < copies; c++) jobs.push({ ctx: { ...base, n: n++ }, copies: 1, counts: true });
+  }
+  return jobs;
+}
+
 async function onPrint() {
   if ($('#print').disabled) return;
   state.printing = true;
@@ -479,19 +701,37 @@ async function onPrint() {
   $('#print').classList.add('busy');
   try {
     await (state.rendering || Promise.resolve());
-    const png = toBase64(await labelPng());
-    const res = await printLabel(png, {
-      copies: Number($('#copies').value) || 1,
-      chain: $('#chain').checked,
-      precut: $('#precut').checked,
-    });
-    if (res.ok) {
-      const copies = res.data.copies > 1 ? `${res.data.copies} labels` : 'Label';
-      toast(`${copies} printed · ${res.data.length_mm} mm`, 'ok');
-      for (const note of res.data.notes || []) toast(note, 'warn');
-    } else {
-      toast(res.data.error || 'Printing failed', 'bad', res.data.output);
-      if (res.status === 503) refreshStatus();
+    const jobs = printJobs(Number($('#copies').value) || 1);
+    let labels = 0;
+    let mm = 0;
+    for (let i = 0; i < jobs.length; i++) {
+      const job = jobs[i];
+      if (jobs.length > 1) $('#print-hint').textContent = `Printing ${i + 1} of ${jobs.length}…`;
+      const { bitmap, errors } = await renderLabel(resolveLabel(state.label, job.ctx), state.tape);
+      const problem = Object.values(errors)[0];
+      if (problem || !bitmap.countBlack()) {
+        toast(`Label ${i + 1} cannot be printed: ${problem || 'it is empty'}`, 'bad');
+        break;
+      }
+      const res = await printLabel(toBase64(await encodePng(bitmap, undefined, state.tape.dpi)), {
+        copies: job.copies,
+        chain: $('#chain').checked || i < jobs.length - 1,
+        precut: $('#precut').checked,
+      });
+      if (!res.ok) {
+        toast(res.data.error || 'Printing failed', 'bad', res.data.output);
+        if (res.status === 503) refreshStatus();
+        break;
+      }
+      labels += res.data.copies;
+      mm += res.data.length_mm * res.data.copies;
+      if (job.counts) state.label.counter += 1;
+      if (i === jobs.length - 1) for (const note of res.data.notes || []) toast(note, 'warn');
+    }
+    if (labels) {
+      toast(`${labels > 1 ? `${labels} labels` : 'Label'} printed · ${Math.round(mm * 10) / 10} mm`, 'ok');
+      renderSettings();
+      changed();
     }
   } finally {
     state.printing = false;
@@ -516,6 +756,8 @@ function toast(message, kind = 'ok', details = '') {
   const el = document.createElement('div');
   el.className = `toast ${kind}`;
   el.textContent = message;
+  el.title = 'Click to close';
+  el.addEventListener('click', () => el.remove());
   if (details) {
     const pre = document.createElement('pre');
     pre.textContent = details;
@@ -569,6 +811,12 @@ function init() {
   blocks.addEventListener('click', onBlockClick);
   for (const btn of document.querySelectorAll('[data-add]')) btn.addEventListener('click', () => addBlock(btn.dataset.add));
   $('#settings').addEventListener('input', onSettingsInput);
+  $('#counter').addEventListener('input', (e) => {
+    const n = Number(e.target.value);
+    if (e.target.value === '' || !Number.isInteger(n) || n < 0) return;
+    state.label.counter = n;
+    changed();
+  });
   $('#save-form').addEventListener('submit', onSave);
   $('#saved-list').addEventListener('click', onSavedClick);
   $('#print').addEventListener('click', onPrint);
@@ -598,6 +846,8 @@ function init() {
     }
   });
   window.addEventListener('resize', scheduleRender);
+  // quick edits keep postponing the delayed save; save at once when the page goes away
+  window.addEventListener('pagehide', persist);
   // keep focused and scrolled-to elements out from under the sticky preview
   const card = $('.preview-card');
   new ResizeObserver(() => {
@@ -611,6 +861,7 @@ function init() {
   renderSettings();
   renderBlocks();
   renderSaved();
+  initBatch();
   refreshStatus();
   loadServerFonts();
 }

@@ -61,7 +61,10 @@ final class PtouchPrintTest extends TestCase
             'unsupported' => [['mode' => 'unsupported'], 'not supported', true],
             'no access' => [['mode' => 'access'], 'udev rule', false],
             'no tape' => [['tape_mm' => 0], 'No tape cassette', true],
-            'cover open' => [['error' => 16], 'error 0x0010', true],
+            'cover open' => [['error' => 0x1000], 'The cover is open: close it.', true],
+            'two errors' => [['error' => 0x2004], 'Cutter jam: open the cover and remove the jammed tape. The printer is overheated', true],
+            'unknown bit' => [['error' => 0x0002], 'The printer reports error 0x0002.', true],
+            'old version' => [['error' => 0x0008, 'version' => '1.5'], 'batteries are weak', true],
             'old no tape' => [['tape_mm' => 0, 'version' => '1.5'], 'No tape cassette', true],
         ];
     }

@@ -22,15 +22,20 @@ export function tapePx(mm, dpi = 180, maxPx = Infinity) {
 
 export const BLOCK_DEFAULTS = {
   text: { type: 'text', text: 'Label', font: 'sans-serif', size: 0, bold: true, italic: false, align: 'center', invert: false },
-  qr: { type: 'qr', content: 'https://example.com', level: 'M', scale: 100, quiet: 1 },
-  barcode: { type: 'barcode', content: '1234567890', text: true, bar: 2, scale: 100 },
+  qr: {
+    type: 'qr', kind: 'text', content: 'https://example.com', level: 'M', scale: 100, quiet: 1,
+    wifiSsid: '', wifiPassword: '', wifiType: 'WPA', wifiHidden: false,
+    contactName: '', org: '', phone: '', email: '', url: '', subject: '',
+  },
+  barcode: { type: 'barcode', format: 'code128', content: '1234567890', text: true, bar: 2, scale: 100 },
   image: { type: 'image', src: '', name: '', mode: 'threshold', level: 128, invert: false, scale: 100 },
+  icon: { type: 'icon', icon: '', src: '', invert: false, scale: 100 },
   spacer: { type: 'spacer', width: 5 },
 };
 
-export const BLOCK_NAMES = { text: 'Text', qr: 'QR code', barcode: 'Barcode', image: 'Image', spacer: 'Space' };
+export const BLOCK_NAMES = { text: 'Text', icon: 'Icon', qr: 'QR code', barcode: 'Barcode', image: 'Image', spacer: 'Space' };
 
-export const LABEL_DEFAULTS = { margin: 2, gap: 2, length: 0, align: 'center', frame: false, frameWidth: 2 };
+export const LABEL_DEFAULTS = { margin: 2, gap: 2, length: 0, align: 'center', frame: false, frameWidth: 2, counter: 1 };
 
 let counter = 0;
 export function newId() {
@@ -72,7 +77,18 @@ export function normalizeBlock(raw) {
       break;
     case 'qr':
       Object.assign(b, {
+        kind: oneOf(raw.kind, ['text', 'wifi', 'contact', 'email', 'phone'], d.kind),
         content: str(raw.content, 2000, d.content),
+        wifiSsid: str(raw.wifiSsid, 64),
+        wifiPassword: str(raw.wifiPassword, 128),
+        wifiType: oneOf(raw.wifiType, ['WPA', 'WEP', 'nopass'], d.wifiType),
+        wifiHidden: Boolean(raw.wifiHidden),
+        contactName: str(raw.contactName, 200),
+        org: str(raw.org, 200),
+        phone: str(raw.phone, 50),
+        email: str(raw.email, 200),
+        url: str(raw.url, 500),
+        subject: str(raw.subject, 200),
         level: oneOf(raw.level, ['L', 'M', 'Q', 'H'], d.level),
         scale: num(raw.scale, 20, 100, d.scale),
         quiet: num(raw.quiet, 0, 4, d.quiet),
@@ -80,6 +96,7 @@ export function normalizeBlock(raw) {
       break;
     case 'barcode':
       Object.assign(b, {
+        format: oneOf(raw.format, ['code128', 'ean13', 'upca', 'code39'], d.format),
         content: str(raw.content, 80, d.content),
         text: raw.text === undefined ? d.text : Boolean(raw.text),
         bar: num(raw.bar, 1, 6, d.bar),
@@ -92,6 +109,14 @@ export function normalizeBlock(raw) {
         name: str(raw.name, 200),
         mode: oneOf(raw.mode, ['threshold', 'dither'], d.mode),
         level: num(raw.level, 1, 254, d.level),
+        invert: Boolean(raw.invert),
+        scale: num(raw.scale, 10, 100, d.scale),
+      });
+      break;
+    case 'icon':
+      Object.assign(b, {
+        icon: typeof raw.icon === 'string' && /^[a-z0-9-]+:[a-z0-9-]+$/.test(raw.icon) ? raw.icon : '',
+        src: typeof raw.src === 'string' && raw.src.startsWith('data:image/svg+xml') ? raw.src : '',
         invert: Boolean(raw.invert),
         scale: num(raw.scale, 10, 100, d.scale),
       });
@@ -112,6 +137,7 @@ export function normalizeLabel(raw) {
     align: oneOf(r.align, ['left', 'center', 'right'], LABEL_DEFAULTS.align),
     frame: Boolean(r.frame),
     frameWidth: num(r.frameWidth, 1, 10, LABEL_DEFAULTS.frameWidth),
+    counter: Math.round(num(r.counter, 0, 999999999, LABEL_DEFAULTS.counter)),
     blocks,
   };
 }

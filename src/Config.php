@@ -48,6 +48,9 @@ final class Config
             // and its token. Empty: print locally.
             'printer_url' => '',
             'printer_token' => '',
+            // Iconify API for the icon search (MDI, Simple Icons), queried by the browser.
+            // Another Iconify server can be used; empty switches icons off.
+            'icon_api' => 'https://api.iconify.design',
         ];
     }
 
@@ -78,11 +81,14 @@ final class Config
         foreach (['timeout', 'max_upload_bytes', 'max_copies', 'log_entries'] as $key) {
             $values[$key] = max(0, (int) $values[$key]);
         }
-        foreach (['ptouch_bin', 'serial', 'data_dir', 'fonts_dir', 'token', 'printer_url', 'printer_token'] as $key) {
+        foreach (['ptouch_bin', 'serial', 'data_dir', 'fonts_dir', 'token', 'printer_url', 'printer_token', 'icon_api'] as $key) {
             $values[$key] = trim((string) $values[$key]);
         }
         if (!preg_match('#^https?://[^\s"\'<>?\#]+$#', $values['printer_url'])) {
             $values['printer_url'] = '';
+        }
+        if (!preg_match('#^https?://[^\s"\'<>]+$#', $values['icon_api'])) {
+            $values['icon_api'] = '';
         }
         return new self($values);
     }

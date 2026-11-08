@@ -1,7 +1,9 @@
 import zxing from '@zxing/library';
 import { inflateSync } from 'node:zlib';
 
-const { RGBLuminanceSource, BinaryBitmap, HybridBinarizer, QRCodeReader, Code128Reader, DecodeHintType } = zxing;
+const { RGBLuminanceSource, BinaryBitmap, HybridBinarizer, QRCodeReader, Code128Reader, Code39Reader, EAN13Reader, MultiFormatReader, BarcodeFormat, DecodeHintType } = zxing;
+
+const READERS = { qr: () => new QRCodeReader(), code128: () => new Code128Reader(), code39: () => new Code39Reader(), ean13: () => new EAN13Reader(), upca: () => new MultiFormatReader() };
 
 /** Scale a 0/1 bitmap up and surround it with white, as luminance bytes. */
 export function luminanceOf(bm, scale = 2, border = 20) {
@@ -20,7 +22,8 @@ export function decode(bm, kind, scale = 2) {
   const { lum, w, h } = luminanceOf(bm, scale);
   const bitmap = new BinaryBitmap(new HybridBinarizer(new RGBLuminanceSource(lum, w, h)));
   const hints = new Map([[DecodeHintType.PURE_BARCODE, kind === 'qr'], [DecodeHintType.TRY_HARDER, true]]);
-  const reader = kind === 'qr' ? new QRCodeReader() : new Code128Reader();
+  if (kind === 'upca') hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.UPC_A]);
+  const reader = READERS[kind]();
   return reader.decode(bitmap, hints).getText();
 }
 

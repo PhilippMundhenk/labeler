@@ -28,6 +28,10 @@ response within a week.
   environment of the service like any other configuration.
 - The udev rule in `deploy/` gives the group `lp` access to all Brother USB devices. On a machine
   shared with untrusted users, narrow it to your printer's product id (`lsusb`).
+- Icon search runs in the browser against the Iconify API (`icon_api`, by default
+  `api.iconify.design`): the search words and the chosen icon names go to that service, nothing
+  else. Set `icon_api` to your own Iconify server or to empty to avoid it. The chosen icon's SVG is
+  stored in the label, so printing never needs the service.
 - The print log keeps the arguments and output of the last ptouch-print runs, never the label
   content. Temporary label files are removed after printing.
 
