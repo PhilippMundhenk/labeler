@@ -49,6 +49,14 @@ test('invert, frame and ink columns', () => {
   assert.deepEqual(rows(new Bitmap(6, 5).frame(1, 1)), ['......', '.####.', '.#..#.', '.####.', '......']);
 });
 
+test('mirror flips every row', () => {
+  const bm = new Bitmap(3, 2);
+  bm.set(0, 0);
+  bm.set(1, 1);
+  assert.deepEqual(rows(bm.mirror()), ['..#', '.#.']);
+  assert.deepEqual(rows(bm.mirror()), ['#..', '.#.']);
+});
+
 test('luminance treats transparency as white paper', () => {
   const rgba = new Uint8ClampedArray([0, 0, 0, 255, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 128]);
   const g = luminance(rgba, 4, 1);

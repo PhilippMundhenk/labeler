@@ -480,6 +480,7 @@ function renderSettings() {
   $('#frame').checked = l.frame;
   $('#frame-width').value = l.frameWidth;
   $('#frame-width').disabled = !l.frame;
+  $('#mirror').checked = l.mirror;
   $('#counter').value = l.counter;
   for (const r of document.querySelectorAll('input[name="label-align"]')) r.checked = r.value === l.align;
 }
@@ -493,6 +494,7 @@ function onSettingsInput(e) {
     $('#frame-width').disabled = !l.frame;
   }
   else if (el.id === 'frame-width') l.frameWidth = Number(el.value) || 1;
+  else if (el.id === 'mirror') l.mirror = el.checked;
   else if (el.id === 'length' && el.value === '') l.length = 0;
   else if (['margin', 'gap', 'length'].includes(el.id)) {
     if (el.value === '' || !Number.isFinite(Number(el.value))) return;

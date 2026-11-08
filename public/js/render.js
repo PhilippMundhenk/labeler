@@ -159,6 +159,7 @@ export async function renderLabel(label, tape) {
   const bitmap = new Bitmap(width, H);
   parts.forEach((p, i) => bitmap.blit(p, xs[i], 0));
   if (label.frame) bitmap.frame(label.frameWidth);
+  if (label.mirror) bitmap.mirror();
   return { bitmap, errors };
 }
 

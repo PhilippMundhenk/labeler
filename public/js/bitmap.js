@@ -50,6 +50,15 @@ export class Bitmap {
     return this;
   }
 
+  /** Flips the bitmap left to right, for clear tape read from the back. */
+  mirror() {
+    for (let y = 0; y < this.height; y++) {
+      const row = this.data.subarray(y * this.width, (y + 1) * this.width);
+      row.reverse();
+    }
+    return this;
+  }
+
   countBlack() {
     let n = 0;
     for (const v of this.data) n += v;
