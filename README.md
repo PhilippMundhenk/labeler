@@ -42,7 +42,8 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 - **Printing**: copies, chain printing and cut before the label where the installed ptouch-print
   supports them; download the label as PNG.
 - **Printer status** with tape width and colour, clear messages for a missing printer, missing
-  tape, open cover, cutter jam, overheating, weak batteries, P-Lite mode or missing USB permissions, and a log of the last print jobs.
+  tape, open cover, cutter jam, overheating, weak batteries, P-Lite mode or missing USB permissions,
+  a check after every print job (ptouch-print itself does not notice a jam during printing), and a log of the last print jobs.
 - **Saved labels** in the browser; the current label is kept between visits.
 - Light and dark mode, works on phones, can be added to the home screen.
 
