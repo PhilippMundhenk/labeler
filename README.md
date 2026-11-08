@@ -12,7 +12,8 @@ will print.
 Labeler is a small web front end for [ptouch-print](https://git.familie-radermacher.ch/linux/ptouch-print.git)
 by Dominic Radermacher, which does the actual talking to the printer over USB. It is made for a
 Raspberry Pi Zero next to the printer: a few PHP files and static pages, no database, no build
-step, no Docker. The label is drawn in your browser, so the Pi only passes it on.
+step. The label is drawn in your browser, so the Pi only passes it on. The interface can also run
+in Docker on a server, with only a small printer agent next to the printer.
 
 > Labeler is an independent open-source project. It has no relation to Brother Industries and is
 > neither endorsed nor supported by them. "Brother" and "P-Touch" only say which printers it
@@ -47,7 +48,29 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 - **Saved labels** in the browser; the current label is kept between visits.
 - Light and dark mode, works on phones, can be added to the home screen.
 
+## Try it in Docker
+
+```sh
+docker run --rm -p 8080:8080 -e LABELER_DEMO=1 ghcr.io/philippmundhenk/labeler
+```
+
+opens a demo with a simulated printer at <http://localhost:8080/>. For real use, run the interface
+in Docker on your server with [`docker-compose.yml`](docker-compose.yml) and the printer on a small
+computer with the printer agent (below); or pass the USB bus when the printer hangs on the Docker
+host. Details: [docs/DOCKER.md](docs/DOCKER.md).
+
 ## Quick start on a Raspberry Pi
+
+The install script sets up everything below in one go (packages, ptouch-print, Labeler, printer
+access, service) and updates an existing installation when run again:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh -o install.sh
+less install.sh       # read what it does
+sudo sh install.sh    # options: sh install.sh --help
+```
+
+Or by hand:
 
 1. Install PHP (`sudo apt install php-cli`) and build ptouch-print from its sources, which takes a
    few minutes even on a Pi Zero: [docs/INSTALL.md](docs/INSTALL.md#1-ptouch-print). Debian and
@@ -66,6 +89,19 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 
 4. Open `http://<raspberry-pi>:8080/`. The badge in the top right corner shows the printer and the
    tape; click it for details and the print log.
+
+### Printer on another computer
+
+The printer can hang on a small computer anywhere in the house while the interface runs on a
+server, for example in Docker. On the computer with the printer, install only the printer agent
+(the API, protected by an access token it generates):
+
+```sh
+sudo sh install.sh --agent
+```
+
+It prints the two settings for the interface: `LABELER_PRINTER_URL=http://<pi>:8631` and
+`LABELER_PRINTER_TOKEN=...`. Status, printing and the print log then go through the agent.
 
 Already running a web server with PHP? Point it at `/opt/labeler/public` instead of step 3's
 service; [docs/INSTALL.md](docs/INSTALL.md) has nginx and lighttpd examples, updates and
@@ -86,9 +122,12 @@ set the environment variable (in `labeler.service`: `Environment=`).
 | `max_upload_bytes` | `LABELER_MAX_UPLOAD_BYTES` | `2000000` | Largest label image |
 | `max_copies` | `LABELER_MAX_COPIES` | `50` | Most copies per print |
 | `log_entries` | `LABELER_LOG_ENTRIES` | `50` | Entries kept in the print log |
+| `token` | `LABELER_TOKEN` | empty | Access token for the API (`Authorization: Bearer`); set by `install.sh --agent` |
+| `printer_url` | `LABELER_PRINTER_URL` | empty | Printer agent to print with, e.g. `http://printer-pi:8631`; empty prints on this computer |
+| `printer_token` | `LABELER_PRINTER_TOKEN` | empty | Access token of that agent |
 | `icon_api` | `LABELER_ICON_API` | `https://api.iconify.design` | Iconify API the browser searches icons with; your own Iconify server, or empty to switch icons off |
 
-Labeler has no login: anyone who can open the page can print. Keep it on your home network; see
+The interface has no login: anyone who can open the page can print. Keep it on your home network; see
 [SECURITY.md](SECURITY.md).
 
 ## Screenshots
@@ -101,8 +140,9 @@ Dark mode and more: [docs/screenshots.md](docs/screenshots.md).
 
 ## Documentation
 
-- [docs/INSTALL.md](docs/INSTALL.md): installing ptouch-print and Labeler, web servers, updates,
-  troubleshooting.
+- [docs/INSTALL.md](docs/INSTALL.md): installing ptouch-print and Labeler, the printer agent, web
+  servers, updates, troubleshooting.
+- [docs/DOCKER.md](docs/DOCKER.md): the container image, demo mode, printer agent or USB.
 - [docs/DESIGN.md](docs/DESIGN.md): how it works, ptouch-print versions, and the
   [architecture decision records](docs/adr/README.md).
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): tests (simulated printer, browser tests, contract

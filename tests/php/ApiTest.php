@@ -181,6 +181,20 @@ final class ApiTest extends TestCase
         $this->assertSame(404, $this->call('GET', 'font')[0]);
     }
 
+    public function testAccessToken(): void
+    {
+        $this->simulate(['version' => '1.9']);
+        $api = $this->api(['LABELER_TOKEN' => 's3cret']);
+        $this->assertSame(200, $api->handle('GET', ['action' => 'health'], '', '')->status, 'health stays open');
+        $denied = $api->handle('GET', ['action' => 'status'], '', '');
+        $this->assertSame([401, 'Bearer'], [$denied->status, $denied->headers['WWW-Authenticate']]);
+        $this->assertSame(401, $api->handle('GET', ['action' => 'status'], '', '', 'Bearer wrong')->status);
+        $this->assertSame(401, $api->handle('GET', ['action' => 'status'], '', '', 's3cret')->status, 'scheme required');
+        $this->assertSame(200, $api->handle('GET', ['action' => 'status'], '', '', 'bearer  s3cret ')->status);
+        $this->assertSame(401, $api->handle('POST', ['action' => 'print'], $this->printBody(), 'application/json')->status);
+        $this->assertCount(0, $this->printed());
+    }
+
     public function testLogWithoutDataFolder(): void
     {
         [$status, $body] = $this->call('GET', 'log', '', '', ['LABELER_DATA_DIR' => '']);

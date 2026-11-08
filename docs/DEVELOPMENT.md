@@ -14,6 +14,9 @@ tests/e2e/         Playwright: the real UI against PHP's built-in server, the si
 deploy/            systemd unit, udev rule, nginx and lighttpd examples
 ```
 
+Container: `docker build -t labeler . && sh tools/container-smoke.sh labeler` runs the image as
+printer agent and as interface and prints through both.
+
 Nothing in `tests/`, `tools/`, `node_modules/` or `vendor/` goes onto the device; `tools/package.sh`
 builds the release zip from `public/`, `src/`, `deploy/`, `fonts/` and the docs.
 
