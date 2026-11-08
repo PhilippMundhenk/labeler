@@ -76,6 +76,19 @@ jobs:
       - name: Contract test
         run: docker run --rm -v "$PWD:/work" labeler-contract
 
+  install:
+    name: Install script on ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # Raspberry Pi OS is Debian: bookworm (PHP 8.2) and bullseye (PHP 7.4)
+        image: ["debian:bookworm", "debian:bullseye"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: sh tools/test-install.sh ${{ matrix.image }}
+
   package:
     name: Release package
     runs-on: ubuntu-latest
