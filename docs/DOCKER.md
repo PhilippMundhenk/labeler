@@ -55,6 +55,7 @@ All `LABELER_*` variables from the [README](../README.md#configuration) work. In
 | --- | --- | --- |
 | `LABELER_DEMO` | `0` | `1` prints to the simulated printer |
 | `PORT` | `8080` | Port inside the container |
+| `LABELER_PASSWORD` | empty | Password for the interface (plain or a `password_hash()` hash) |
 
 The image is built for amd64, arm64 and arm/v7. Build it yourself with `docker build -t labeler .`
 (`--build-arg PTOUCH_REF=v1.8` for another ptouch-print version).

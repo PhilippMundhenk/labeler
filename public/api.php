@@ -13,7 +13,9 @@ $response = $api->handle(
     $_SERVER['CONTENT_TYPE'] ?? '',
     // Apache drops Authorization unless told otherwise; X-Labeler-Token always arrives
     $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
-        ?? (isset($_SERVER['HTTP_X_LABELER_TOKEN']) ? 'Bearer ' . $_SERVER['HTTP_X_LABELER_TOKEN'] : '')
+        ?? (isset($_SERVER['HTTP_X_LABELER_TOKEN']) ? 'Bearer ' . $_SERVER['HTTP_X_LABELER_TOKEN'] : ''),
+    array_filter($_COOKIE, 'is_string'),
+    (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
 );
 [$status, $headers, $body] = $response->parts();
 http_response_code($status);

@@ -54,7 +54,7 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 - **Undo and redo** for every change, also with Ctrl+Z and Ctrl+Shift+Z.
 - **Recent prints** with a small picture of each label, to load or print again.
 - **Saved labels** in the browser; the current label is kept between visits.
-- Light and dark mode, works on phones, can be added to the home screen.
+- Optional password, light and dark mode, works on phones, can be added to the home screen.
 
 ## Try it in Docker
 
@@ -134,9 +134,10 @@ set the environment variable (in `labeler.service`: `Environment=`).
 | `printer_url` | `LABELER_PRINTER_URL` | empty | Printer agent to print with, e.g. `http://printer-pi:8631`; empty prints on this computer |
 | `printer_token` | `LABELER_PRINTER_TOKEN` | empty | Access token of that agent |
 | `icon_api` | `LABELER_ICON_API` | `https://api.iconify.design` | Iconify API the browser searches icons with; your own Iconify server, or empty to switch icons off |
+| `password` | `LABELER_PASSWORD` | empty | Password for the interface, plain or a `password_hash()` hash; empty: no login |
 
-The interface has no login: anyone who can open the page can print. Keep it on your home network; see
-[SECURITY.md](SECURITY.md).
+Without a password, anyone who can open the page can print. On a home network that is usually
+fine; otherwise set `password`. See [SECURITY.md](SECURITY.md).
 
 ## Screenshots
 

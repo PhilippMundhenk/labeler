@@ -8,9 +8,14 @@ response within a week.
 
 ## Deployment notes
 
-- Labeler has no login. Anyone who can reach the page can print and read the print log. Run it on
-  your home network only; do not forward the port to the internet. If it must be reachable from
-  elsewhere, put it behind a VPN or a reverse proxy with authentication.
+- Without the `password` setting, anyone who can reach the page can print and read the print log.
+  With it, every API call except `health` needs a login: a signed, HttpOnly, SameSite=Strict
+  session cookie valid for 30 days, keyed by the password (changing it logs everybody out), with a
+  one-second delay after a wrong password. Store a hash rather than the plain password:
+  `php -r 'echo password_hash("...", PASSWORD_DEFAULT);'`. Behind a reverse proxy with HTTPS the
+  cookie gets the Secure flag (`X-Forwarded-Proto: https`).
+- Even with a password, do not forward the port to the internet without TLS: use a reverse proxy
+  with HTTPS or a VPN.
 - A printer agent (`install.sh --agent`) always has an access token (48 hex characters,
   `config.php` readable only by root and the service). Every request except `health` needs it as
   `Authorization: Bearer` or `X-Labeler-Token`; it is compared in constant time. It travels in

@@ -137,10 +137,20 @@
     Labeler is an independent open-source project. It has no relation to Brother Industries and is
     neither endorsed nor supported by them; "Brother" and "P-Touch" only say which printers it works with.
     <a href="https://github.com/PhilippMundhenk/labeler">Source and help</a>
+    <button type="button" id="logout" class="link" hidden>Log out</button>
   </footer>
 
   <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
   <div id="drop-overlay" class="drop-overlay" hidden><p>Drop images to add them to the label</p></div>
+
+  <dialog id="login-dialog" aria-labelledby="login-title">
+    <form id="login-form">
+      <h2 id="login-title">Log in</h2>
+      <label class="field" for="login-password">Password<input id="login-password" type="password" autocomplete="current-password" required></label>
+      <p id="login-error" class="block-error" role="alert"></p>
+      <div class="row end"><button type="submit" class="primary">Log in</button></div>
+    </form>
+  </dialog>
 
   <dialog id="template-dialog" aria-labelledby="template-title">
     <h2 id="template-title">Start from a template</h2>

@@ -22,7 +22,10 @@ final class Api
     private PtouchPrint $printer;
     private Log $log;
     private ?Remote $remote;
+    private Session $session;
     private string $serial = '';
+    /** Delay after a wrong password, against guessing; tests set it to 0. */
+    public static int $loginDelayMs = 1000;
 
     public function __construct(Config $config, ?PtouchPrint $printer = null, ?Log $log = null)
     {
@@ -31,14 +34,17 @@ final class Api
         $this->printer = $printer ?? PtouchPrint::fromConfig($config, $this->log);
         $url = (string) $config->get('printer_url');
         $this->remote = $url === '' ? null : new Remote($url, (string) $config->get('printer_token'), (int) $config->get('timeout'));
+        $this->session = new Session((string) $config->get('password'));
     }
 
     /**
      * @param array<string, string> $query
      * @param string $authorization value of the Authorization header
+     * @param array<string, string> $cookies
+     * @param bool $secure the request came in over HTTPS
      * @return Response
      */
-    public function handle(string $method, array $query, string $body, string $contentType, string $authorization = ''): Response
+    public function handle(string $method, array $query, string $body, string $contentType, string $authorization = '', array $cookies = [], bool $secure = false): Response
     {
         $action = $query['action'] ?? '';
         $routes = [
@@ -49,6 +55,8 @@ final class Api
             'font' => ['GET', 'font'],
             'log' => ['GET', 'log'],
             'printers' => ['GET', 'printers'],
+            'login' => ['POST', 'login'],
+            'logout' => ['POST', 'logout'],
         ];
         if (!isset($routes[$action])) {
             return Response::json(404, ['error' => 'unknown action']);
@@ -58,11 +66,22 @@ final class Api
             return Response::json(405, ['error' => "use $allowed"], ['Allow' => $allowed]);
         }
         $token = (string) $this->config->get('token');
-        if ($token !== '' && $action !== 'health') {
-            $given = preg_match('/^Bearer\s+(\S+)$/i', trim($authorization), $m) ? $m[1] : '';
-            if (!hash_equals($token, $given)) {
+        $given = preg_match('/^Bearer\s+(\S+)$/i', trim($authorization), $m) ? $m[1] : '';
+        $tokenOk = $token !== '' && hash_equals($token, $given);
+        if (!in_array($action, ['health', 'login', 'logout'], true)) {
+            if ($this->session->enabled()) {
+                if (!$tokenOk && !$this->session->valid($cookies[Session::COOKIE] ?? null, time())) {
+                    return Response::json(401, ['error' => 'please log in', 'login' => true]);
+                }
+            } elseif ($token !== '' && !$tokenOk) {
                 return Response::json(401, ['error' => 'access token missing or wrong'], ['WWW-Authenticate' => 'Bearer']);
             }
+        }
+        if ($handler === 'login') {
+            return $this->login($body, $secure);
+        }
+        if ($handler === 'logout') {
+            return Response::json(200, ['ok' => true], ['Set-Cookie' => Session::cookie('', $secure, 0)]);
         }
         $serial = (string) ($query['serial'] ?? '');
         if ($serial !== '' && !preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/', $serial)) {
@@ -79,6 +98,22 @@ final class Api
             return $this->font($query['file'] ?? '');
         }
         return $this->$handler();
+    }
+
+    private function login(string $body, bool $secure): Response
+    {
+        if (!$this->session->enabled()) {
+            return Response::json(400, ['error' => 'no password is set']);
+        }
+        $request = json_decode($body, true);
+        $password = is_array($request) && is_string($request['password'] ?? null) ? $request['password'] : '';
+        if (!$this->session->verify($password)) {
+            usleep(self::$loginDelayMs * 1000);
+            return Response::json(401, ['error' => 'wrong password', 'login' => true]);
+        }
+        return Response::json(200, ['ok' => true], [
+            'Set-Cookie' => Session::cookie($this->session->issue(time()), $secure, Session::LIFETIME),
+        ]);
     }
 
     private function health(): Response
@@ -101,6 +136,7 @@ final class Api
             'features' => $this->printer->features(),
             'max_copies' => (int) $this->config->get('max_copies'),
             'icon_api' => (string) $this->config->get('icon_api'),
+            'password' => $this->session->enabled(),
             'printer' => $info,
             'agent' => null,
         ]);
@@ -128,6 +164,7 @@ final class Api
             'features' => $features,
             'max_copies' => $maxCopies,
             'icon_api' => (string) $this->config->get('icon_api'),
+            'password' => $this->session->enabled(),
             'printer' => $printer,
             'agent' => ['url' => $remote->url(), 'version' => $data['app_version'] ?? null, 'reachable' => $result['status'] !== 0],
         ]);

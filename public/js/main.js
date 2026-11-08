@@ -1,5 +1,5 @@
 // Labeler user interface.
-import { getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel } from './api.js';
+import { getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel, login, logout } from './api.js';
 import {
   BLOCK_NAMES, FONTS, TAPES, defaultLabel, newBlock, newId, normalizeLabel, pxToMm, tapePx,
 } from './label.js';
@@ -151,6 +151,7 @@ async function refreshStatus() {
     chip.dataset.state = p && p.connected ? 'warn' : 'bad';
     $('#status-text').textContent = p && p.connected ? 'Printer not ready' : 'No printer';
   }
+  $('#logout').hidden = !(state.status && state.status.password);
   let message = res.ok ? (p && !p.ready ? p.message : '') : res.data.error;
   if (p && !p.connected && state.wasReady) {
     // the printer was there a moment ago: P-Touch printers switch themselves off after a while
@@ -1047,6 +1048,27 @@ function init() {
     openDetails();
   });
   $('#details-close').addEventListener('click', () => $('#details').close());
+  window.addEventListener('labeler:login', () => {
+    if (!$('#login-dialog').open) $('#login-dialog').showModal();
+  });
+  $('#login-dialog').addEventListener('cancel', (e) => e.preventDefault());
+  $('#login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await login($('#login-password').value);
+    if (!res.ok) {
+      $('#login-error').textContent = res.data.error;
+      return;
+    }
+    $('#login-error').textContent = '';
+    $('#login-password').value = '';
+    $('#login-dialog').close();
+    await refreshStatus();
+    loadServerFonts();
+  });
+  $('#logout').addEventListener('click', async () => {
+    await logout();
+    location.reload();
+  });
   setSerial(load(STORE_SERIAL, ''));
   $('#printer-select').addEventListener('change', async (e) => {
     store(STORE_SERIAL, e.target.value);

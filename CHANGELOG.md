@@ -15,6 +15,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - Font selection (built-in list, fonts in the server's `fonts/` folder, fonts of the device),
   size, bold, italic, alignment, white on black, any number of lines (#4).
 - QR codes and Code 128 barcodes (#5).
+- Optional password for the interface (`password`, plain or hashed): login dialog, signed
+  session cookie for 30 days, log out; printer agents keep using their token (#30).
 - Several printers: with ptouch-print 1.9 the details dialog lists the attached printers and the
   choice is kept per browser; also through a printer agent (#28).
 - Recent prints: the last 20 printed labels with a small picture, to load or print again (#27).
