@@ -154,7 +154,9 @@ function updateFeatures() {
   for (const [id, key, min] of [['chain', 'chain', '1.6'], ['precut', 'precut', '1.8']]) {
     const input = $(`#${id}`);
     input.disabled = !f[key];
-    input.closest('label').title = f[key] ? '' : `needs ptouch-print ${min} or newer`;
+    input.closest('label').title = f[key]
+      ? (key === 'precut' ? 'Cuts the tape automatically; only printers with a cutter (e.g. PT-P700, PT-P750W, PT-P900)' : '')
+      : `needs ptouch-print ${min} or newer`;
     if (!f[key]) input.checked = false;
   }
   const max = (state.status && state.status.max_copies) || 50;

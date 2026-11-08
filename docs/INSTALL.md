@@ -158,7 +158,7 @@ with the exact ptouch-print command and output.
 | The printer is in P-Lite mode | Mode switch from EL to E, or hold the PLite button for two seconds. |
 | No tape cassette inserted | Insert tape; close the cover. |
 | The cover is open / Cutter jam / Replace the tape cassette / overheated / batteries weak | What the printer reports about itself; the message says what to do. Unknown error bits are shown as `error 0x…`. |
-| Chain printing / cut before the label is greyed out | The installed ptouch-print is too old: chain needs 1.6, cut before the label 1.8. |
+| Chain printing / auto cut is greyed out | The installed ptouch-print is too old: chain needs 1.6, auto cut 1.8. Auto cut also needs a printer with a cutter. |
 
 Run ptouch-print as the service user to see what the service sees:
 

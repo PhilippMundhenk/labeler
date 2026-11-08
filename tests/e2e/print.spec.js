@@ -76,6 +76,8 @@ test('copies, chain and precut with ptouch-print 1.9', async ({ page }) => {
   await page.locator('#copies').fill('3');
   await page.locator('summary').click();
   await page.locator('#chain').check();
+  await expect(page.locator('#precut').locator('..')).toHaveAttribute('title', /only printers with a cutter/);
+  await expect(page.locator('#precut').locator('..')).toContainText('Auto cut');
   await page.locator('#precut').check();
   await page.locator('#print').click();
   await expect(page.locator('.toast.ok')).toContainText('3 labels printed');
