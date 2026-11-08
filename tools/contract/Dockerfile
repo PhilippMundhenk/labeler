@@ -8,7 +8,8 @@ RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       cmake gcc make pkg-config gettext git libgd-dev libusb-1.0-0-dev php-cli \
  && rm -rf /var/lib/apt/lists/*
-RUN git clone https://git.familie-radermacher.ch/linux/ptouch-print.git /src/ptouch-print \
+# upstream is a small self-hosted server: try the clone up to three times
+RUN for i in 1 2 3; do git clone https://git.familie-radermacher.ch/linux/ptouch-print.git /src/ptouch-print && break; rm -rf /src/ptouch-print; sleep 10; done \
  && cd /src/ptouch-print && git checkout "$PTOUCH_REF" \
  && cmake -S . -B build && cmake --build build -j"$(nproc)" \
  && install -m 755 build/ptouch-print /usr/local/bin/ptouch-print \

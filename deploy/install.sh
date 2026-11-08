@@ -71,7 +71,12 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends $p
 
 if [ "$SKIP_PTOUCH" = 0 ]; then
   say "Building ptouch-print $PTOUCH_REF"
-  git clone -q https://git.familie-radermacher.ch/linux/ptouch-print.git "$work/ptouch-print"
+  for i in 1 2 3; do
+    git clone -q https://git.familie-radermacher.ch/linux/ptouch-print.git "$work/ptouch-print" && break
+    rm -rf "$work/ptouch-print"
+    [ "$i" = 3 ] && die "cannot download ptouch-print; try again later"
+    sleep 10
+  done
   git -C "$work/ptouch-print" -c advice.detachedHead=false checkout -q "$PTOUCH_REF"
   cmake -S "$work/ptouch-print" -B "$work/ptouch-print/build" >/dev/null
   cmake --build "$work/ptouch-print/build" -j "$(nproc)" >/dev/null
