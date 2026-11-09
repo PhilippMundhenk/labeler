@@ -61,7 +61,7 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 ## Try it in Docker
 
 ```sh
-docker run --rm -p 8080:8080 -e LABELER_DEMO=1 ghcr.io/philippmundhenk/labeler
+docker run --rm -p 8080:8080 -e LABELER_DEMO=1 ghcr.io/philippmundhenk/labeler:main
 ```
 
 opens a demo with a simulated printer at <http://localhost:8080/>. For real use, run the interface

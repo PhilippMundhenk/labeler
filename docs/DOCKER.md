@@ -2,12 +2,13 @@
 
 The image `ghcr.io/philippmundhenk/labeler` contains the interface, PHP and ptouch-print. It
 runs as user 1000, listens on port 8080 and keeps the print log and fonts in `/data`. Tags:
-`latest` (newest release), `X.Y.Z`, `X.Y`, and `main` (current development).
+`main` (current development, updated with every change), and from the first release on `latest`
+(newest release), `X.Y.Z` and `X.Y`. Until then use `main`.
 
 ## Try it without a printer
 
 ```sh
-docker run --rm -p 8080:8080 -e LABELER_DEMO=1 ghcr.io/philippmundhenk/labeler
+docker run --rm -p 8080:8080 -e LABELER_DEMO=1 ghcr.io/philippmundhenk/labeler:main
 ```
 
 Open <http://localhost:8080/>. The demo uses the simulated printer (12 mm tape, ptouch-print 1.9);
