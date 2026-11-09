@@ -78,6 +78,38 @@ final class LabelsTest extends TestCase
         $off->delete('x');
     }
 
+    public function testTotalSizeAndSafeWriting(): void
+    {
+        $labels = new Labels($this->tmp);
+        $big = ['blocks' => [['src' => str_repeat('A', Labels::MAX_BYTES - 100)]]];
+        $saved = 0;
+        try {
+            for ($i = 0; $i < 30; $i++) {
+                $labels->save("big $i", $big);
+                $saved++;
+            }
+            $this->fail('total size not limited');
+        } catch (InvalidArgumentException $e) {
+            $this->assertStringContainsString('too large together', $e->getMessage());
+        }
+        $this->assertCount($saved, $labels->all(), 'the refused label changed nothing');
+        $this->assertLessThanOrEqual(Labels::MAX_TOTAL_BYTES, filesize($this->tmp . '/labels.json'));
+        $this->assertFileDoesNotExist($this->tmp . '/labels.json.tmp');
+
+        // a file that cannot be replaced: the old contents stay
+        mkdir($this->tmp . '/ro');
+        $ro = new Labels($this->tmp . '/ro');
+        $ro->save('kept', self::LABEL);
+        mkdir($this->tmp . '/ro/labels.json.tmp');
+        try {
+            $ro->save('new', self::LABEL);
+            $this->fail('write error not reported');
+        } catch (InvalidArgumentException $e) {
+            $this->assertStringContainsString('cannot write', $e->getMessage());
+        }
+        $this->assertSame(['kept'], array_keys($ro->all()));
+    }
+
     public function testApi(): void
     {
         $api = new Api(Config::load($this->tmp, null, ['LABELER_DATA_DIR' => $this->tmp . '/data', 'LABELER_PTOUCH_BIN' => self::simBin()]));
