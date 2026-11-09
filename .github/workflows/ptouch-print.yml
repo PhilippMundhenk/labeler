@@ -1,0 +1,79 @@
+name: ptouch-print builds
+
+# Static ptouch-print binaries (tools/ptouch-build) for install.sh, so a Raspberry Pi downloads
+# one file instead of installing a compiler and building it. On main they are published as the
+# pre-release "ptouch-print-<ref>" (never "latest", so it does not hide Labeler's releases).
+on:
+  push:
+    branches: [main]
+    paths: [tools/ptouch-build/**, tools/ptouch-patches/**, .github/workflows/ptouch-print.yml]
+  pull_request:
+    paths: [tools/ptouch-build/**, tools/ptouch-patches/**, .github/workflows/ptouch-print.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PTOUCH_REF: v1.9
+
+jobs:
+  build:
+    name: ptouch-print ${{ matrix.arch }}${{ matrix.patches == 1 && ' with patches' || '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: linux/amd64, arch: amd64, patches: 0 }
+          - { platform: linux/arm64, arch: arm64, patches: 0 }
+          - { platform: linux/arm/v6, arch: armv6, patches: 0 }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build
+        run: |
+          docker buildx build --platform ${{ matrix.platform }} -f tools/ptouch-build/Dockerfile \
+            --build-arg PTOUCH_REF=$PTOUCH_REF --build-arg PTOUCH_PATCHES=${{ matrix.patches }} \
+            --output type=local,dest=out tools
+          name=ptouch-print-$PTOUCH_REF${{ matrix.patches == 1 && '-labeler' || '' }}-${{ matrix.arch }}
+          mkdir dist && mv out/ptouch-print "dist/$name"
+          echo "NAME=$name" >> "$GITHUB_ENV"
+      - name: Runs on Debian without any library
+        run: |
+          docker run --rm --platform ${{ matrix.platform == 'linux/arm/v6' && 'linux/arm/v7' || matrix.platform }} \
+            -v "$PWD/dist:/dist:ro" debian:bookworm-slim sh -c "/dist/$NAME --version && /dist/$NAME --help | grep -q -- --image"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ env.NAME }}
+          path: dist/${{ env.NAME }}
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+      - run: cd dist && sha256sum ptouch-print-* > SHA256SUMS && cat SHA256SUMS
+      - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
+        with:
+          tag_name: ptouch-print-${{ env.PTOUCH_REF }}
+          target_commitish: ${{ github.sha }}
+          name: ptouch-print ${{ env.PTOUCH_REF }} builds (not a Labeler release)
+          prerelease: true
+          make_latest: false
+          files: dist/*
+          body: |
+            Static builds of [ptouch-print](https://git.familie-radermacher.ch/linux/ptouch-print) ${{ env.PTOUCH_REF }}
+            for `deploy/install.sh`: one file without library dependencies, built with musl and libgd
+            (PNG only) from `tools/ptouch-build`. `armv6` runs on every Raspberry Pi with a 32-bit OS,
+            `arm64` on 64-bit Raspberry Pi OS. Built from ${{ github.sha }}.

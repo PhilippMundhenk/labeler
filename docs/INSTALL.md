@@ -6,21 +6,35 @@ Raspberry Pi OS or Debian; other Linux distributions work the same way with thei
 
 ## Install script
 
-[`deploy/install.sh`](../deploy/install.sh) does steps 1 to 4a below: installs the packages, builds
-ptouch-print, downloads the newest release to `/opt/labeler`, creates the user `labeler`, installs
-the udev rule and the systemd service. Run it again to update; `config.php` and the fonts are
-kept, the previous version stays in `/opt/labeler.old`.
+[`deploy/install.sh`](../deploy/install.sh) does steps 1 to 4a below: installs the missing
+packages, puts ptouch-print in place, downloads the newest release to `/opt/labeler`, creates the
+user `labeler`, installs the udev rule and the systemd service. Run it again to update;
+`config.php` and the fonts are kept, the previous version stays in `/opt/labeler.old`.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh -o install.sh
-sudo sh install.sh                       # newest release, port 8080
-sudo sh install.sh --port 80 --skip-ptouch
-sudo sh install.sh --zip labeler-1.0.0.zip --version 1.0.0
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh | sudo sh -s -- --port 80
+sudo sh install.sh --zip labeler-1.0.0.zip      # a downloaded release
+sudo sh deploy/install.sh                       # in a clone: installs the clone
 sh install.sh --help
 ```
 
-Building ptouch-print takes a few minutes on a Pi Zero. CI runs the script on Debian bookworm and
-trixie for every change.
+What it installs, so it stays quick on a Pi Zero:
+
+- **Packages:** only the missing ones of `php-cli curl ca-certificates` (and `unzip` for a
+  release zip). `apt` does not run at all when everything is there, so updates take seconds.
+- **ptouch-print:** kept when the installed one is already the wanted version. Otherwise it
+  downloads a ready-made static build (one file of about 0.5 MB without library dependencies,
+  from [the ptouch-print builds](https://github.com/PhilippMundhenk/labeler/releases/tag/ptouch-print-v1.9),
+  checked against `SHA256SUMS`): `armv6` for 32-bit Raspberry Pi OS (every Pi, Zero included),
+  `arm64` and `amd64`. The static build reads PNG images only, which is all Labeler uses;
+  ptouch-print's own `--text` is missing from it. Only when there is no build for the system,
+  or with `--build-ptouch`, does it install a compiler and libraries (about 100 packages) and
+  build ptouch-print from the sources, which takes long on a Pi Zero.
+- **Labeler:** the newest release; before the first release, the branch `main` (`--branch NAME`
+  picks another branch).
+
+CI runs the script on Debian bookworm and trixie for every change.
 
 ## Printer agent: printer and interface on different computers
 
@@ -29,7 +43,7 @@ computer elsewhere. That computer only runs the printer agent: Labeler's API wit
 interface, protected by an access token.
 
 ```sh
-sudo sh install.sh --agent
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh | sudo sh -s -- --agent
 ```
 
 installs ptouch-print, the agent in `/opt/labeler-agent`, the udev rule and the service
@@ -49,10 +63,38 @@ agent and keeps the token. Without `--no-service`, `systemctl status labeler-age
 The token travels in plain HTTP. On your own network that is usually fine; across networks you
 do not trust, put the agent behind a reverse proxy with TLS or a VPN.
 
+The agent by hand, without the script:
+
+```sh
+sudo apt install --no-install-recommends php-cli
+# ptouch-print: see step 1 below (static build or from the sources)
+cd /opt && sudo unzip ~/labeler-agent-1.0.0.zip         # from the releases page
+printf "<?php\nreturn ['token' => '%s'];\n" "$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')" \
+  | sudo tee /opt/labeler-agent/config.php >/dev/null
+sudo useradd --system --groups lp labeler
+sudo chown root:labeler /opt/labeler-agent/config.php && sudo chmod 640 /opt/labeler-agent/config.php
+sudo cp /opt/labeler-agent/deploy/99-labeler-ptouch.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules                       # then unplug and plug in the printer
+sudo cp /opt/labeler-agent/deploy/labeler-agent.service /etc/systemd/system/
+sudo systemctl enable --now labeler-agent
+sudo cat /opt/labeler-agent/config.php                    # the token for the interface
+```
+
 ## 1. ptouch-print
 
-Debian and Raspberry Pi OS only package the CUPS driver, not ptouch-print, so build it from the
-sources:
+Debian and Raspberry Pi OS only package the CUPS driver, not ptouch-print. Either download the
+static build for your system from the
+[ptouch-print builds](https://github.com/PhilippMundhenk/labeler/releases/tag/ptouch-print-v1.9)
+and check it:
+
+```sh
+curl -fsSLO https://github.com/PhilippMundhenk/labeler/releases/download/ptouch-print-v1.9/ptouch-print-v1.9-armv6
+curl -fsSLO https://github.com/PhilippMundhenk/labeler/releases/download/ptouch-print-v1.9/SHA256SUMS
+sha256sum --ignore-missing -c SHA256SUMS
+sudo install -m 755 ptouch-print-v1.9-armv6 /usr/local/bin/ptouch-print
+```
+
+or build it from the sources (several minutes on a Pi Zero):
 
 ```sh
 sudo apt install git cmake gcc make pkg-config gettext libgd-dev libusb-1.0-0-dev
