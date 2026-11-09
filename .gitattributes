@@ -3,3 +3,5 @@
 *.jpg binary
 *.ttf binary
 *.woff2 binary
+# patches for ptouch-print are applied with git am: keep them byte for byte
+*.patch -text

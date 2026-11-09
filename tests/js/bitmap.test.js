@@ -92,3 +92,14 @@ test('threshold and dither', () => {
   assert.equal(dither(new Float32Array(4).fill(255), 2, 2).countBlack(), 0);
   assert.equal(dither(new Float32Array(4).fill(0), 2, 2).countBlack(), 4);
 });
+
+test('halveRows merges every two rows, a pixel black when either is', () => {
+  const bm = new Bitmap(3, 5);
+  bm.set(0, 0);
+  bm.set(1, 1);
+  bm.set(2, 4);
+  const half = bm.halveRows();
+  assert.equal(half.width, 3);
+  assert.equal(half.height, 3);
+  assert.deepEqual([...half.data], [1, 1, 0, 0, 0, 0, 0, 0, 1]);
+});

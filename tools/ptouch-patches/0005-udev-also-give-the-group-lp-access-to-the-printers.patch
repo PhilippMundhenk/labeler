@@ -1,0 +1,78 @@
+From cd67998b0bac1b26e8e41634ab4b8a7170c424ab Mon Sep 17 00:00:00 2001
+From: Philipp Mundhenk <philipp@mundhenk.org>
+Date: Mon, 9 Nov 2026 20:04:38 +0100
+Subject: [PATCH 5/5] udev: also give the group lp access to the printers
+
+TAG+="uaccess" only covers users logged in at the console. With GROUP="lp"
+a service (a web interface, a print server) can print when its user is in the
+group lp, without running as root.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ udev/20-usb-ptouch-permissions.rules | 59 ++++++++++++++--------------
+ 1 file changed, 30 insertions(+), 29 deletions(-)
+
+diff --git a/udev/20-usb-ptouch-permissions.rules b/udev/20-usb-ptouch-permissions.rules
+index 34feb6b..d32f893 100644
+--- a/udev/20-usb-ptouch-permissions.rules
++++ b/udev/20-usb-ptouch-permissions.rules
+@@ -1,29 +1,30 @@
+-# Enable non-root access for known ptouch printers
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2001", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2002", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2004", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2007", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2011", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2019", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "201f", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "202c", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "202d", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2030", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2031", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2041", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "205e", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "205f", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2060", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2061", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2062", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2064", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2065", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2073", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2074", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2085", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "20af", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "20df", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "20e0", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "20e1", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2201", MODE="0660", TAG+="uaccess"
+-SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2203", MODE="0660", TAG+="uaccess"
++# Enable non-root access for known ptouch printers: for users logged in at the
++# console (uaccess) and for services running as a member of the group "lp"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2001", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2002", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2004", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2007", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2011", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2019", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "201f", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "202c", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "202d", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2030", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2031", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2041", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "205e", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "205f", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2060", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2061", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2062", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2064", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2065", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2073", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2074", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2085", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "20af", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "20df", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "20e0", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "20e1", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2201", MODE="0660", GROUP="lp", TAG+="uaccess"
++SUBSYSTEM == "usb", ATTRS{idVendor} == "04f9", ATTRS{idProduct} == "2203", MODE="0660", GROUP="lp", TAG+="uaccess"

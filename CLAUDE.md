@@ -9,7 +9,7 @@ installed on the Windows host.
     tools/dev.sh composer coverage                            # PHPUnit + 95 % gate per file
     tools/dev.sh npm test                                     # lint, node tests, Playwright, JS gate
     npm run test:unit                                         # node tests only, works on the host
-    docker build -t labeler-contract tools/contract && docker run --rm -v "$PWD:/work" labeler-contract
+    docker build -t labeler-contract -f tools/contract/Dockerfile tools && docker run --rm -v "$PWD:/work" labeler-contract
     docker buildx build --platform linux/arm/v6 -f tools/ptouch-build/Dockerfile --output type=local,dest=build/ptouch tools
     tools/dev.sh npm run screenshots                          # docs/screenshots/*.png
     DEV_PORT=8080 tools/dev.sh sh tools/demo.sh               # UI with the simulated printer

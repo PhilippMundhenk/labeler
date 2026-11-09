@@ -185,3 +185,37 @@ test('download the label as PNG', async ({ page }) => {
   const p = parsePng(readFileSync(await download.path()));
   expect(p.height).toBe(76);
 });
+
+test("patched ptouch-print: half cut, high resolution, cut every n and margin (#52)", async ({ page }) => {
+  setSim({ version: '1.9', extensions: 1 });
+  await ready(page);
+  await setText(page, 'Hires');
+  await settled(page);
+  await page.locator('#print').click();
+  await expect(page.locator('.toast.ok')).toContainText('Label printed');
+  const normal = printed()[0];
+
+  await page.locator('summary').click();
+  await expect(page.locator('#halfcut').locator('..')).toHaveAttribute('title', /half cutter/);
+  await page.locator('#halfcut').check();
+  await page.locator('#hires').check();
+  await page.locator('#cut-every').fill('2');
+  await page.locator('#feed').fill('1');
+  await page.locator('#copies').fill('4');
+  await page.locator('#print').click();
+  await expect(page.locator('.toast.ok').last()).toContainText('4 labels printed');
+  const hires = printed()[1];
+  expect(hires).toMatchObject({ copies: 4, halfcut: true, hires: true, cut_every: 2, feed: 7 });
+  expect(hires.width_px).toBe(2 * normal.width_px);
+  expect(hires.height_px).toBe(normal.height_px);
+  expect(printedBitmap(hires).height).toBe(76);
+});
+
+test('without the patches the extra options are switched off and say why', async ({ page }) => {
+  await ready(page);
+  await page.locator('summary').click();
+  for (const id of ['halfcut', 'hires', 'cut-every', 'feed']) {
+    await expect(page.locator(`#${id}`)).toBeDisabled();
+    await expect(page.locator(`#${id}`).locator('..')).toHaveAttribute('title', /Labeler's patches/);
+  }
+});

@@ -30,7 +30,7 @@ Everything runs in the development image, so only Docker is needed:
 tools/dev.sh composer install && tools/dev.sh npm ci   # once
 tools/dev.sh composer coverage    # PHPUnit with the 95 % gate per file
 tools/dev.sh npm test             # lint, node tests, browser tests, merged JS coverage gate
-docker build -t labeler-contract tools/contract && docker run --rm -v "$PWD:/work" labeler-contract
+docker build -t labeler-contract -f tools/contract/Dockerfile tools && docker run --rm -v "$PWD:/work" labeler-contract
 docker buildx build --platform linux/arm/v6 -f tools/ptouch-build/Dockerfile --output type=local,dest=build/ptouch tools
 sh tools/test-install.sh debian:bookworm       # install script in a clean container
 ```

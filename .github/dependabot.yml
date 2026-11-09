@@ -24,7 +24,7 @@ updates:
       interval: weekly
     labels: [dependencies]
   - package-ecosystem: docker
-    directories: [/tools/dev, /tools/contract]
+    directories: [/tools/dev, /tools/contract, /tools/ptouch-build]
     schedule:
       interval: weekly
     labels: [dependencies]

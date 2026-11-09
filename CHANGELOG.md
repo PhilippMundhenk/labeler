@@ -10,6 +10,10 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Added
 
+- Half cut, cut after every n labels, the margin before and after a label and high resolution
+  (twice the dots along the tape), with patches for ptouch-print in `tools/ptouch-patches`
+  (`install.sh --ptouch-patches`); the options are greyed out with an unpatched ptouch-print.
+  The contract test checks the bytes sent to the printer against a fake libusb (#52).
 - One-line install: `curl -fsSL .../deploy/install.sh | sudo sh` (`sh -s -- --agent` for the
   printer agent) downloads everything it needs; before the first release it installs `main`,
   from a clone it installs the clone. It only runs `apt` for missing packages and shows its
@@ -87,6 +91,7 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Fixed
 
+- A label saved right after opening the page went to the browser instead of the server (#52).
 - Preview and two-line labels failed with ptouch-print 1.7 and newer; tape width shown wrong with
   1.9; preview written to a hard-coded path and cached by the browser (#1).
 

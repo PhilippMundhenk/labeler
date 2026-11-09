@@ -21,6 +21,17 @@ final class PtouchPrint
         'serial' => '1.9',
     ];
 
+    /**
+     * Options of Labeler's patches for ptouch-print (tools/ptouch-patches), found in --help.
+     * Feature => option.
+     */
+    public const EXTENSIONS = [
+        'feed' => '--feed',
+        'halfcut' => '--halfcut',
+        'cut_every' => '--cut-every',
+        'hires' => '--hires',
+    ];
+
     private const TAPE_COLORS = [
         0x01 => 'White', 0x02 => 'Other', 0x03 => 'Clear', 0x04 => 'Red', 0x05 => 'Blue',
         0x06 => 'Yellow', 0x07 => 'Green', 0x08 => 'Black', 0x09 => 'Clear', 0x20 => 'Matte White',
@@ -55,6 +66,7 @@ final class PtouchPrint
     private string $serial;
     private ?Log $log;
     private ?string $version = null;
+    private ?string $help = null;
 
     public function __construct(string $bin, int $timeout = 60, string $serial = '', ?Log $log = null)
     {
@@ -92,17 +104,35 @@ final class PtouchPrint
     public function supports(string $feature): bool
     {
         $version = $this->version();
-        if ($version === null || !isset(self::FEATURES[$feature])) {
+        if ($version === null) {
+            return false;
+        }
+        if (isset(self::EXTENSIONS[$feature])) {
+            return preg_match('/(^|\s)' . preg_quote(self::EXTENSIONS[$feature], '/') . '([=\s]|$)/m', $this->help()) === 1;
+        }
+        if (!isset(self::FEATURES[$feature])) {
             return false;
         }
         return version_compare($version, self::FEATURES[$feature], '>=');
+    }
+
+    /** `ptouch-print --help` (argp, 1.7+), empty before. */
+    private function help(): string
+    {
+        if ($this->help === null) {
+            $version = $this->version();
+            $this->help = $version !== null && version_compare($version, '1.7', '>=')
+                ? $this->run(['--help'], false)['output']
+                : '';
+        }
+        return $this->help;
     }
 
     /** @return array<string, bool> */
     public function features(): array
     {
         $features = [];
-        foreach (array_keys(self::FEATURES) as $feature) {
+        foreach (array_merge(array_keys(self::FEATURES), array_keys(self::EXTENSIONS)) as $feature) {
             $features[$feature] = $this->supports($feature);
         }
         return $features;
@@ -247,10 +277,30 @@ final class PtouchPrint
      *
      * @return array{ok: bool, output: string, notes: list<string>}
      */
-    public function printImage(string $png, int $copies = 1, bool $chain = false, bool $precut = false): array
+    /**
+     * @param array{feed?: ?int, halfcut?: bool, cut_every?: ?int, hires?: bool} $extra options of
+     *        the patched ptouch-print (EXTENSIONS); left out with a note when not available
+     */
+    public function printImage(string $png, int $copies = 1, bool $chain = false, bool $precut = false, array $extra = []): array
     {
         $notes = [];
         $args = $this->serialArgs();
+        $wanted = [
+            'feed' => isset($extra['feed']) ? ['--feed', (string) $extra['feed']] : null,
+            'halfcut' => !empty($extra['halfcut']) ? ['--halfcut'] : null,
+            'cut_every' => isset($extra['cut_every']) && $copies > 1 ? ['--cut-every', (string) $extra['cut_every']] : null,
+            'hires' => !empty($extra['hires']) ? ['--hires'] : null,
+        ];
+        foreach ($wanted as $feature => $options) {
+            if ($options === null) {
+                continue;
+            }
+            if ($this->supports($feature)) {
+                array_push($args, ...$options);
+            } else {
+                $notes[] = self::EXTENSIONS[$feature] . " needs a ptouch-print with Labeler's patches (docs/PTOUCH-PRINT.md)";
+            }
+        }
         $runs = 1;
         if ($chain) {
             if ($this->supports('chain')) {
