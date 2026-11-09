@@ -23,7 +23,7 @@
   <main>
     <section class="card preview-card" aria-labelledby="preview-title">
       <h2 id="preview-title" class="sr-only">Preview</h2>
-      <div class="meta"><span id="tape-info">12 mm tape</span><span id="length-info"></span></div>
+      <div class="meta"><span id="tape-info">12 mm tape</span><span class="meta-end"><label class="mini-switch" title="A small copy of the label stays in view while the preview is scrolled away"><input id="float-preview" type="checkbox" checked> Floating preview</label><span id="length-info"></span></span></div>
       <div class="tape"><canvas id="preview" role="img" aria-label="Label preview"></canvas></div>
 
       <div id="printer-notice" class="notice" hidden>
@@ -137,6 +137,7 @@
     </section>
     </div>
   </main>
+  <button type="button" id="mini-preview" class="mini-preview" hidden aria-label="Show the full preview" title="Show the full preview"><canvas id="mini-canvas" aria-hidden="true"></canvas></button>
 
   <footer>
     Labeler is an independent open-source project. It has no relation to Brother Industries and is

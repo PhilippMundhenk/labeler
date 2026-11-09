@@ -10,6 +10,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Added
 
+- Floating mini preview: while the preview is scrolled out of view, a small copy of the label
+  floats in the corner; *Floating preview* switches it off (on by default) (#102).
 - The ptouch-print patches are also published as a fork,
   <https://github.com/PhilippMundhenk/ptouch-print>; patched sources carry `CHANGES.fork` with the
   dated list of changes (#98).

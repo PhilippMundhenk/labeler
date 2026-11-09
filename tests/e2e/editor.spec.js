@@ -586,3 +586,29 @@ test('wide screens: print options beside the preview, always open (#86)', async 
   await page.locator('details.options summary').click();
   await expect(page.locator('#chain')).toBeHidden();
 });
+
+test('floating mini preview while the preview is scrolled away (#102)', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1000 }); // wide and low: the card scrolls away
+  await ready(page);
+  const mini = page.locator('#mini-preview');
+  await expect(mini).toBeHidden();
+  await page.locator('#saved-title').scrollIntoViewIfNeeded();
+  await expect(mini).toBeVisible();
+  const box = await page.locator('#mini-canvas').boundingBox();
+  expect(box.height).toBeLessThanOrEqual(57);
+  expect(box.width).toBeGreaterThan(20);
+  // it follows the label
+  await block(page, 'text').locator('textarea').fill('A much longer text than before');
+  await settled(page);
+  await expect.poll(async () => (await page.locator('#mini-canvas').boundingBox()).width).toBeGreaterThan(box.width);
+  await mini.click();
+  await expect(mini).toBeHidden();
+  await expect(page.locator('#preview')).toBeInViewport();
+
+  await page.locator('#float-preview').uncheck();
+  await page.locator('#saved-title').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+  await expect(mini).toBeHidden();
+  await page.reload();
+  await expect(page.locator('#float-preview')).not.toBeChecked();
+});

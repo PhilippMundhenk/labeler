@@ -24,6 +24,7 @@ const STORE_BATCH = 'labeler.batch';
 const STORE_HISTORY = 'labeler.history';
 const STORE_SERIAL = 'labeler.serial';
 const STORE_LANG = 'labeler.lang';
+const STORE_FLOAT = 'labeler.floatPreview';
 const HISTORY_MAX = 20;
 
 const TAPE_COLORS = {
@@ -795,6 +796,42 @@ async function onSavedClick(e) {
 
 /* ---------- preview and print ---------- */
 
+// A small copy of the label floats in a corner while the preview card is scrolled out of view.
+let previewInView = true;
+
+function drawMini() {
+  const main = $('#preview');
+  const mini = $('#mini-canvas');
+  const k = Math.min(1, 56 / Math.max(1, main.height), 420 / Math.max(1, main.width));
+  mini.width = Math.max(1, Math.round(main.width * k));
+  mini.height = Math.max(1, Math.round(main.height * k));
+  const ctx = mini.getContext('2d');
+  ctx.imageSmoothingEnabled = k < 1;
+  ctx.drawImage(main, 0, 0, mini.width, mini.height);
+  updateMini();
+}
+
+function updateMini() {
+  $('#mini-preview').hidden = previewInView || !$('#float-preview').checked || !state.bitmap;
+}
+
+function initMiniPreview() {
+  const toggle = $('#float-preview');
+  toggle.checked = load(STORE_FLOAT, true) !== false;
+  toggle.addEventListener('change', () => {
+    store(STORE_FLOAT, toggle.checked);
+    updateMini();
+  });
+  $('#mini-preview').addEventListener('click', () => {
+    $('.preview-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  new IntersectionObserver(([entry]) => {
+    // in view: at least the label itself is visible
+    previewInView = entry.isIntersecting;
+    updateMini();
+  }, { rootMargin: '-56px 0px 0px 0px' }).observe($('#preview'));
+}
+
 let renderTimer = null;
 let persistTimer = null;
 
@@ -862,6 +899,7 @@ async function render() {
     state.errors = errors;
     const colors = { tape: TAPE_COLORS[state.tape.tapeColor] || TAPE_COLORS.White, ink: INK_COLORS[state.tape.inkColor] || INK_COLORS.Black };
     drawPreview($('#preview'), bitmap, state.tape, colors);
+    drawMini();
     $('#preview').dataset.width = bitmap.width;
     $('#preview').dataset.height = bitmap.height;
     $('#tape-info').textContent = `${state.tape.mm} mm tape · ${state.tape.px} px at ${state.tape.dpi} dpi`;
@@ -1252,6 +1290,7 @@ function init() {
   renderHistory();
   initBatch();
   statusLoading = refreshStatus();
+  initMiniPreview();
   // wide screens show the print options beside the preview, always open
   const wide = window.matchMedia('(min-width: 1400px)');
   const openOptions = () => { if (wide.matches) $('details.options').open = true; };
