@@ -190,6 +190,32 @@ sudo systemctl restart labeler
 Coming from the first version of Labeler (a single `index.php` in the web root): remove
 `index.php`, `main.css` and `preview.png` from the old web root and install as above.
 
+## Uninstalling
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh | sudo sh -s -- --uninstall
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh | sudo sh -s -- --uninstall --agent
+sudo sh /opt/labeler/deploy/install.sh --uninstall          # the copy that came with the installation
+```
+
+stops and removes the service and the program files. `config.php` (the agent's token), the fonts
+and the print log and saved labels in `/var/lib/labeler` stay, so a later install picks them up
+again. When neither the interface nor the agent is left, the udev rule and the user `labeler`
+go too. `--purge` also deletes the kept files and `/usr/local/bin/ptouch-print`. PHP stays
+installed (`sudo apt remove php-cli`).
+
+By hand (for the agent, use `labeler-agent` in every name):
+
+```sh
+sudo systemctl disable --now labeler
+sudo rm /etc/systemd/system/labeler.service && sudo systemctl daemon-reload
+sudo rm -rf /opt/labeler /opt/labeler.old /var/lib/labeler
+# when neither the interface nor the agent is left:
+sudo rm /etc/udev/rules.d/99-labeler-ptouch.rules && sudo udevadm control --reload-rules
+sudo userdel labeler
+sudo rm /usr/local/bin/ptouch-print
+```
+
 ## Troubleshooting
 
 The badge in the top right corner shows the state; click it for the details and the print log
