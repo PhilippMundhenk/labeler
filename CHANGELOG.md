@@ -126,6 +126,10 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 - Saved labels on the server are limited to 20 MB together (every request reads them all), and
   `labels.json` is replaced in one step, so a crash while saving no longer loses it (#109).
+- `install.sh` left the interface's `config.php` (password, tokens) readable for every user after
+  an update; it is now `root:labeler`, mode 640, like the agent's (#108).
+- DNS rebinding: without password and token the API answers only by IP address, `localhost` or a
+  local name; other names go into the new setting `allowed_hosts` (#107).
 - A saved label with a crafted block id could run script in the browser of everyone who loaded
   it; ids are now checked and escaped, block types looked up safely (#106).
 - Label text was passed to a shell unescaped (command injection) and echoed without HTML
