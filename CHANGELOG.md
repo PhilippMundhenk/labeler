@@ -124,5 +124,7 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Security
 
+- DNS rebinding: without password and token the API answers only by IP address, `localhost` or a
+  local name; other names go into the new setting `allowed_hosts` (#107).
 - Label text was passed to a shell unescaped (command injection) and echoed without HTML
   escaping (#2).
