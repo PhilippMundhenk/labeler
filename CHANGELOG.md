@@ -111,6 +111,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Fixed
 
+- The ptouch-print builds also publish their build files (`ptouch-build.Dockerfile`,
+  `ptouch-patches.tar.gz`), and NOTICE.md points to the files as they are published (#114).
 - The container image tag `latest` was set from a push to main once and then went stale;
   it is now only set by a release, and docker-compose.yml and the docs use `:main` until the
   first release (#100).
