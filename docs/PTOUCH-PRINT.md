@@ -28,13 +28,22 @@ checked byte for byte against a simulated USB printer in CI, not yet on every pr
   `--build-ptouch` builds it from the sources with the patches applied.
 - **Docker, printer on the Docker host:** build the image with
   `docker build --build-arg PTOUCH_PATCHES=1 -t labeler .`.
-- **By hand:** clone ptouch-print, `git checkout v1.9`, `git am /path/to/labeler/tools/ptouch-patches/*.patch`,
+- **By hand:** clone the fork (`git clone -b labeler https://github.com/PhilippMundhenk/ptouch-print.git`),
+  or the original with `git checkout v1.9` and `git am /path/to/labeler/tools/ptouch-patches/*.patch`,
   then build as in [INSTALL.md](INSTALL.md#1-ptouch-print).
 
 Going back is the same without `--ptouch-patches` (the script replaces a patched build only when
 the version differs; run it with `--build-ptouch` or delete `/usr/local/bin/ptouch-print` first).
 
+## The fork
+
+The same changes, one commit each, are in the fork
+[PhilippMundhenk/ptouch-print](https://github.com/PhilippMundhenk/ptouch-print) (branch `labeler`,
+on top of v1.9; `master` mirrors the original). ptouch-print is by Dominic Radermacher; the fork
+and the patches stay under its license, the GPL-3.0, and say what was changed and when
+(`CHANGES.fork`, which the last patch adds).
+
 ## Upstream
 
 The patches are written so that they can go to ptouch-print's author unchanged, one feature per
-patch, each with a message saying what it does. They are GPL-3.0 like ptouch-print.
+patch, each with a message saying what it does. The last one only adds the fork's notes.

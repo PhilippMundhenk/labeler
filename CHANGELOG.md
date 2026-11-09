@@ -10,6 +10,9 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Added
 
+- The ptouch-print patches are also published as a fork,
+  <https://github.com/PhilippMundhenk/ptouch-print>; patched sources carry `CHANGES.fork` with the
+  dated list of changes (#98).
 - `install.sh --uninstall` (`--agent`, `--purge`) removes Labeler or the agent again; manual steps in
   docs/INSTALL.md (#89).
 - Half cut, cut after every n labels, the margin before and after a label and high resolution
