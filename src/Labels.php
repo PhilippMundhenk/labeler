@@ -13,6 +13,8 @@ final class Labels
 {
     public const MAX_LABELS = 200;
     public const MAX_BYTES = 1000000; // one label, images included
+    // all labels together: every request reads the whole file, a Raspberry Pi Zero has 512 MB
+    public const MAX_TOTAL_BYTES = 20000000;
 
     private string $file;
 
@@ -64,6 +66,9 @@ final class Labels
                 throw new InvalidArgumentException('too many saved labels; delete some first');
             }
             $labels[$name] = ['label' => $label, 'updated' => gmdate('c')];
+            if (strlen((string) json_encode($labels)) > self::MAX_TOTAL_BYTES) {
+                throw new InvalidArgumentException('the saved labels are too large together (big images?); delete some first');
+            }
             return $labels;
         });
     }
@@ -82,18 +87,22 @@ final class Labels
         if (!$this->enabled()) {
             throw new InvalidArgumentException('saved labels on the server are not available (data folder not writable)');
         }
-        $handle = fopen($this->file, 'c+');
+        // a separate lock file, and the new contents written to a temporary file that then
+        // replaces labels.json: a crash while writing never leaves a half-written file
+        $handle = fopen($this->file . '.lock', 'c');
         if ($handle === false) {
             throw new InvalidArgumentException('cannot open the label file');
         }
         flock($handle, LOCK_EX);
         try {
-            $labels = json_decode((string) stream_get_contents($handle), true);
-            $labels = $change(is_array($labels) ? $labels : []);
+            $labels = $change($this->all());
             ksort($labels, SORT_NATURAL | SORT_FLAG_CASE);
-            ftruncate($handle, 0);
-            rewind($handle);
-            fwrite($handle, (string) json_encode($labels, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            $temp = $this->file . '.tmp';
+            if (@file_put_contents($temp, (string) json_encode($labels, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) === false
+                || !@rename($temp, $this->file)) {
+                @unlink($temp);
+                throw new InvalidArgumentException('cannot write the label file');
+            }
         } finally {
             flock($handle, LOCK_UN);
             fclose($handle);
