@@ -124,6 +124,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Security
 
+- A `printer_url` with `user:password@` showed the credentials in the status and in messages;
+  the address is now shown without them (#113).
 - Saved labels on the server are limited to 20 MB together (every request reads them all), and
   `labels.json` is replaced in one step, so a crash while saving no longer loses it (#109).
 - `install.sh` left the interface's `config.php` (password, tokens) readable for every user after
