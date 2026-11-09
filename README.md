@@ -1,4 +1,4 @@
-# Labeler
+# <img src="public/icon.svg" alt="" width="48" height="48" align="absmiddle"> Labeler
 
 Design and print labels on a Brother P-Touch printer from any browser on your network: text in
 any font, thousands of icons, QR codes, barcodes and images, with a live preview that shows exactly what the printer
