@@ -12,14 +12,17 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -euc '
   cd /tmp/repo
   sh tools/package.sh 0.0.0-test >/dev/null
 
-  sh deploy/install.sh --zip build/labeler-0.0.0-test.zip --no-service
+  sh deploy/install.sh --zip build/labeler-0.0.0-test.zip --no-service --build-ptouch
   test -x /usr/local/bin/ptouch-print
   id labeler | grep -q "(lp)"
   test -f /opt/labeler/public/index.html
 
   echo "<?php return [\"max_copies\" => 3];" > /opt/labeler/config.php
   echo font > /opt/labeler/fonts/Test.ttf
-  sh deploy/install.sh --zip build/labeler-0.0.0-test.zip --no-service --skip-ptouch
+  # piped into sh, like curl ... | sudo sh; ptouch-print is kept, apt is not run again
+  sh -s -- --zip build/labeler-0.0.0-test.zip --no-service < deploy/install.sh > /tmp/update.txt
+  grep -q "ptouch-print v1.9 is already installed" /tmp/update.txt
+  ! grep -q "Installing packages" /tmp/update.txt
   test -f /opt/labeler/config.php
   test -f /opt/labeler/fonts/Test.ttf
   test -d /opt/labeler.old
@@ -32,8 +35,9 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -euc '
   echo "$status" | grep -q "No printer found"
   curl -fsS http://127.0.0.1:8080/api.php?action=fonts | grep -q "Test.ttf"
 
-  # printer agent: only the API, token generated once and kept on update
-  sh deploy/install.sh --agent --zip build/labeler-agent-0.0.0-test.zip --no-service --skip-ptouch > /tmp/agent.txt
+  # printer agent from the clone itself (no zip, no download): only the API, token generated once
+  sh deploy/install.sh --agent --no-service > /tmp/agent.txt
+  grep -q "from the folder /tmp/repo" /tmp/agent.txt
   token=$(sed -n "s/.*LABELER_PRINTER_TOKEN=//p" /tmp/agent.txt)
   [ ${#token} -eq 48 ]
   test ! -e /opt/labeler-agent/public/index.html

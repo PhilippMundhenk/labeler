@@ -10,6 +10,13 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Added
 
+- One-line install: `curl -fsSL .../deploy/install.sh | sudo sh` (`sh -s -- --agent` for the
+  printer agent) downloads everything it needs; before the first release it installs `main`,
+  from a clone it installs the clone. It only runs `apt` for missing packages and shows its
+  progress (#81).
+- Ready-made static ptouch-print builds (`armv6` for every Raspberry Pi, `arm64`, `amd64`,
+  about 0.5 MB without library dependencies), so the install script no longer needs a compiler
+  and about 100 packages on the device (#81).
 - Labels are drawn in the browser and printed as a 1-bit PNG with `ptouch-print --image`; the
   preview is the printout and updates while typing (#3).
 - Font selection (built-in list, fonts in the server's `fonts/` folder, fonts of the device),

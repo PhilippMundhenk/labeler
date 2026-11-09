@@ -70,20 +70,28 @@ host. Details: [docs/DOCKER.md](docs/DOCKER.md).
 
 ## Quick start on a Raspberry Pi
 
-The install script sets up everything below in one go (packages, ptouch-print, Labeler, printer
-access, service) and updates an existing installation when run again:
+One command sets up everything (ptouch-print, PHP, Labeler, printer access, service) and updates
+an existing installation when run again:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh -o install.sh
-less install.sh       # read what it does
-sudo sh install.sh    # options: sh install.sh --help
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh | sudo sh
 ```
+
+It only downloads what the device needs: a ready-made ptouch-print (one file, no compiler or
+libraries; it is built from the sources only on other systems) and PHP. Options, such as
+`--port 80`, go after `sh -s --`:
+`curl ... | sudo sh -s -- --port 80`; all of them: `sh -s -- --help`.
+Rather read the script first? `curl -fsSLO https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh`,
+`less install.sh`, `sudo sh install.sh`. In a clone of this repository, `sudo sh deploy/install.sh`
+installs the clone.
 
 Or by hand:
 
-1. Install PHP (`sudo apt install php-cli`) and build ptouch-print from its sources, which takes a
-   few minutes even on a Pi Zero: [docs/INSTALL.md](docs/INSTALL.md#1-ptouch-print). Debian and
-   Raspberry Pi OS do not package it.
+1. Install PHP (`sudo apt install php-cli`) and ptouch-print: download the file for your system
+   (`armv6` for 32-bit Raspberry Pi OS on any Pi, `arm64` for 64-bit) from the
+   [ptouch-print builds](https://github.com/PhilippMundhenk/labeler/releases/tag/ptouch-print-v1.9)
+   to `/usr/local/bin/ptouch-print` and make it executable, or build it from its sources:
+   [docs/INSTALL.md](docs/INSTALL.md#1-ptouch-print).
 2. Download `labeler-<version>.zip` from the [releases page](https://github.com/PhilippMundhenk/labeler/releases)
    and unpack it to `/opt/labeler`.
 3. Allow the service to use the printer and start it:
@@ -106,8 +114,13 @@ server, for example in Docker. On the computer with the printer, install only th
 (the API, protected by an access token it generates):
 
 ```sh
-sudo sh install.sh --agent
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh | sudo sh -s -- --agent
 ```
+
+On a Pi Zero this takes a few minutes, most of it for installing PHP; the agent needs nothing
+else. By hand: steps 1 and 3 of the quick start with `labeler-agent-<version>.zip` in
+`/opt/labeler-agent` and `deploy/labeler-agent.service`, and a `config.php` with
+`'token' => '<a long random string>'` ([docs/INSTALL.md](docs/INSTALL.md#printer-agent-printer-and-interface-on-different-computers)).
 
 It prints the two settings for the interface: `LABELER_PRINTER_URL=http://<pi>:8631` and
 `LABELER_PRINTER_TOKEN=...`. Status, printing and the print log then go through the agent.

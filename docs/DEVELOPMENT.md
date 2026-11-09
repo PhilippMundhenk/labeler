@@ -7,6 +7,8 @@ public/            web root: index.html, app.css, api.php, js/ (ES modules), lib
 src/               PHP: Api, Config, Log, Png, Process, PtouchPrint, Response, bootstrap.php
 tools/ptouch-sim/  simulated ptouch-print with a simulated printer (PHP, see its README)
 tools/contract/    contract test against the real ptouch-print, built from upstream
+tools/ptouch-build/ static ptouch-print for install.sh (workflow ptouch-print.yml publishes it)
+tools/ptouch-patches/ patches for ptouch-print, applied with PTOUCH_PATCHES=1
 tools/dev/         development image: PHP + pcov, Composer, Node, Playwright
 tests/php/         PHPUnit: API, ptouch-print wrapper, PNG checks, config, log, simulator
 tests/js/          node:test: PNG encoder, bitmaps, Code 128, QR, label model, API client
@@ -29,6 +31,8 @@ tools/dev.sh composer install && tools/dev.sh npm ci   # once
 tools/dev.sh composer coverage    # PHPUnit with the 95 % gate per file
 tools/dev.sh npm test             # lint, node tests, browser tests, merged JS coverage gate
 docker build -t labeler-contract tools/contract && docker run --rm -v "$PWD:/work" labeler-contract
+docker buildx build --platform linux/arm/v6 -f tools/ptouch-build/Dockerfile --output type=local,dest=build/ptouch tools
+sh tools/test-install.sh debian:bookworm       # install script in a clean container
 ```
 
 With PHP 7.4+ and Node 22+ installed locally, `composer coverage` (needs pcov) and `npm test` work
