@@ -42,6 +42,52 @@ export async function searchIcons(api, query, set = 'all', limit = 64, fetchFn =
   return (Array.isArray(data.icons) ? data.icons : []).filter((id) => parseId(id));
 }
 
+// previews already loaded, by id: data URL, or '' when the service does not know the icon
+const previews = new Map();
+
+/**
+ * Previews of many icons with one request per collection (Iconify's /<prefix>.json?icons=...),
+ * instead of one image request per icon: a page of 64 results would otherwise be 64 requests,
+ * which the public service starts to refuse after a few searches. Kept for the session.
+ * @returns {Promise<Map<string, string>>} id => data URL ('' for unknown icons)
+ */
+export async function iconPreviews(api, ids, fetchFn = fetch) {
+  const wanted = {};
+  for (const id of ids) {
+    const p = parseId(id);
+    if (p && !previews.has(id)) (wanted[p.prefix] ||= []).push(p.name);
+  }
+  await Promise.all(Object.entries(wanted).map(async ([prefix, names]) => {
+    let res;
+    try {
+      res = await fetchFn(`${base(api)}/${prefix}.json?icons=${names.map(encodeURIComponent).join(',')}`);
+    } catch {
+      throw new Error('the icon service cannot be reached');
+    }
+    if (!res.ok) throw new Error(`the icon service answered HTTP ${res.status}`);
+    const data = await res.json();
+    const icons = data.icons || {};
+    const aliases = data.aliases || {};
+    for (const name of names) {
+      const icon = icons[name] || (aliases[name] && icons[aliases[name].parent]);
+      if (!icon || typeof icon.body !== 'string') {
+        previews.set(`${prefix}:${name}`, '');
+        continue;
+      }
+      const w = icon.width || data.width || 24;
+      const h = icon.height || data.height || 24;
+      const body = icon.body.replace(/currentColor/g, '#000');
+      previews.set(`${prefix}:${name}`, svgDataUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="32" height="32">${body}</svg>`));
+    }
+  }));
+  return new Map(ids.map((id) => [id, previews.get(id) || '']));
+}
+
+/** Forgets the loaded previews (tests). */
+export function clearPreviews() {
+  previews.clear();
+}
+
 export function svgDataUrl(svg) {
   const bytes = new TextEncoder().encode(svg);
   let s = '';

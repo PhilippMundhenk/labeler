@@ -87,6 +87,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Fixed
 
+- Icon search: the previews of the results come in one request per collection instead of one per
+  icon, so they no longer stay empty after a few searches; without previews the names are shown (#87).
 - Preview and two-line labels failed with ptouch-print 1.7 and newer; tape width shown wrong with
   1.9; preview written to a hard-coded path and cached by the browser (#1).
 

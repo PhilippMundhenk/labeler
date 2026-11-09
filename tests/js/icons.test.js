@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { COLLECTIONS, parseId, iconUrl, searchIcons, svgDataUrl, fetchIcon } from '../../public/js/icons.js';
+import { COLLECTIONS, parseId, iconUrl, searchIcons, svgDataUrl, fetchIcon, iconPreviews, clearPreviews } from '../../public/js/icons.js';
 import { normalizeBlock, newBlock } from '../../public/js/label.js';
 
 const API = 'https://icons.example/';
@@ -71,4 +71,33 @@ test('icon blocks are normalized', () => {
   assert.deepEqual([b.icon, b.src, b.invert, b.scale], ['mdi:home', 'data:image/svg+xml;base64,AA', true, 10]);
   const bad = normalizeBlock({ type: 'icon', icon: '<script>', src: 'data:text/html,x' });
   assert.deepEqual([bad.icon, bad.src, bad.scale], ['', '', 100]);
+});
+
+test('iconPreviews: one request per collection, aliases, unknown icons, kept for the session', async () => {
+  clearPreviews();
+  const f = fakeFetch((url) => {
+    if (url.includes('/mdi.json')) {
+      return new Response(JSON.stringify({ width: 24, height: 24, icons: { home: { body: '<path fill="currentColor" d="M0 0"/>' }, tall: { body: '<g/>', height: 32 } }, aliases: { house: { parent: 'home' } } }));
+    }
+    return new Response(JSON.stringify({ icons: { github: { body: '<path/>' } } }));
+  });
+  const ids = ['mdi:home', 'mdi:house', 'mdi:tall', 'mdi:gone', 'simple-icons:github', 'nope'];
+  const map = await iconPreviews(API, ids, f.fn);
+  assert.equal(f.calls.length, 2);
+  assert.equal(f.calls[0], 'https://icons.example/mdi.json?icons=home,house,tall,gone');
+  const svg = (id) => Buffer.from(map.get(id).split(',')[1], 'base64').toString();
+  assert.match(svg('mdi:home'), /viewBox="0 0 24 24".*fill="#000"/);
+  assert.equal(svg('mdi:house'), svg('mdi:home'));
+  assert.match(svg('mdi:tall'), /viewBox="0 0 24 32"/);
+  assert.equal(map.get('mdi:gone'), '');
+  assert.equal(map.get('nope'), '');
+  assert.match(svg('simple-icons:github'), /viewBox="0 0 24 24"/);
+  await iconPreviews(API, ['mdi:home', 'mdi:gone'], f.fn);
+  assert.equal(f.calls.length, 2, 'known previews are not fetched again');
+});
+
+test('iconPreviews reports a refusing or unreachable service', async () => {
+  clearPreviews();
+  await assert.rejects(iconPreviews(API, ['mdi:a'], fakeFetch(() => new Response('', { status: 429 })).fn), /HTTP 429/);
+  await assert.rejects(iconPreviews(API, ['mdi:a'], async () => { throw new Error('down'); }), /cannot be reached/);
 });
