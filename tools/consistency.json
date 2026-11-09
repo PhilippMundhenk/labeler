@@ -1,0 +1,42 @@
+{
+  "_doc": "Consistency rules for tools/consistency_check.py (master copy: ~/.claude/skills/release). Run: python3 tools/consistency_check.py --config tools/consistency.json",
+  "checks": [
+    {
+      "name": "config-keys-documented", "type": "listed", "severity": "error",
+      "source": ["src/Config.php"],
+      "pattern": "^\\s{12}'([a-z_]+)' =>",
+      "targets": [
+        {"file": "README.md", "format": "`{}`"},
+        {"file": "config.example.php", "format": "'{}'"}
+      ]
+    },
+    {
+      "name": "api-actions-documented", "type": "listed", "severity": "error",
+      "source": ["src/Api.php"],
+      "pattern": "^\\s{12}'([a-z-]+)' => \\['(?:GET|POST)'",
+      "targets": [{"file": "docs/API.md", "format": "`{}`"}]
+    },
+    {
+      "name": "php-classes-in-design-doc", "type": "mentioned", "severity": "error",
+      "files": ["src/*.php"],
+      "docs": ["docs/DESIGN.md"]
+    },
+    {
+      "name": "closed-issue-references", "type": "closed_issues", "severity": "error",
+      "docs": ["README.md", "docs/*.md"],
+      "ignore": ["CHANGELOG.md"]
+    },
+    {
+      "name": "changelog", "type": "changelog", "severity": "error",
+      "file": "CHANGELOG.md"
+    },
+    {
+      "name": "screenshots-fresh", "type": "fresh", "severity": "warn",
+      "items": [
+        {"image": "docs/screenshots/editor.png", "sources": ["public/index.html", "public/app.css"]},
+        {"image": "docs/screenshots/wide.png", "sources": ["public/index.html", "public/app.css"]},
+        {"image": "docs/screenshots/phone.png", "sources": ["public/index.html", "public/app.css"]}
+      ]
+    }
+  ]
+}

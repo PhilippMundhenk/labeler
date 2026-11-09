@@ -17,7 +17,9 @@ service can print without Labeler's own rule), and sizes are printed with the ri
 32-bit systems (no compiler warnings on Raspberry Pi OS).
 
 Without these options the patched ptouch-print sends exactly the same bytes as the original; the
-contract test checks this. The commands come from Brother's *Raster Command Reference*; they are
+contract test checks this. The commands come from Brother's *Raster Command Reference*
+([PT-E550W/P750W/P710BT](https://download.brother.com/welcome/docp100064/cv_pte550wp750wp710bt_eng_raster_102.pdf),
+[PT-P900 series](https://download.brother.com/welcome/docp100407/cv_ptp900_eng_raster_102.pdf)); they are
 checked byte for byte against a simulated USB printer in CI, not yet on every printer model.
 
 ## Installing it

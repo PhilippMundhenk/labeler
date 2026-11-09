@@ -31,7 +31,8 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
   Drag them into order, duplicate and remove them; drop image files onto the page to add them.
 - **Icons** with search: about 7,400 [Material Design Icons](https://pictogrammers.com/library/mdi/)
   and 3,500 brand logos from [Simple Icons](https://simpleicons.org/), loaded on demand from the
-  [Iconify API](https://iconify.design/); the chosen icon is stored in the label.
+  [Iconify API](https://iconify.design/); the chosen icon is stored in the label. The search goes
+  from the browser to that service; your own Iconify server or none can be set (`icon_api`).
 - **Text**: one to several lines, any font (built-in list, fonts you put on the Pi, or the fonts of
   your computer in Chrome and Edge), automatic or fixed size, a size per line, bold, italic,
   underline, letter spacing, alignment, white on black.
@@ -62,7 +63,7 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 ## Try it in Docker
 
 ```sh
-docker run --rm -p 8080:8080 -e LABELER_DEMO=1 ghcr.io/philippmundhenk/labeler:main
+docker run --rm -p 8080:8080 -e LABELER_DEMO=1 ghcr.io/philippmundhenk/labeler
 ```
 
 opens a demo with a simulated printer at <http://localhost:8080/>. For real use, run the interface
@@ -169,6 +170,7 @@ Dark mode and more: [docs/screenshots.md](docs/screenshots.md).
 - [docs/INSTALL.md](docs/INSTALL.md): installing ptouch-print and Labeler, the printer agent, web
   servers, updates, troubleshooting.
 - [docs/DOCKER.md](docs/DOCKER.md): the container image, demo mode, printer agent or USB.
+- [docs/API.md](docs/API.md): the JSON API of the interface and the printer agent, e.g. to print from scripts.
 - [docs/PTOUCH-PRINT.md](docs/PTOUCH-PRINT.md): ptouch-print with Labeler's patches (half cut, margin, cut every n labels, high resolution).
 - [docs/DESIGN.md](docs/DESIGN.md): how it works, ptouch-print versions, and the
   [architecture decision records](docs/adr/README.md).
