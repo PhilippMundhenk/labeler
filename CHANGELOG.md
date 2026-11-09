@@ -10,6 +10,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Added
 
+- `install.sh --uninstall` (`--agent`, `--purge`) removes Labeler or the agent again; manual steps in
+  docs/INSTALL.md (#89).
 - Half cut, cut after every n labels, the margin before and after a label and high resolution
   (twice the dots along the tape), with patches for ptouch-print in `tools/ptouch-patches`
   (`install.sh --ptouch-patches`); the options are greyed out with an unpatched ptouch-print.

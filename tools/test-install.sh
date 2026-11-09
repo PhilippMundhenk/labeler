@@ -47,5 +47,19 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -euc '
   for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8631/api.php?action=health >/dev/null 2>&1 && break; sleep 0.3; done
   test "$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8631/api.php?action=status)" = 401
   curl -fsS -H "Authorization: Bearer $token" http://127.0.0.1:8631/api.php?action=status | grep -q "No printer found"
+
+  # uninstall: the agent first (the interface keeps the user and ptouch-print), then everything
+  sh -s -- --uninstall --agent < deploy/install.sh | grep -q "labeler is still installed"
+  test "$(ls /opt/labeler-agent)" = config.php
+  id labeler >/dev/null
+  sh deploy/install.sh --uninstall > /tmp/uninstall.txt
+  grep -q "kept: /opt/labeler (config.php, fonts)" /tmp/uninstall.txt
+  test -f /opt/labeler/config.php && test -f /opt/labeler/fonts/Test.ttf && test ! -e /opt/labeler/public
+  ! id labeler >/dev/null 2>&1
+  test -x /usr/local/bin/ptouch-print
+  if sh deploy/install.sh --purge 2>/dev/null; then echo "FAIL: --purge without --uninstall"; exit 1; fi
+  sh deploy/install.sh --uninstall --purge >/dev/null
+  sh deploy/install.sh --uninstall --agent --purge >/dev/null
+  test ! -e /opt/labeler && test ! -e /opt/labeler-agent && test ! -e /usr/local/bin/ptouch-print
   echo "install test passed"
 '

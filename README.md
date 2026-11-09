@@ -85,6 +85,7 @@ libraries; it is built from the sources only on other systems) and PHP. Options,
 Rather read the script first? `curl -fsSLO https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh`,
 `less install.sh`, `sudo sh install.sh`. In a clone of this repository, `sudo sh deploy/install.sh`
 installs the clone.
+To remove it again: `... | sudo sh -s -- --uninstall` ([docs/INSTALL.md](docs/INSTALL.md#uninstalling)).
 
 Or by hand:
 

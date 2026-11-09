@@ -28,6 +28,11 @@ elsewhere, for example in Docker.
   --port N            port of the web interface (default 8080, agent 8631)
   --dir DIR           install folder (default /opt/labeler or /opt/labeler-agent)
   --no-service        do not set up systemd and udev (containers, own web server)
+  --uninstall         remove Labeler (with --agent: the agent): service, program files and,
+                      when neither is left, the udev rule and the user labeler; keeps
+                      config.php, fonts and the print log
+  --purge             with --uninstall: also remove config.php, fonts, the print log and
+                      /usr/local/bin/ptouch-print
 EOF
 }
 set -eu
@@ -44,6 +49,8 @@ PORT=
 DIR=
 SERVICE=1
 AGENT=0
+UNINSTALL=0
+PURGE=0
 # a clone of the repository around the script: install that instead of downloading
 TREE=
 case "$0" in
@@ -71,6 +78,8 @@ while [ $# -gt 0 ]; do
     --dir) DIR=${2:?}; shift ;;
     --no-service) SERVICE=0 ;;
     --agent) AGENT=1 ;;
+    --uninstall) UNINSTALL=1 ;;
+    --purge) PURGE=1 ;;
     -h|--help) usage; exit 0 ;;
     *) die "unknown option $1 (see --help)" ;;
   esac
@@ -85,6 +94,42 @@ fi
 [ "$(id -u)" = 0 ] || die "run as root (sudo)"
 case "$PORT" in *[!0-9]*|'') die "--port needs a number" ;; esac
 [ -z "$ZIP" ] || [ -f "$ZIP" ] || die "$ZIP not found"
+[ "$PURGE" = 0 ] || [ "$UNINSTALL" = 1 ] || die "--purge only goes with --uninstall"
+
+if [ "$UNINSTALL" = 1 ]; then
+  say "Removing $NAME from $DIR"
+  if [ -f "/etc/systemd/system/$NAME.service" ]; then
+    systemctl disable --now "$NAME" >/dev/null 2>&1 || true
+    rm -f "/etc/systemd/system/$NAME.service"
+    systemctl daemon-reload 2>/dev/null || true
+  fi
+  rm -rf "$DIR.old"
+  if [ "$PURGE" = 1 ]; then
+    rm -rf "$DIR" "/var/lib/$NAME"
+  elif [ -d "$DIR" ]; then
+    # keep what was set up by hand: config.php (the agent's token) and the fonts
+    find "$DIR" -mindepth 1 -maxdepth 1 ! -name config.php ! -name fonts -exec rm -rf {} +
+    [ -n "$(ls -A "$DIR")" ] || rmdir "$DIR"
+  fi
+  if [ "$AGENT" = 1 ]; then other=labeler; else other=labeler-agent; fi
+  if [ -f "/etc/systemd/system/$other.service" ] || [ -f "/opt/$other/public/api.php" ]; then
+    echo "$other is still installed: the udev rule, the user labeler and ptouch-print stay"
+  else
+    rm -f /etc/udev/rules.d/99-labeler-ptouch.rules
+    udevadm control --reload-rules 2>/dev/null || true
+    ! id labeler >/dev/null 2>&1 || userdel labeler 2>/dev/null || true
+    [ "$PURGE" = 0 ] || rm -f /usr/local/bin/ptouch-print
+  fi
+  say "$NAME removed"
+  if [ "$PURGE" = 0 ]; then
+    [ ! -d "$DIR" ] || echo "kept: $DIR (config.php, fonts)"
+    [ ! -d "/var/lib/$NAME" ] || echo "kept: /var/lib/$NAME (print log, saved labels)"
+    echo "kept: /usr/local/bin/ptouch-print. Remove everything with --uninstall --purge."
+  fi
+  echo "PHP stays installed; remove it with: sudo apt remove php-cli"
+  exit 0
+fi
+
 command -v apt-get >/dev/null || die "this script needs apt (Raspberry Pi OS, Debian, Ubuntu)"
 
 work=$(mktemp -d)
