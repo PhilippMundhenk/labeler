@@ -124,6 +124,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Security
 
+- The login cookie is signed with a random secret in the data folder (`session.key`) instead of a
+  key derived from the password alone, so a captured cookie does not help to guess the password (#111).
 - PHP's built-in server answered one request at a time, so a print or a wrong password blocked
   everyone else; the services run 3 workers, the container 4 (`PHP_CLI_SERVER_WORKERS`) (#110).
 - Saved labels on the server are limited to 20 MB together (every request reads them all), and
