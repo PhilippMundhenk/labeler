@@ -124,5 +124,7 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Security
 
+- `install.sh` runs only after it was downloaded completely (`curl | sh`), and checks a release
+  package against the release's `SHA256SUMS` (#112).
 - Label text was passed to a shell unescaped (command injection) and echoed without HTML
   escaping (#2).
