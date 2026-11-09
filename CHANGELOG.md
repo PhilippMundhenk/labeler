@@ -85,6 +85,11 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
   mode with the simulated printer, docker-compose example; works as interface or agent (#43).
 - Documentation, release package, systemd unit, udev rule, nginx and lighttpd examples (#13, #14).
 
+### Changed
+
+- New QR codes, also in the templates, start without a quiet zone (0 modules); the label's
+  margins keep them clear of the tape edge (#88).
+
 ### Fixed
 
 - Preview and two-line labels failed with ptouch-print 1.7 and newer; tape width shown wrong with
