@@ -324,3 +324,5 @@ export const DE = {
   'White': 'Weiß', 'Black': 'Schwarz', 'Clear': 'Klar', 'Red': 'Rot', 'Blue': 'Blau', 'Yellow': 'Gelb',
   'Green': 'Grün', 'Gold': 'Gold', 'Other': 'Andere', 'Unknown': 'Unbekannt',
 };
+
+export default DE;
