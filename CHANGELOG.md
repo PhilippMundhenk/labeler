@@ -111,6 +111,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Fixed
 
+- The container image carries Labeler's license and the QR code library's full MIT license in
+  `/usr/share/doc/labeler`; the QR library's license also ships next to it in `public/lib` (#115).
 - The container image tag `latest` was set from a push to main once and then went stale;
   it is now only set by a release, and docker-compose.yml and the docs use `:main` until the
   first release (#100).
