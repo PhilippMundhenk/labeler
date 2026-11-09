@@ -4,7 +4,7 @@
 #   docker build -t labeler-contract --build-arg PTOUCH_REF=v1.9 -f tools/contract/Dockerfile tools
 #   docker build -t labeler-contract --build-arg PTOUCH_PATCHES=1 -f tools/contract/Dockerfile tools   # with tools/ptouch-patches
 #   docker run --rm -v "$PWD:/work" labeler-contract
-FROM node:24-bookworm
+FROM node:26-bookworm
 ARG PTOUCH_REF=v1.9
 ARG PTOUCH_PATCHES=0
 RUN apt-get update \
