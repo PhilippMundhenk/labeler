@@ -85,8 +85,10 @@ h3 { font-size: 14px; margin: 16px 0 8px; }
 .head-tools { display: flex; align-items: center; gap: 2px; }
 
 /* preview */
-.preview-card { position: sticky; top: 56px; z-index: 5; box-shadow: 0 6px 20px #0000000f; }
-@media (max-height: 640px) { .preview-card { position: static; } }
+.preview-card { top: 56px; z-index: 5; box-shadow: 0 6px 20px #0000000f; }
+/* the card stays on top while editing only where there is room for it: not on phones or narrow
+   or low windows, where the small floating preview takes over */
+@media (min-width: 980px) and (min-height: 641px) { .preview-card { position: sticky; } }
 /* with the print options open the card is too tall to stay on top of the editor */
 .preview-card:has(.options[open]) { position: static; }
 

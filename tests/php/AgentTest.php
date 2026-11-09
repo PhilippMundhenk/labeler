@@ -188,4 +188,11 @@ final class AgentTest extends TestCase
         $ctx = stream_context_create(['http' => ['header' => 'X-Labeler-Token: ' . self::TOKEN]]);
         $this->assertStringContainsString('"printer"', (string) file_get_contents($url . 'status', false, $ctx));
     }
+
+    public function testAgentAddressIsShownWithoutCredentials(): void
+    {
+        $this->assertSame('http://agent:8631', (new Remote('http://user:secret@agent:8631/', 't'))->url());
+        $this->assertSame('https://agent.example', (new Remote('https://user@agent.example', 't'))->url());
+        $this->assertSame('http://agent:8631/path@x', (new Remote('http://agent:8631/path@x', 't'))->url());
+    }
 }

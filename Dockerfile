@@ -40,7 +40,9 @@ COPY --from=ptouch /doc/ /usr/share/doc/ptouch-print/
 COPY public /app/public
 COPY src /app/src
 COPY tools/ptouch-sim /app/tools/ptouch-sim
-COPY config.example.php /app/
+COPY config.example.php LICENSE /app/
+# Labeler's license (MIT) and the bundled QR code library's, where licenses are looked for
+COPY LICENSE public/lib/qrcode-LICENSE.txt /usr/share/doc/labeler/
 COPY docker/entrypoint.sh /usr/local/bin/labeler-entrypoint
 RUN sed -i "s/VERSION = '[^']*'/VERSION = '${VERSION}'/" /app/src/Config.php \
  && chmod 755 /usr/local/bin/labeler-entrypoint /app/tools/ptouch-sim/ptouch-print

@@ -41,6 +41,26 @@ final class SessionTest extends TestCase
         $this->assertStringNotContainsString('Secure', Session::cookie('v', false, 5));
     }
 
+    public function testRandomSecretInTheDataFolder(): void
+    {
+        $dir = $this->tmp . '/data';
+        $session = new Session('secret', $dir);
+        $cookie = $session->issue(1000);
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', (string) file_get_contents($dir . '/session.key'));
+        $this->assertSame('600', substr(sprintf('%o', fileperms($dir . '/session.key')), -3));
+        $this->assertTrue((new Session('secret', $dir))->valid($cookie, 1001), 'the same key on the next request');
+        $this->assertFalse((new Session('secret'))->valid($cookie, 1001), 'the password alone does not sign it');
+        $this->assertFalse((new Session('secret', $this->tmp . '/other'))->valid($cookie, 1001), 'another secret');
+        unlink($dir . '/session.key');
+        $this->assertFalse((new Session('secret', $dir))->valid($cookie, 1001), 'a new key logs everybody out');
+        file_put_contents($dir . '/session.key', 'broken');
+        $this->assertTrue((new Session('secret', $dir))->valid((new Session('secret', $dir))->issue(1000), 1001));
+        // a folder that cannot be written: the key comes from the password alone
+        $file = $this->tmp . '/a-file';
+        touch($file);
+        $this->assertTrue((new Session('secret', $file . '/sub'))->valid((new Session('secret'))->issue(1000), 1001));
+    }
+
     private function api(array $env): Api
     {
         Api::$loginDelayMs = 0;
