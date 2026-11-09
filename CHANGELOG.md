@@ -111,6 +111,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Fixed
 
+- The container image carries Labeler's license and the QR code library's full MIT license in
+  `/usr/share/doc/labeler`; the QR library's license also ships next to it in `public/lib` (#115).
 - The ptouch-print builds also publish their build files (`ptouch-build.Dockerfile`,
   `ptouch-patches.tar.gz`), and NOTICE.md points to the files as they are published (#114).
 - Phones and narrow windows: the preview card no longer stays pinned and takes half the screen;
