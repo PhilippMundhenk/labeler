@@ -15,7 +15,8 @@ $response = $api->handle(
     $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
         ?? (isset($_SERVER['HTTP_X_LABELER_TOKEN']) ? 'Bearer ' . $_SERVER['HTTP_X_LABELER_TOKEN'] : ''),
     array_filter($_COOKIE, 'is_string'),
-    (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
+    (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https',
+    (string) ($_SERVER['HTTP_HOST'] ?? '')
 );
 [$status, $headers, $body] = $response->parts();
 http_response_code($status);

@@ -31,7 +31,10 @@ response within a week.
   and the only user data on the command line is the path of a temporary PNG it wrote itself. That
   PNG is checked first: palette image, at most two colours, not higher than the tape, size limit.
 - Printing only accepts `application/json`, which browsers cannot send to another site without a
-  CORS preflight that the API never answers. Other web pages therefore cannot print.
+  CORS preflight that the API never answers. A web page could still point its own domain name at
+  your Labeler (DNS rebinding); therefore an API without password and token only answers when it
+  is reached by IP address, `localhost` or a local name, and other names have to be listed in
+  `allowed_hosts`. With a password or token this does not apply: the foreign page has neither.
 - The `ptouch_bin` setting names a program that is executed; protect `config.php` and the
   environment of the service like any other configuration.
 - The udev rule in `deploy/` gives the group `lp` access to all Brother USB devices. On a machine

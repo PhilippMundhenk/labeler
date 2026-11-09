@@ -24,6 +24,7 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -euc '
   grep -q "ptouch-print v1.9 is already installed" /tmp/update.txt
   ! grep -q "Installing packages" /tmp/update.txt
   test -f /opt/labeler/config.php
+  test "$(stat -c "%a %U:%G" /opt/labeler/config.php)" = "640 root:labeler"
   test -f /opt/labeler/fonts/Test.ttf
   test -d /opt/labeler.old
   if sh deploy/install.sh --port abc 2>/dev/null; then echo "FAIL: bad port accepted"; exit 1; fi

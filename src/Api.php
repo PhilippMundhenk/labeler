@@ -44,7 +44,7 @@ final class Api
      * @param bool $secure the request came in over HTTPS
      * @return Response
      */
-    public function handle(string $method, array $query, string $body, string $contentType, string $authorization = '', array $cookies = [], bool $secure = false): Response
+    public function handle(string $method, array $query, string $body, string $contentType, string $authorization = '', array $cookies = [], bool $secure = false, string $host = ''): Response
     {
         $action = $query['action'] ?? '';
         $routes = [
@@ -69,6 +69,10 @@ final class Api
             return Response::json(405, ['error' => "use $allowed"], ['Allow' => $allowed]);
         }
         $token = (string) $this->config->get('token');
+        if ($action !== 'health' && $token === '' && !$this->session->enabled() && !$this->hostAllowed($host)) {
+            // DNS rebinding: a foreign web page whose name points here must not use the API
+            return Response::json(403, ['error' => "the host name $host is not allowed: add it to allowed_hosts, or set a password"]);
+        }
         $given = preg_match('/^Bearer\s+(\S+)$/i', trim($authorization), $m) ? $m[1] : '';
         $tokenOk = $token !== '' && hash_equals($token, $given);
         if (!in_array($action, ['health', 'login', 'logout'], true)) {
@@ -148,6 +152,32 @@ final class Api
         return Response::json(200, ['ok' => true], [
             'Set-Cookie' => Session::cookie($this->session->issue(time()), $secure, Session::LIFETIME),
         ]);
+    }
+
+    /**
+     * Host names an open API (no password, no token) answers for: IP addresses, localhost, local
+     * names and the names in allowed_hosts. An empty host (not from a browser) is fine.
+     */
+    public function hostAllowed(string $host): bool
+    {
+        $name = strtolower(trim($host));
+        if (preg_match('/^\[[0-9a-f:.]+\](:\d+)?$/', $name)) {
+            return true; // IPv6 literal
+        }
+        $name = preg_replace('/:\d+$/', '', $name) ?? $name;
+        if ($name === '' || $name === 'localhost' || filter_var($name, FILTER_VALIDATE_IP) !== false) {
+            return true;
+        }
+        if (strpos($name, '.') === false || preg_match('/\.(local|lan|home\.arpa|internal|localhost)\.?$/', $name)) {
+            return true;
+        }
+        foreach (explode(',', strtolower((string) $this->config->get('allowed_hosts'))) as $allowed) {
+            $allowed = trim($allowed);
+            if ($allowed === '*' || ($allowed !== '' && $allowed === $name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private function health(): Response
