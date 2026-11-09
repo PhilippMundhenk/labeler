@@ -126,5 +126,7 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 - `install.sh` left the interface's `config.php` (password, tokens) readable for every user after
   an update; it is now `root:labeler`, mode 640, like the agent's (#108).
+- A saved label with a crafted block id could run script in the browser of everyone who loaded
+  it; ids are now checked and escaped, block types looked up safely (#106).
 - Label text was passed to a shell unescaped (command injection) and echoed without HTML
   escaping (#2).
