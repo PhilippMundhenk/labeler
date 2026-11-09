@@ -9,7 +9,7 @@ export const TEMPLATES = [
     name: 'Asset tag',
     description: 'Numbered inventory label with a QR code; every copy gets the next number.',
     label: layout({ blocks: [
-      { type: 'qr', kind: 'text', content: 'https://example.com/asset/{n:4}', level: 'M', scale: 100, quiet: 1 },
+      { type: 'qr', kind: 'text', content: 'https://example.com/asset/{n:4}', level: 'M', scale: 100, quiet: 0 },
       text('Asset {n:4}\nProperty of Example', { align: 'left' }),
     ] }),
   },
@@ -19,7 +19,7 @@ export const TEMPLATES = [
     description: 'Network name and a QR code that phones join by scanning.',
     label: layout({ blocks: [
       text('Guest Wi-Fi\nScan to connect', { align: 'left' }),
-      { type: 'qr', kind: 'wifi', wifiSsid: 'Guest', wifiPassword: 'change-me', wifiType: 'WPA', wifiHidden: false, level: 'M', scale: 100, quiet: 1 },
+      { type: 'qr', kind: 'wifi', wifiSsid: 'Guest', wifiPassword: 'change-me', wifiType: 'WPA', wifiHidden: false, level: 'M', scale: 100, quiet: 0 },
     ] }),
   },
   {

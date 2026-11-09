@@ -23,7 +23,7 @@ export function tapePx(mm, dpi = 180, maxPx = Infinity) {
 export const BLOCK_DEFAULTS = {
   text: { type: 'text', text: 'Label', font: 'sans-serif', size: 0, bold: true, italic: false, align: 'center', invert: false, rotate: 0, lineSizes: '', underline: false, spacing: 0 },
   qr: {
-    type: 'qr', kind: 'text', content: 'https://example.com', level: 'M', scale: 100, quiet: 1,
+    type: 'qr', kind: 'text', content: 'https://example.com', level: 'M', scale: 100, quiet: 0,
     wifiSsid: '', wifiPassword: '', wifiType: 'WPA', wifiHidden: false,
     contactName: '', org: '', phone: '', email: '', url: '', subject: '',
   },

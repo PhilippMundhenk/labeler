@@ -33,7 +33,7 @@ test('normalizeBlock cleans every block type', () => {
   assert.deepEqual([t.text, t.size, t.align, t.bold, t.font], ['Label', 200, 'center', true, 'sans-serif']);
   assert.ok(t.id);
   const q = normalizeBlock({ type: 'qr', content: 'x', level: 'Z', scale: 5, quiet: 'a' });
-  assert.deepEqual([q.content, q.level, q.scale, q.quiet], ['x', 'M', 20, 1]);
+  assert.deepEqual([q.content, q.level, q.scale, q.quiet], ['x', 'M', 20, 0]);
   const bc = normalizeBlock({ type: 'barcode', bar: 0 });
   assert.deepEqual([bc.content, bc.text, bc.bar], [BLOCK_DEFAULTS.barcode.content, true, 1]);
   assert.equal(normalizeBlock({ type: 'barcode', text: false }).text, false);
