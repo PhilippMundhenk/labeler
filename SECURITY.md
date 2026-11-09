@@ -10,8 +10,11 @@ response within a week.
 
 - Without the `password` setting, anyone who can reach the page can print and read the print log.
   With it, every API call except `health` needs a login: a signed, HttpOnly, SameSite=Strict
-  session cookie valid for 30 days, keyed by the password (changing it logs everybody out), with a
-  one-second delay after a wrong password. Store a hash rather than the plain password:
+  session cookie valid for 30 days, signed with a random secret in the data folder
+  (`session.key`) together with the password, with a one-second delay after a wrong password.
+  Changing the password or deleting `session.key` logs everybody out; logging out only deletes
+  the cookie in that browser, so a stolen cookie stays valid until then. Over plain HTTP the
+  cookie can be read on the network: use HTTPS when that matters. Store a hash rather than the plain password:
   `php -r 'echo password_hash("...", PASSWORD_DEFAULT);'`. Behind a reverse proxy with HTTPS the
   cookie gets the Secure flag (`X-Forwarded-Proto: https`).
 - Even with a password, do not forward the port to the internet without TLS: use a reverse proxy

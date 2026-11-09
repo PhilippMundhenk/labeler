@@ -20,4 +20,6 @@ if [ -n "${LABELER_TOKEN:-}" ]; then
   echo "labeler: API access token set: this container is a printer agent, the web page itself cannot print"
 fi
 
+# several requests at once: a print or a wrong password must not block everyone else
+export PHP_CLI_SERVER_WORKERS="${PHP_CLI_SERVER_WORKERS:-4}"
 exec php -S "0.0.0.0:${PORT:-8080}" -t /app/public /app/src/router.php

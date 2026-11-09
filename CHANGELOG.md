@@ -126,6 +126,10 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 - `install.sh` runs only after it was downloaded completely (`curl | sh`), and checks a release
   package against the release's `SHA256SUMS` (#112).
+- The login cookie is signed with a random secret in the data folder (`session.key`) instead of a
+  key derived from the password alone, so a captured cookie does not help to guess the password (#111).
+- PHP's built-in server answered one request at a time, so a print or a wrong password blocked
+  everyone else; the services run 3 workers, the container 4 (`PHP_CLI_SERVER_WORKERS`) (#110).
 - Saved labels on the server are limited to 20 MB together (every request reads them all), and
   `labels.json` is replaced in one step, so a crash while saving no longer loses it (#109).
 - `install.sh` left the interface's `config.php` (password, tokens) readable for every user after
