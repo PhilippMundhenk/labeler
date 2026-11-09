@@ -6,10 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-09
+
 The first versioned release: Labeler was rewritten from a single PHP page into a label editor.
 
 ### Added
 
+- docs/API.md describes the JSON API, e.g. for printing from scripts; a consistency check in CI
+  keeps docs and code in step (config keys, API actions, changelog) and runs before every release.
 - Translations for the 15 most spoken languages: Chinese (Simplified), Hindi, Spanish, Arabic,
   French, Bengali, Portuguese, Russian, Indonesian, Urdu, Japanese, Marathi and Telugu besides
   English and German, translated by machine and open for review; each language loads only when
@@ -111,9 +115,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Fixed
 
-- The container image tag `latest` was set from a push to main once and then went stale;
-  it is now only set by a release, and docker-compose.yml and the docs use `:main` until the
-  first release (#100).
+- The container image tag `latest` was set from a push to main once and then went stale; it is
+  now only set by a release (#100).
 - The image's license label names ptouch-print's GPL-3.0 next to Labeler's MIT; docs/DOCKER.md
   explains every image tag and the image labels (#100).
 - Icon search: the previews of the results come in one request per collection instead of one per
