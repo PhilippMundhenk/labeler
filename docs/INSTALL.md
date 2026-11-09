@@ -1,7 +1,9 @@
 # Installation
 
 Labeler runs where the printer is plugged in, typically a Raspberry Pi (a Zero W is enough) with
-Raspberry Pi OS. It needs PHP 7.4 or newer and ptouch-print 1.5 or newer. The steps below assume
+Raspberry Pi OS. It needs PHP 7.4 or newer and ptouch-print 1.5 or newer. PHP 7.4 is what Debian
+11 (bullseye) ships; bullseye's long-term support ended in 2026, so it gets no security updates any
+more: prefer Raspberry Pi OS bookworm or newer (PHP 8.2). The steps below assume
 Raspberry Pi OS or Debian; other Linux distributions work the same way with their package names.
 
 ## Install script
@@ -233,9 +235,9 @@ with the exact ptouch-print command and output.
 
 ### The printer switches itself off
 
-P-Touch printers switch themselves off after a while without use (auto power off). Switched off,
+P-touch printers switch themselves off after a while without use (auto power off). Switched off,
 they disappear from USB, so Labeler shows "No printer" and, if it saw the printer a moment
-before, says that it probably switched itself off. **A P-Touch printer cannot be switched on over
+before, says that it probably switched itself off. **A P-touch printer cannot be switched on over
 USB**: Brother's raster command reference has no power command, and a computer can only wake a
 sleeping USB device, not one that is off. What helps:
 

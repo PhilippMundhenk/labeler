@@ -13,6 +13,8 @@ SupplementaryGroups=lp
 WorkingDirectory=/opt/labeler
 ExecStart=/usr/bin/php -S 0.0.0.0:8080 -t /opt/labeler/public /opt/labeler/src/router.php
 Environment=LABELER_DATA_DIR=/var/lib/labeler
+# several requests at once: a print or a wrong password must not block everyone else
+Environment=PHP_CLI_SERVER_WORKERS=3
 StateDirectory=labeler
 Restart=on-failure
 RestartSec=5

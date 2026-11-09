@@ -35,6 +35,10 @@ elsewhere, for example in Docker.
                       /usr/local/bin/ptouch-print
 EOF
 }
+
+# Everything runs inside main, called on the last line: piped through curl, a download that
+# breaks off never runs half a script.
+main() {
 set -eu
 
 REPO=PhilippMundhenk/labeler
@@ -246,7 +250,9 @@ else
       api=https://api.github.com/repos/$REPO/releases/tags/v${VERSION#v}
     fi
     if [ "$AGENT" = 1 ]; then pattern='labeler-agent-[0-9][^"]*[.]zip'; else pattern='labeler-[0-9][^"]*[.]zip'; fi
-    url=$(curl -fsSL "$api" 2>/dev/null | grep -o "\"browser_download_url\": *\"[^\"]*$pattern\"" | head -n 1 | sed 's/.*"\(https[^"]*\)"/\1/' || true)
+    release=$(curl -fsSL "$api" 2>/dev/null || true)
+    sums=$(printf '%s' "$release" | grep -o '"browser_download_url": *"[^"]*/SHA256SUMS"' | head -n 1 | sed 's/.*"\(https[^"]*\)"/\1/' || true)
+    url=$(printf '%s' "$release" | grep -o "\"browser_download_url\": *\"[^\"]*$pattern\"" | head -n 1 | sed 's/.*"\(https[^"]*\)"/\1/' || true)
     if [ -z "$url" ]; then
       [ "$VERSION" = latest ] || die "no release package found at $api"
       echo "There is no release yet: installing the current state of the branch main."
@@ -256,8 +262,12 @@ else
   if [ -n "$url" ]; then
     say "Downloading $NAME ($VERSION)"
     need unzip
-    ZIP=$work/labeler.zip
+    ZIP=$work/${url##*/}
     curl -fsSL "$url" -o "$ZIP"
+    if [ -n "$sums" ]; then
+      curl -fsSL "$sums" -o "$work/SHA256SUMS"
+      (cd "$work" && grep " ${url##*/}$" SHA256SUMS | sha256sum -c - >/dev/null) || die "checksum of ${url##*/} does not match"
+    fi
     unzip -q "$ZIP" -d "$work/unpacked"
   else
     say "Downloading $NAME from the branch $BRANCH"
@@ -297,9 +307,13 @@ if [ "$AGENT" = 1 ]; then
     token=$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')
     printf "<?php\n\n// Access token of this printer agent; the interface needs it as printer_token.\nreturn ['token' => '%s'];\n" "$token" > "$DIR/config.php"
   fi
+  token=$(sed -n "s/.*'token' => '\([0-9a-f]*\)'.*/\1/p" "$DIR/config.php")
+fi
+
+# config.php holds the password and tokens: readable only by root and the service
+if [ -f "$DIR/config.php" ]; then
   chown root:labeler "$DIR/config.php"
   chmod 640 "$DIR/config.php"
-  token=$(sed -n "s/.*'token' => '\([0-9a-f]*\)'.*/\1/p" "$DIR/config.php")
 fi
 
 if [ "$SERVICE" = 1 ]; then
@@ -324,3 +338,6 @@ if [ "$SERVICE" = 1 ]; then
 else
   echo "Start it with: sudo -u labeler php -S 0.0.0.0:$PORT -t $DIR/public"
 fi
+}
+
+main "$@"

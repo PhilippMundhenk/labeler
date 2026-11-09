@@ -160,7 +160,7 @@ async function refreshStatus() {
   if (Boolean(state.status && state.status.shared_labels) !== sharedLabels()) savedLoading = refreshSaved();
   let message = res.ok ? (p && !p.ready ? p.message : '') : res.data.error;
   if (p && !p.connected && state.wasReady) {
-    // the printer was there a moment ago: P-Touch printers switch themselves off after a while
+    // the printer was there a moment ago: P-touch printers switch themselves off after a while
     message = 'The printer was ready a moment ago and is gone now: it has probably switched itself off (auto power off) or was unplugged. Press its power button, then check again.';
   }
   const notice = $('#printer-notice');
@@ -397,7 +397,7 @@ function renderBlocks() {
   const list = $('#blocks');
   const focused = document.activeElement && document.activeElement.id;
   list.innerHTML = state.label.blocks.map((b, i) => `
-    <li class="block" data-id="${b.id}" data-type="${b.type}">
+    <li class="block" data-id="${esc(b.id)}" data-type="${esc(b.type)}">
       <div class="block-head">
         <span class="grip" draggable="true" title="Drag to move" aria-hidden="true">${icon('grip')}</span>
         <span class="block-title">${BLOCK_NAMES[b.type]}</span>
@@ -1129,7 +1129,7 @@ async function openDetails() {
   const res = await getLog();
   const entries = res.ok ? res.data.entries : [];
   $('#details-log').innerHTML = entries.length
-    ? entries.map((e) => `<li class="${e.code === 0 ? '' : 'failed'}"><div><time>${esc(new Date(e.time).toLocaleString())}</time> · exit ${e.code} · ${e.ms} ms</div><code>ptouch-print ${esc(e.args.join(' '))}</code><pre>${esc(e.output)}</pre></li>`).join('')
+    ? entries.map((e) => `<li class="${Number(e.code) === 0 ? '' : 'failed'}"><div><time>${esc(new Date(e.time).toLocaleString())}</time> · exit ${Number(e.code)} · ${Number(e.ms)} ms</div><code>ptouch-print ${esc(e.args.join(' '))}</code><pre>${esc(e.output)}</pre></li>`).join('')
     : `<li class="muted">${res.ok && !res.data.enabled ? 'The print log is off: the data folder is not writable.' : 'Nothing printed yet.'}</li>`;
   dialog.showModal();
 }

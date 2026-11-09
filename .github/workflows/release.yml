@@ -83,11 +83,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build the package
-        run: sh tools/package.sh "${GITHUB_REF_NAME#v}"
+        run: |
+          sh tools/package.sh "${GITHUB_REF_NAME#v}"
+          (cd build && sha256sum labeler-*.zip > SHA256SUMS)
       - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           generate_release_notes: true
-          files: build/labeler-*.zip
+          files: |
+            build/labeler-*.zip
+            build/SHA256SUMS
           body: |
             Install or update on the device: see [docs/INSTALL.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/docs/INSTALL.md).
             Printer agent only: `labeler-agent-*.zip` (`install.sh --agent` downloads it).

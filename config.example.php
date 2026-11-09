@@ -48,4 +48,10 @@ return [
     // it directly; the chosen icon is stored in the label. Use your own Iconify server, or ''
     // to switch icons off.
     'icon_api' => 'https://api.iconify.design',
+
+    // Without password and token, the API only answers when it is reached by IP address,
+    // localhost or a local name (one word like "labeler", or .local, .lan, .home.arpa, .internal),
+    // so that a foreign web page cannot use it through DNS rebinding. Other names you use, e.g.
+    // behind a reverse proxy, comma-separated; "*" allows every name.
+    'allowed_hosts' => '',
 ];

@@ -44,7 +44,7 @@ export function newId() {
 }
 
 export function newBlock(type) {
-  if (!BLOCK_DEFAULTS[type]) throw new Error(`unknown block type ${type}`);
+  if (!Object.prototype.hasOwnProperty.call(BLOCK_DEFAULTS, type)) throw new Error(`unknown block type ${type}`);
   return { id: newId(), ...BLOCK_DEFAULTS[type] };
 }
 
@@ -60,9 +60,10 @@ const oneOf = (v, options, fallback) => (options.includes(v) ? v : fallback);
 const str = (v, max, fallback = '') => (typeof v === 'string' ? v.slice(0, max) : fallback);
 
 export function normalizeBlock(raw) {
-  if (!raw || typeof raw !== 'object' || !BLOCK_DEFAULTS[raw.type]) return null;
+  if (!raw || typeof raw !== 'object' || typeof raw.type !== 'string' || !Object.prototype.hasOwnProperty.call(BLOCK_DEFAULTS, raw.type)) return null;
   const d = BLOCK_DEFAULTS[raw.type];
-  const b = { id: str(raw.id, 40) || newId(), type: raw.type };
+  // ids end up in HTML attributes: only plain characters, anything else gets a new id
+  const b = { id: typeof raw.id === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(raw.id) ? raw.id : newId(), type: raw.type };
   switch (raw.type) {
     case 'text':
       Object.assign(b, {

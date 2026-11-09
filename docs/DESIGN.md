@@ -4,7 +4,7 @@ Status date: 2026-11-09
 
 ## Goal
 
-Print labels on a P-Touch printer from a phone or computer in the house, with a preview that is
+Print labels on a P-touch printer from a phone or computer in the house, with a preview that is
 exactly the printout, without installing anything on the client and with as little as possible on
 the small computer the printer hangs on.
 
@@ -98,7 +98,7 @@ See the [architecture decision records](adr/README.md):
   when a font is missing on one of them. Fonts in the server's `fonts/` folder avoid that.
 - Anti-aliased text is cut at 50 % grey. Very small text (below about 6 pt at 180 dpi) is better
   set in bold.
-- A P-Touch printer cannot be switched on over USB (no such command in Brother's raster command
+- A P-touch printer cannot be switched on over USB (no such command in Brother's raster command
   reference; USB remote wakeup only goes from the device to the host). Labeler explains a printer
   that switched itself off; INSTALL.md lists what helps.
 - Several printers on one computer need ptouch-print 1.9 (`--list-connected`, `--serial`); the browser picks one, the `serial` setting is the default. Printers on different computers each need a printer agent; one interface talks to one agent.

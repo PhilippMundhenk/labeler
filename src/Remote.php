@@ -21,9 +21,10 @@ final class Remote
         $this->timeout = max(1, $timeout);
     }
 
+    /** The agent's address for display: without a user name or password in it. */
     public function url(): string
     {
-        return $this->url;
+        return (string) preg_replace('#^(https?://)[^/@]*@#i', '$1', $this->url);
     }
 
     /**

@@ -105,6 +105,33 @@ final class ApiTest extends TestCase
         $this->assertSame(200, $code, 'empty values mean the printer default');
     }
 
+    public function testHostNamesAgainstDnsRebinding(): void
+    {
+        $this->simulate(['version' => '1.9']);
+        $api = $this->api();
+        foreach (['', '192.168.1.20', '192.168.1.20:8080', '[::1]:8080', 'localhost:8080', 'labeler', 'labeler:55543',
+            'pi.local', 'printer.lan', 'pi.home.arpa', 'box.internal'] as $host) {
+            $this->assertTrue($api->hostAllowed($host), $host);
+        }
+        foreach (['evil.example.com', 'labels.example.org:443', '1.2.3.4.nip.io'] as $host) {
+            $this->assertFalse($api->hostAllowed($host), $host);
+        }
+        $denied = $api->handle('GET', ['action' => 'status'], '', '', '', [], false, 'evil.example.com');
+        $this->assertSame(403, $denied->status);
+        $this->assertStringContainsString('allowed_hosts', $denied->body);
+        $this->assertSame(200, $api->handle('GET', ['action' => 'health'], '', '', '', [], false, 'evil.example.com')->status);
+
+        $listed = $this->api(['LABELER_ALLOWED_HOSTS' => 'Labels.Example.org, other.example']);
+        $this->assertTrue($listed->hostAllowed('labels.example.org:443'));
+        $this->assertFalse($listed->hostAllowed('evil.example.com'));
+        $this->assertTrue($this->api(['LABELER_ALLOWED_HOSTS' => '*'])->hostAllowed('evil.example.com'));
+
+        // with a token or a password the foreign page cannot use the API anyway
+        $token = $this->api(['LABELER_TOKEN' => 'secret']);
+        $this->assertSame(200, $token->handle('GET', ['action' => 'status'], '', '', 'Bearer secret', [], false, 'evil.example.com')->status);
+        $this->assertSame(401, $this->api(['LABELER_PASSWORD' => 'pw'])->handle('GET', ['action' => 'status'], '', '', '', [], false, 'evil.example.com')->status);
+    }
+
     public function testPrintAcceptsADataUrl(): void
     {
         $this->simulate(['version' => '1.9']);

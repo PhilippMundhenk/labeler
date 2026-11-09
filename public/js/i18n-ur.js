@@ -314,8 +314,8 @@ export default {
   'Log out': 'لاگ آؤٹ',
   'Source and help': 'سورس کوڈ اور مدد',
   'Language': 'زبان',
-  'Labeler is an independent open-source project. It has no relation to Brother Industries and is neither endorsed nor supported by them; "Brother" and "P-Touch" only say which printers it works with.':
-    'Labeler ایک آزاد اوپن سورس پروجیکٹ ہے۔ اس کا Brother Industries سے کوئی تعلق نہیں اور نہ وہ اس کی توثیق یا حمایت کرتے ہیں؛ “Brother” اور “P-Touch” صرف یہ بتاتے ہیں کہ یہ کن پرنٹرز کے ساتھ کام کرتا ہے۔',
+  'Labeler is an independent open-source project. It has no relation to Brother Industries and is neither endorsed nor supported by them; "Brother" and "P-touch" only say which printers it works with.':
+    'Labeler ایک آزاد اوپن سورس پروجیکٹ ہے۔ اس کا Brother Industries سے کوئی تعلق نہیں اور نہ وہ اس کی توثیق یا حمایت کرتے ہیں؛ “Brother” اور “P-touch” صرف یہ بتاتے ہیں کہ یہ کن پرنٹرز کے ساتھ کام کرتا ہے۔',
 
   // names that stay the same
   'Labeler': 'Labeler', 'ptouch-print': 'ptouch-print', 'Code 128': 'Code 128', 'Code 39': 'Code 39',

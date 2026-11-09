@@ -2,7 +2,7 @@
   "name": "labeler",
   "version": "1.0.0",
   "private": true,
-  "description": "Web interface for Brother P-Touch label printers through ptouch-print",
+  "description": "Web interface for Brother P-touch label printers through ptouch-print",
   "license": "MIT",
   "author": "Philipp Mundhenk",
   "repository": {

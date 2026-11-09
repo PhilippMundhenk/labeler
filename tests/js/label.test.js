@@ -99,3 +99,12 @@ test('cssFont quotes family names', () => {
   assert.equal(cssFont({ font: 'sans-serif', bold: true, italic: true }, 20), 'italic bold 20px sans-serif');
   assert.equal(cssFont({ font: 'Open "Sans"', bold: false, italic: false }, 9), '9px "Open Sans", sans-serif');
 });
+
+test('block ids and types from stored labels cannot inject HTML (#106)', () => {
+  const evil = normalizeBlock({ type: 'spacer', id: '"><img src=x onerror=alert(1)>' });
+  assert.match(evil.id, /^[A-Za-z0-9_-]{1,40}$/);
+  assert.notEqual(evil.id, '"><img src=x onerror=alert(1)>');
+  assert.equal(normalizeBlock({ type: 'spacer', id: 'b-12_x' }).id, 'b-12_x');
+  for (const type of ['__proto__', 'constructor', 'toString', 7]) assert.equal(normalizeBlock({ type }), null);
+  assert.throws(() => newBlock('constructor'), /unknown block type/);
+});
