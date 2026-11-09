@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+# runs for main replace each other (parallel pushes of :main collide); tag runs always finish
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
+
 jobs:
   consistency:
     name: Docs and code consistency
