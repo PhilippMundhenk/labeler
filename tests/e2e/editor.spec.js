@@ -612,3 +612,17 @@ test('floating mini preview while the preview is scrolled away (#102)', async ({
   await page.reload();
   await expect(page.locator('#float-preview')).not.toBeChecked();
 });
+
+test('phones: the preview scrolls with the page, the floating label takes over (#123)', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await ready(page);
+  expect(await page.locator('.preview-card').evaluate((el) => getComputedStyle(el).position)).toBe('static');
+  await page.locator('#saved-title').scrollIntoViewIfNeeded();
+  await expect(page.locator('#preview')).not.toBeInViewport();
+  await expect(page.locator('#mini-preview')).toBeVisible();
+  const mini = await page.locator('#mini-preview').boundingBox();
+  expect(mini.height).toBeLessThan(844 * 0.15);
+  await page.locator('#float-preview').evaluate((el) => { el.checked = false; el.dispatchEvent(new Event('change')); });
+  await expect(page.locator('#mini-preview')).toBeHidden();
+  await expect(page.locator('#preview')).not.toBeInViewport();
+});

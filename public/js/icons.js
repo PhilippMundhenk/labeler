@@ -55,7 +55,10 @@ export async function iconPreviews(api, ids, fetchFn = fetch) {
   const wanted = {};
   for (const id of ids) {
     const p = parseId(id);
-    if (p && !previews.has(id)) (wanted[p.prefix] ||= []).push(p.name);
+    if (p && !previews.has(id)) {
+      if (!wanted[p.prefix]) wanted[p.prefix] = [];
+      wanted[p.prefix].push(p.name);
+    }
   }
   await Promise.all(Object.entries(wanted).map(async ([prefix, names]) => {
     let res;
