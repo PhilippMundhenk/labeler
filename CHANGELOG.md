@@ -124,5 +124,7 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Security
 
+- The login cookie is signed with a random secret in the data folder (`session.key`) instead of a
+  key derived from the password alone, so a captured cookie does not help to guess the password (#111).
 - Label text was passed to a shell unescaped (command injection) and echoed without HTML
   escaping (#2).

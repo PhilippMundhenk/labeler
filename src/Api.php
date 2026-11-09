@@ -34,7 +34,7 @@ final class Api
         $this->printer = $printer ?? PtouchPrint::fromConfig($config, $this->log);
         $url = (string) $config->get('printer_url');
         $this->remote = $url === '' ? null : new Remote($url, (string) $config->get('printer_token'), (int) $config->get('timeout'));
-        $this->session = new Session((string) $config->get('password'));
+        $this->session = new Session((string) $config->get('password'), (string) $config->get('data_dir'));
     }
 
     /**
