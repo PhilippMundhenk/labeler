@@ -1,0 +1,129 @@
+From 1004ed4915f3cce2dc4ca5bf769daccff528cd33 Mon Sep 17 00:00:00 2001
+From: Philipp Mundhenk <philipp@mundhenk.org>
+Date: Mon, 9 Nov 2026 20:04:37 +0100
+Subject: [PATCH 1/5] add --feed to set the blank tape before and after a label
+
+Sends ESC i d (specify margin amount) with the given number of dots. Without
+the option nothing changes: the printer keeps its default of 14 dots.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ include/ptouch.h   |  1 +
+ ptouch-print.1     |  5 +++++
+ src/libptouch.c    | 14 ++++++++++++++
+ src/ptouch-print.c | 21 ++++++++++++++++++++-
+ 4 files changed, 40 insertions(+), 1 deletion(-)
+
+diff --git a/include/ptouch.h b/include/ptouch.h
+index 2b245b5..3a3d4d2 100644
+--- a/include/ptouch.h
++++ b/include/ptouch.h
+@@ -127,6 +127,7 @@ int ptouch_send_d460bt_chain(ptouch_dev ptdev);
+ int ptouch_enable_packbits(ptouch_dev ptdev);
+ int ptouch_info_cmd(ptouch_dev ptdev, int size_x);
+ int ptouch_send_precut_cmd(ptouch_dev ptdev, int precut);
++int ptouch_send_margin(ptouch_dev ptdev, int dots);
+ int ptouch_rasterstart(ptouch_dev ptdev);
+ int ptouch_sendraster(ptouch_dev ptdev, uint8_t *data, size_t len);
+ void ptouch_rawstatus(uint8_t raw[32]);
+diff --git a/ptouch-print.1 b/ptouch-print.1
+index 0acd39c..341ad07 100644
+--- a/ptouch-print.1
++++ b/ptouch-print.1
+@@ -80,6 +80,11 @@ Print a cutmark (dashed line) at the current position.
+ .BR \-\-pad\  \fI<n>
+ Print <n> pixels of white space at the current position. Useful for printers
+ that would otherwise cut off parts of the printed text or image.
++.TP
++.BR \-\-feed\  \fI<dots>
++Blank tape the printer adds before and after the label, in dots (0 to 1000).
++Without this option the printer uses its default of 14 dots (2 mm at 180 dpi).
++Small values save tape, mostly in chain mode.
+ 
+ .SS "Getting help and display information"
+ .TP
+diff --git a/src/libptouch.c b/src/libptouch.c
+index 0ce5ee4..fbbc56e 100644
+--- a/src/libptouch.c
++++ b/src/libptouch.c
+@@ -338,6 +338,20 @@ int ptouch_send_precut_cmd(ptouch_dev ptdev, int precut)
+ 	return ptouch_send(ptdev, (uint8_t *)cmd, sizeof(cmd)-1);
+ }
+ 
++/* 1B 69 64 {n1} {n2} = ESC i d = specify margin amount (feed amount)
++   The blank tape before and after the print, in dots (n1 + n2*256). The
++   printer's default is 14 dots (2 mm at 180 dpi). */
++int ptouch_send_margin(ptouch_dev ptdev, int dots)
++{
++	uint8_t cmd[] = "\x1b\x69\x64\x00\x00";
++	if ((dots < 0) || (dots > 0xffff)) {
++		return -1;
++	}
++	cmd[3] = (uint8_t)(dots & 0xff);
++	cmd[4] = (uint8_t)((dots >> 8) & 0xff);
++	return ptouch_send(ptdev, cmd, sizeof(cmd)-1);
++}
++
+ int ptouch_rasterstart(ptouch_dev ptdev)
+ {
+ 	if (!ptdev) {
+diff --git a/src/ptouch-print.c b/src/ptouch-print.c
+index f5f2c65..f9a9dad 100644
+--- a/src/ptouch-print.c
++++ b/src/ptouch-print.c
+@@ -66,6 +66,7 @@ struct arguments {
+ 	int verbose;
+ 	int timeout;
+ 	char *serial;
++	int feed;
+ };
+ 
+ typedef enum { JOB_CUTMARK, JOB_IMAGE, JOB_PAD, JOB_TEXT, JOB_UNDEFINED } job_type_t;
+@@ -119,6 +120,7 @@ static struct argp_option options[] = {
+ 	{ "pad", 'p', "<n>", 0, "Add n pixels padding (blank tape)", 2},
+ 	{ "chain", 10, 0, 0, "Skip final feed of label and any automatic cut", 2},
+ 	{ "precut", 11, 0, 0, "Add a cut before the label (useful in chain mode for cuts with minimal waste)", 2},
++	{ "feed", 13, "<dots>", 0, "Blank tape before and after the label in dots (printer default: 14)", 2},
+ 	{ "newline", 'n', "<text>", 0, "Add text in a new line (up to 4 lines). \\n will be replaced by a newline", 2},
+ 	{ "align", 'a', "<l|c|r>", 0, "Align text (when printing multiple lines)", 2},
+ 
+@@ -145,7 +147,8 @@ struct arguments arguments = {
+ 	.save_png = NULL,
+ 	.verbose = 0,
+ 	.timeout = -1,		/* -1 = not given; 0 is already "infinity" */
+-	.serial = NULL
++	.serial = NULL,
++	.feed = -1		/* -1 = printer default */
+ };
+ 
+ job_t *jobs = NULL;
+@@ -247,6 +250,13 @@ int print_img(ptouch_dev ptdev, gdImage *im, int chain, int precut)
+ 			}
+ 		}
+ 	}
++	if (arguments.feed >= 0) {
++		/* after the PT-D460BT magic, which sets a margin of its own */
++		ptouch_send_margin(ptdev, arguments.feed);
++		if (arguments.debug) {
++			printf(_("send margin command (%d dots)\n"), arguments.feed);
++		}
++	}
+ 	for (int k = 0; k < gdImageSX(im); ++k) {
+ 		memset(rasterline, 0, sizeof(rasterline));
+ 		for (int i = 0; i < gdImageSY(im); ++i) {
+@@ -695,6 +705,15 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
+ 		case 12: // serial
+ 			arguments->serial = arg;
+ 			break;
++		case 13: { // feed
++			char *end = NULL;
++			long v = strtol(arg, &end, 10);
++			if ((end == arg) || (*end != '\0') || (v < 0) || (v > 1000)) {
++				argp_failure(state, 1, EINVAL, _("--feed needs a number of dots between 0 and 1000"));
++			}
++			arguments->feed = (int)v;
++			break;
++		}
+ 		case 'a': // align
+ 			if ((strcmp(arg, "c") == 0) || (strcmp(arg, "center") == 0)) {
+ 				arguments->align = ALIGN_CENTER;

@@ -260,6 +260,16 @@ final class Api
         if ($copies < 1 || $copies > $maxCopies) {
             return Response::json(400, ['error' => "copies must be between 1 and $maxCopies"]);
         }
+        $extra = ['halfcut' => !empty($request['halfcut']), 'hires' => !empty($request['hires'])];
+        foreach (['feed' => [0, 1000], 'cut_every' => [1, 99]] as $key => [$min, $max]) {
+            if (!isset($request[$key]) || $request[$key] === '') {
+                continue;
+            }
+            if (!is_int($request[$key]) || $request[$key] < $min || $request[$key] > $max) {
+                return Response::json(400, ['error' => "$key must be a whole number between $min and $max"]);
+            }
+            $extra[$key] = $request[$key];
+        }
 
         $info = $this->printer->info();
         if (!$info['ready']) {
@@ -281,7 +291,8 @@ final class Api
                 $file,
                 $copies,
                 !empty($request['chain']),
-                !empty($request['precut'])
+                !empty($request['precut']),
+                $extra
             );
         } finally {
             @unlink($file);
@@ -297,7 +308,9 @@ final class Api
                 $result['problem'] = 'After printing, the printer reports: ' . $after['message'];
             }
         }
-        $lengthMm = round($size['width'] / max(1, (int) $info['dpi']) * 25.4, 1);
+        // in high resolution a pixel column is half as long along the tape
+        $dpiAlong = max(1, (int) $info['dpi']) * ($extra['hires'] && $this->printer->supports('hires') ? 2 : 1);
+        $lengthMm = round($size['width'] / $dpiAlong * 25.4, 1);
         return Response::json($result['ok'] ? 200 : 502, [
             'ok' => $result['ok'],
             'error' => $result['ok'] ? null : ($result['problem'] ?? 'ptouch-print reported a problem'),

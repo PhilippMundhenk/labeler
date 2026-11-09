@@ -1,0 +1,157 @@
+From 2ce2ef521756fbf3c7fa73efc1eb237feb5dd6d7 Mon Sep 17 00:00:00 2001
+From: Philipp Mundhenk <philipp@mundhenk.org>
+Date: Mon, 9 Nov 2026 20:53:04 +0100
+Subject: [PATCH] print size_t values with %zu
+
+size_t is unsigned int on 32-bit systems such as Raspberry Pi OS, where %ld
+gives -Wformat warnings and reads the wrong argument size. The translations
+change along with the strings.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ po/de.po           | 8 ++++----
+ po/en.po           | 8 ++++----
+ po/ptouch.pot      | 6 +++---
+ src/libptouch.c    | 2 +-
+ src/ptouch-print.c | 6 +++---
+ 5 files changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/po/de.po b/po/de.po
+index 9105c92..1217686 100644
+--- a/po/de.po
++++ b/po/de.po
+@@ -77,7 +77,7 @@ msgstr ""
+ 
+ #: src/libptouch.c:252
+ #, fuzzy, c-format
+-msgid "write error: could send only %i of %ld bytes\n"
++msgid "write error: could send only %i of %zu bytes\n"
+ msgstr "Lesefehler: %i anstatt 32 bytes empfangen\n"
+ 
+ #: src/libptouch.c:302
+@@ -337,12 +337,12 @@ msgstr "ptouch_getstatus() fehlgeschlagen\n"
+ 
+ #: src/ptouch-print.c:789
+ #, fuzzy, c-format
+-msgid "printer has %d dpi, maximum printing width is %ld px\n"
++msgid "printer has %d dpi, maximum printing width is %zu px\n"
+ msgstr "Maximal druckbare Breite für dieses Schriftband sind %ipx\n"
+ 
+ #: src/ptouch-print.c:790
+ #, fuzzy, c-format
+-msgid "maximum printing width for this tape is %ldpx\n"
++msgid "maximum printing width for this tape is %zupx\n"
+ msgstr "Maximal druckbare Breite für dieses Schriftband sind %ipx\n"
+ 
+ #: src/ptouch-print.c:815
+@@ -361,7 +361,7 @@ msgid "ptouch_finalize(%d) failed\n"
+ msgstr "ptouch_finalize(%d) fehlgeschlagen\n"
+ 
+ #, fuzzy, c-format
+-#~ msgid "maximum printing width for this printer is %ldpx\n"
++#~ msgid "maximum printing width for this printer is %zupx\n"
+ #~ msgstr "Maximal druckbare Breite für dieses Schriftband sind %ipx\n"
+ 
+ #, c-format
+diff --git a/po/en.po b/po/en.po
+index 17f2604..79bccb5 100644
+--- a/po/en.po
++++ b/po/en.po
+@@ -77,7 +77,7 @@ msgstr "write error: %s\n"
+ 
+ #: src/libptouch.c:252
+ #, fuzzy, c-format
+-msgid "write error: could send only %i of %ld bytes\n"
++msgid "write error: could send only %i of %zu bytes\n"
+ msgstr "write error: could send only %i of %i bytes\n"
+ 
+ #: src/libptouch.c:302
+@@ -337,12 +337,12 @@ msgstr "ptouch_getstatus() failed\n"
+ 
+ #: src/ptouch-print.c:789
+ #, fuzzy, c-format
+-msgid "printer has %d dpi, maximum printing width is %ld px\n"
++msgid "printer has %d dpi, maximum printing width is %zu px\n"
+ msgstr "maximum printing width for this tape is %ipx\n"
+ 
+ #: src/ptouch-print.c:790
+ #, fuzzy, c-format
+-msgid "maximum printing width for this tape is %ldpx\n"
++msgid "maximum printing width for this tape is %zupx\n"
+ msgstr "maximum printing width for this tape is %ipx\n"
+ 
+ #: src/ptouch-print.c:815
+@@ -361,7 +361,7 @@ msgid "ptouch_finalize(%d) failed\n"
+ msgstr "ptouch_finalize(%d) failed\n"
+ 
+ #, fuzzy, c-format
+-#~ msgid "maximum printing width for this printer is %ldpx\n"
++#~ msgid "maximum printing width for this printer is %zupx\n"
+ #~ msgstr "maximum printing width for this tape is %ipx\n"
+ 
+ #, c-format
+diff --git a/po/ptouch.pot b/po/ptouch.pot
+index f4f8260..35b2384 100644
+--- a/po/ptouch.pot
++++ b/po/ptouch.pot
+@@ -75,7 +75,7 @@ msgstr ""
+ 
+ #: src/libptouch.c:252
+ #, c-format
+-msgid "write error: could send only %i of %ld bytes\n"
++msgid "write error: could send only %i of %zu bytes\n"
+ msgstr ""
+ 
+ #: src/libptouch.c:302
+@@ -335,12 +335,12 @@ msgstr ""
+ 
+ #: src/ptouch-print.c:789
+ #, c-format
+-msgid "printer has %d dpi, maximum printing width is %ld px\n"
++msgid "printer has %d dpi, maximum printing width is %zu px\n"
+ msgstr ""
+ 
+ #: src/ptouch-print.c:790
+ #, c-format
+-msgid "maximum printing width for this tape is %ldpx\n"
++msgid "maximum printing width for this tape is %zupx\n"
+ msgstr ""
+ 
+ #: src/ptouch-print.c:815
+diff --git a/src/libptouch.c b/src/libptouch.c
+index cc66032..8a5f7dd 100644
+--- a/src/libptouch.c
++++ b/src/libptouch.c
+@@ -249,7 +249,7 @@ int ptouch_send(ptouch_dev ptdev, uint8_t *data, size_t len)
+ 		return -1;
+ 	}
+ 	if (tx != (int)len) {
+-		fprintf(stderr, _("write error: could send only %i of %ld bytes\n"), tx, len);
++		fprintf(stderr, _("write error: could send only %i of %zu bytes\n"), tx, len);
+ 		return -1;
+ 	}
+ 	return 0;
+diff --git a/src/ptouch-print.c b/src/ptouch-print.c
+index c1f05d0..112bc81 100644
+--- a/src/ptouch-print.c
++++ b/src/ptouch-print.c
+@@ -233,7 +233,7 @@ int print_img(ptouch_dev ptdev, gdImage *im, int chain, int precut)
+ 	   See the Brother "Software Developer's Manual - Raster Command
+ 	   Reference, PT-P900/P900W/P950NW", section 2.3.5 "Raster line". */
+ 	offset += ptdev->devinfo->pin_offset;
+-	printf("max_pixels=%ld, offset=%d\n", max_pixels, offset);
++	printf("max_pixels=%zu, offset=%d\n", max_pixels, offset);
+ 	if ((ptdev->devinfo->flags & FLAG_RASTER_PACKBITS) == FLAG_RASTER_PACKBITS) {
+ 		if (arguments.debug) {
+ 			printf("enable PackBits mode\n");
+@@ -862,8 +862,8 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ 	if (arguments.info) {
+-		printf(_("printer has %d dpi, maximum printing width is %ld px\n"), ptouch_get_dpi(ptdev), ptouch_get_max_width(ptdev));
+-		printf(_("maximum printing width for this tape is %ldpx\n"), ptouch_get_tape_width(ptdev));
++		printf(_("printer has %d dpi, maximum printing width is %zu px\n"), ptouch_get_dpi(ptdev), ptouch_get_max_width(ptdev));
++		printf(_("maximum printing width for this tape is %zupx\n"), ptouch_get_tape_width(ptdev));
+ 		printf("media type = 0x%02x (%s)\n", ptdev->status->media_type, pt_mediatype(ptdev->status->media_type));
+ 		printf("media width = %d mm\n", ptdev->status->media_width);
+ 		printf("tape color = 0x%02x (%s)\n", ptdev->status->tape_color, pt_tapecolor(ptdev->status->tape_color));

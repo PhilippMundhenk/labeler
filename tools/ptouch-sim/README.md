@@ -24,5 +24,6 @@ Printed labels are written to `PTSIM_OUT` as `label-NNNN.png` with a `label-NNNN
 | `PTSIM_ERROR` | `0` | status error bits as ptouch-print prints them, e.g. `4096` (0x1000) cover open, `4` cutter jam, `8` weak batteries |
 | `PTSIM_FAIL` | empty | `print` makes printing fail with a USB write error; `jam` lets the print end with exit code 0 like the real tool, then the printer reports a cutter jam (needs `PTSIM_STATE`) |
 | `PTSIM_DELAY_MS` | `0` | how long a print takes |
+| `PTSIM_EXTENSIONS` | `0` | `1`: a ptouch-print 1.7+ with [Labeler's patches](../../docs/PTOUCH-PRINT.md): `--help` lists and the command line accepts `--feed`, `--halfcut`, `--cut-every` and `--hires`; the label records show them |
 | `PTSIM_OTHERS` | `[]` | more printers as JSON, e.g. `[{"printer":"PT-P750W","serial":"B2","tape_mm":24}]`; `--list-connected` lists them, `--serial` picks one |
 | `PTSIM_STATE` | unset | JSON file with the same keys in lower case; read on every call, so tests can change the state of a running server |

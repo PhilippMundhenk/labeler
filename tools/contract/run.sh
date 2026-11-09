@@ -41,4 +41,5 @@ if ptouch-print --force-tape-width 76 --writepng "$out/t.png" --text "line 1" "l
 else
   pass "--text with two arguments is rejected (reason for #1)"
 fi
+sh tools/contract/usb.sh "$out/in"
 echo "contract test passed: $(cat "$out/version.txt")"

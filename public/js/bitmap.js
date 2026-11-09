@@ -34,6 +34,17 @@ export class Bitmap {
     }
   }
 
+  /** Half as many rows, a pixel black when either of its two source rows is (high resolution). */
+  halveRows() {
+    const out = new Bitmap(this.width, Math.ceil(this.height / 2));
+    for (let y = 0; y < this.height; y++) {
+      const row = y * this.width;
+      const to = (y >> 1) * this.width;
+      for (let x = 0; x < this.width; x++) if (this.data[row + x]) out.data[to + x] = 1;
+    }
+    return out;
+  }
+
   invert() {
     for (let i = 0; i < this.data.length; i++) this.data[i] = this.data[i] ? 0 : 1;
     return this;

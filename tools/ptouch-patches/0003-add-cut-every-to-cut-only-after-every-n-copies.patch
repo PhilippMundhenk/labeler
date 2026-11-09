@@ -1,0 +1,129 @@
+From ff7db88c18578f9f91e7d70db8f4074145f61eaa Mon Sep 17 00:00:00 2001
+From: Philipp Mundhenk <philipp@mundhenk.org>
+Date: Mon, 9 Nov 2026 20:04:37 +0100
+Subject: [PATCH 3/5] add --cut-every to cut only after every n copies
+
+Sends ESC i A (cut every n labels) together with auto cut (ESC i M 0x40), so
+--copies 10 --cut-every 5 gives two strips of five labels.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ include/ptouch.h   |  1 +
+ ptouch-print.1     |  4 ++++
+ src/libptouch.c    | 11 +++++++++++
+ src/ptouch-print.c | 25 ++++++++++++++++++++++++-
+ 4 files changed, 40 insertions(+), 1 deletion(-)
+
+diff --git a/include/ptouch.h b/include/ptouch.h
+index 9c1b5cf..3b88f27 100644
+--- a/include/ptouch.h
++++ b/include/ptouch.h
+@@ -136,6 +136,7 @@ int ptouch_info_cmd(ptouch_dev ptdev, int size_x);
+ int ptouch_send_precut_cmd(ptouch_dev ptdev, int precut);
+ int ptouch_send_margin(ptouch_dev ptdev, int dots);
+ int ptouch_send_advanced_mode(ptouch_dev ptdev, uint8_t mode);
++int ptouch_send_cut_every(ptouch_dev ptdev, int n);
+ int ptouch_rasterstart(ptouch_dev ptdev);
+ int ptouch_sendraster(ptouch_dev ptdev, uint8_t *data, size_t len);
+ void ptouch_rawstatus(uint8_t raw[32]);
+diff --git a/ptouch-print.1 b/ptouch-print.1
+index 7ef9866..0d143aa 100644
+--- a/ptouch-print.1
++++ b/ptouch-print.1
+@@ -90,6 +90,10 @@ Small values save tape, mostly in chain mode.
+ Cut through the tape but not its backing between labels, so a strip of labels
+ stays in one piece. Only for printers with a half cutter (for example the
+ PT-P900 series); other printers ignore it.
++.TP
++.BR \-\-cut-every\  \fI<n>
++Together with \-\-copies: turn on auto cut and cut only after every <n>
++labels (1 to 99), so the labels in between stay joined.
+ 
+ .SS "Getting help and display information"
+ .TP
+diff --git a/src/libptouch.c b/src/libptouch.c
+index a865222..cc66032 100644
+--- a/src/libptouch.c
++++ b/src/libptouch.c
+@@ -360,6 +360,17 @@ int ptouch_send_advanced_mode(ptouch_dev ptdev, uint8_t mode)
+ 	return ptouch_send(ptdev, cmd, sizeof(cmd)-1);
+ }
+ 
++/* 1B 69 41 {n} = ESC i A = with auto cut on, cut after every n labels (1-99) */
++int ptouch_send_cut_every(ptouch_dev ptdev, int n)
++{
++	uint8_t cmd[] = "\x1b\x69\x41\x01";
++	if ((n < 1) || (n > 99)) {
++		return -1;
++	}
++	cmd[3] = (uint8_t)n;
++	return ptouch_send(ptdev, cmd, sizeof(cmd)-1);
++}
++
+ int ptouch_rasterstart(ptouch_dev ptdev)
+ {
+ 	if (!ptdev) {
+diff --git a/src/ptouch-print.c b/src/ptouch-print.c
+index ee3e5d3..bf1f400 100644
+--- a/src/ptouch-print.c
++++ b/src/ptouch-print.c
+@@ -68,6 +68,7 @@ struct arguments {
+ 	char *serial;
+ 	int feed;
+ 	bool halfcut;
++	int cut_every;
+ };
+ 
+ typedef enum { JOB_CUTMARK, JOB_IMAGE, JOB_PAD, JOB_TEXT, JOB_UNDEFINED } job_type_t;
+@@ -123,6 +124,7 @@ static struct argp_option options[] = {
+ 	{ "precut", 11, 0, 0, "Add a cut before the label (useful in chain mode for cuts with minimal waste)", 2},
+ 	{ "feed", 13, "<dots>", 0, "Blank tape before and after the label in dots (printer default: 14)", 2},
+ 	{ "halfcut", 14, 0, 0, "Cut only the tape, not its backing, between labels (printers with a half cutter)", 2},
++	{ "cut-every", 15, "<n>", 0, "With --copies, cut only after every <n> labels (1-99)", 2},
+ 	{ "newline", 'n', "<text>", 0, "Add text in a new line (up to 4 lines). \\n will be replaced by a newline", 2},
+ 	{ "align", 'a', "<l|c|r>", 0, "Align text (when printing multiple lines)", 2},
+ 
+@@ -151,7 +153,8 @@ struct arguments arguments = {
+ 	.timeout = -1,		/* -1 = not given; 0 is already "infinity" */
+ 	.serial = NULL,
+ 	.feed = -1,		/* -1 = printer default */
+-	.halfcut = false
++	.halfcut = false,
++	.cut_every = 0		/* 0 = not given */
+ };
+ 
+ job_t *jobs = NULL;
+@@ -255,6 +258,17 @@ int print_img(ptouch_dev ptdev, gdImage *im, int chain, int precut)
+ 			}
+ 		}
+ 	}
++	if (arguments.cut_every > 0) {
++		/* "cut every n labels" only works with auto cut on (ESC i M 0x40,
++		   the same command --precut sends) */
++		if (!(precut && (ptdev->devinfo->flags & FLAG_HAS_PRECUT))) {
++			ptouch_send_precut_cmd(ptdev, 1);
++		}
++		ptouch_send_cut_every(ptdev, arguments.cut_every);
++		if (arguments.debug) {
++			printf(_("send cut every %d labels command\n"), arguments.cut_every);
++		}
++	}
+ 	/* send chain command after precut, to allow precutting before chain */
+ 	uint8_t advanced = advanced_mode();
+ 	if (advanced) {
+@@ -739,6 +753,15 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
+ 		case 14: // halfcut
+ 			arguments->halfcut = true;
+ 			break;
++		case 15: { // cut-every
++			char *end = NULL;
++			long v = strtol(arg, &end, 10);
++			if ((end == arg) || (*end != '\0') || (v < 1) || (v > 99)) {
++				argp_failure(state, 1, EINVAL, _("--cut-every needs a number between 1 and 99"));
++			}
++			arguments->cut_every = (int)v;
++			break;
++		}
+ 		case 'a': // align
+ 			if ((strcmp(arg, "c") == 0) || (strcmp(arg, "center") == 0)) {
+ 				arguments->align = ALIGN_CENTER;

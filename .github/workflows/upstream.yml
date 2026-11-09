@@ -16,5 +16,5 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: docker build -t labeler-contract --build-arg PTOUCH_REF=master tools/contract
+      - run: docker build -t labeler-contract --build-arg PTOUCH_REF=master -f tools/contract/Dockerfile tools
       - run: docker run --rm -v "$PWD:/work" labeler-contract

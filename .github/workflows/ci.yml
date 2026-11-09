@@ -62,17 +62,20 @@ jobs:
             vendor/bin/phpunit'
 
   contract:
-    name: Real ptouch-print ${{ matrix.ref }}
+    name: Real ptouch-print ${{ matrix.ref }}${{ matrix.patches == 1 && ' with patches' || '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         ref: [v1.6, v1.7, v1.8, v1.9]
+        patches: [0]
+        include:
+          - { ref: v1.9, patches: 1 }   # tools/ptouch-patches
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build ptouch-print ${{ matrix.ref }} from the upstream sources
-        run: docker build -t labeler-contract --build-arg PTOUCH_REF=${{ matrix.ref }} tools/contract
+        run: docker build -t labeler-contract --build-arg PTOUCH_REF=${{ matrix.ref }} --build-arg PTOUCH_PATCHES=${{ matrix.patches }} -f tools/contract/Dockerfile tools
       - name: Contract test
         run: docker run --rm -v "$PWD:/work" labeler-contract
 

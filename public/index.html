@@ -47,6 +47,10 @@
         <div class="row wrap">
           <label class="check" title=""><input id="chain" type="checkbox"> Chain printing (no feed and cut after the label)</label>
           <label class="check" title=""><input id="precut" type="checkbox"> Auto cut</label>
+          <label class="check" title=""><input id="halfcut" type="checkbox"> Half cut (backing stays in one piece)</label>
+          <label class="check" title=""><input id="hires" type="checkbox"> High resolution (slower)</label>
+          <label class="inline" title="">Cut after every <input id="cut-every" type="number" inputmode="numeric" min="1" max="99" step="1" class="narrow"> labels</label>
+          <label class="inline" title="">Margin <input id="feed" type="number" inputmode="decimal" min="0" max="10" step="0.5" class="narrow" placeholder="2"> mm</label>
           <label class="inline">Next number for {n} <input id="counter" type="number" inputmode="numeric" min="0" step="1" class="narrow"></label>
           <button type="button" id="download" class="secondary">Download PNG</button>
         </div>
