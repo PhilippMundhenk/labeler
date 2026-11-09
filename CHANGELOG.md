@@ -105,6 +105,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - The container image tag `latest` was set from a push to main once and then went stale;
   it is now only set by a release, and docker-compose.yml and the docs use `:main` until the
   first release (#100).
+- The image's license label names ptouch-print's GPL-3.0 next to Labeler's MIT; docs/DOCKER.md
+  explains every image tag and the image labels (#100).
 - Icon search: the previews of the results come in one request per collection instead of one per
   icon, so they no longer stay empty after a few searches; without previews the names are shown (#87).
 - A label saved right after opening the page went to the browser instead of the server (#52).
