@@ -1,7 +1,7 @@
 {
   "name": "Labeler",
   "short_name": "Labeler",
-  "description": "Design and print labels on a Brother P-Touch printer",
+  "description": "Design and print labels on a Brother P-touch printer",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

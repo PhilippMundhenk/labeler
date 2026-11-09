@@ -25,7 +25,7 @@ RUN for i in 1 2 3; do git clone https://git.familie-radermacher.ch/linux/ptouch
 FROM debian:bookworm-slim
 ARG VERSION=dev
 LABEL org.opencontainers.image.title="Labeler" \
-      org.opencontainers.image.description="Web interface for Brother P-Touch label printers" \
+      org.opencontainers.image.description="Web interface for Brother P-touch label printers" \
       org.opencontainers.image.source="https://github.com/PhilippMundhenk/labeler" \
       org.opencontainers.image.licenses="MIT AND GPL-3.0-only"
 RUN apt-get update \

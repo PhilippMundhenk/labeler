@@ -40,13 +40,16 @@ response within a week.
 - The udev rule in `deploy/` gives the group `lp` access to all Brother USB devices. On a machine
   shared with untrusted users, narrow it to your printer's product id (`lsusb`).
 - Icon search runs in the browser against the Iconify API (`icon_api`, by default
-  `api.iconify.design`): the search words and the chosen icon names go to that service, nothing
-  else. Set `icon_api` to your own Iconify server or to empty to avoid it. The chosen icon's SVG is
+  `api.iconify.design`): the search words and the chosen icon names go to that service, together
+  with what every web request carries: the IP address, the browser and the `Origin` header (the
+  address you opened Labeler with); no `Referer` is sent, no label content. Set `icon_api` to your own Iconify server or to empty to avoid it. The chosen icon's SVG is
   stored in the label, so printing never needs the service.
 - The print log keeps the arguments and output of the last ptouch-print runs, never the label
   content. Temporary label files are removed after printing.
 
 ## Fixed issues
 
-- Versions before 1.0.0 (the single `index.php`) passed the label text to a shell, so text such as
-  `$(...)` was executed as the web server user (#2). Update to 1.0.0 or newer.
+- The old single `index.php` (before the rewrite; the first release of the new code is 0.0.1)
+  passed the label text to a shell, so text such as `$(...)` was executed as the web server user.
+  Version 0.0.1 had a stored XSS through saved labels and further weaknesses found in a review
+  before 1.0.0 (see the changelog, section Security). Update to 1.0.0 or newer.

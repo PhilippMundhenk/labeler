@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Labeler\Sim;
 
 /**
- * A stand-in for the ptouch-print command line tool and a connected P-Touch printer.
+ * A stand-in for the ptouch-print command line tool and a connected P-touch printer.
  *
  * It accepts the same arguments as the selected ptouch-print version (1.5 to 1.9), and with
  * "extensions" the options of Labeler's patches (tools/ptouch-patches: --feed, --halfcut,

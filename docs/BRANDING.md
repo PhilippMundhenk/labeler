@@ -4,7 +4,7 @@ One product, one surface: the web page in `public/`. Code references: `public/ap
 `public/icon.svg`, `public/manifest.webmanifest`.
 
 > Labeler is an independent open-source project, not affiliated with Brother Industries; "Brother"
-> and "P-Touch" are used only to describe compatibility.
+> and "P-touch" are used only to describe compatibility.
 
 ## 1. Name
 

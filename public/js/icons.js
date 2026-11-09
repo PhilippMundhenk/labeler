@@ -14,6 +14,8 @@ export function parseId(id) {
 }
 
 const base = (api) => api.replace(/\/+$/, '');
+// the service needs no Referer (it would name the page Labeler runs on)
+const NO_REFERRER = { referrerPolicy: 'no-referrer' };
 
 /** Small preview or full-size black SVG of an icon. */
 export function iconUrl(api, id, height = 480) {
@@ -33,7 +35,7 @@ export async function searchIcons(api, query, set = 'all', limit = 64, fetchFn =
   const url = `${base(api)}/search?query=${encodeURIComponent(q)}&prefixes=${encodeURIComponent(prefixes)}&limit=${limit}`;
   let res;
   try {
-    res = await fetchFn(url);
+    res = await fetchFn(url, NO_REFERRER);
   } catch {
     throw new Error('the icon service cannot be reached');
   }
@@ -63,7 +65,7 @@ export async function iconPreviews(api, ids, fetchFn = fetch) {
   await Promise.all(Object.entries(wanted).map(async ([prefix, names]) => {
     let res;
     try {
-      res = await fetchFn(`${base(api)}/${prefix}.json?icons=${names.map(encodeURIComponent).join(',')}`);
+      res = await fetchFn(`${base(api)}/${prefix}.json?icons=${names.map(encodeURIComponent).join(',')}`, NO_REFERRER);
     } catch {
       throw new Error('the icon service cannot be reached');
     }
@@ -102,7 +104,7 @@ export function svgDataUrl(svg) {
 export async function fetchIcon(api, id, fetchFn = fetch) {
   let res;
   try {
-    res = await fetchFn(iconUrl(api, id));
+    res = await fetchFn(iconUrl(api, id), NO_REFERRER);
   } catch {
     throw new Error('the icon service cannot be reached');
   }

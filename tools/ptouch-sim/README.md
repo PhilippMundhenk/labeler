@@ -1,7 +1,7 @@
 # ptouch-print simulator
 
 `ptouch-print` in this folder behaves like the real
-[ptouch-print](https://git.familie-radermacher.ch/linux/ptouch-print.git) with a P-Touch printer
+[ptouch-print](https://git.familie-radermacher.ch/linux/ptouch-print.git) with a P-touch printer
 attached: same options, messages and exit codes for versions 1.5 to 1.9. It needs only PHP.
 The unit tests, the browser tests, the demo mode and the screenshots use it.
 
