@@ -124,6 +124,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Security
 
+- `install.sh` left the interface's `config.php` (password, tokens) readable for every user after
+  an update; it is now `root:labeler`, mode 640, like the agent's (#108).
 - DNS rebinding: without password and token the API answers only by IP address, `localhost` or a
   local name; other names go into the new setting `allowed_hosts` (#107).
 - A saved label with a crafted block id could run script in the browser of everyone who loaded
