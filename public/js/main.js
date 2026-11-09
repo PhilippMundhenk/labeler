@@ -697,17 +697,21 @@ function onHistoryClick(e) {
   }
 }
 
-// Saved labels live on the server when its data folder allows it (shared by every browser),
-// otherwise in this browser.
+// Saved labels are kept in this browser; with "On the server" checked they go to the server
+// instead (when its data folder allows it), where every browser sees them.
 let serverLabels = null;
 // the first status and the server's list: until both are known, saving would pick the wrong place
 let statusLoading = Promise.resolve();
 let savedLoading = Promise.resolve();
 const sharedLabels = () => serverLabels !== null;
 
+/** @returns {{name: string, where: 'browser'|'server', label: object}[]} sorted by name */
 function savedLabels() {
-  if (!sharedLabels()) return load(STORE_SAVED, {});
-  return Object.fromEntries(Object.entries(serverLabels).map(([name, entry]) => [name, entry.label]));
+  const list = Object.entries(load(STORE_SAVED, {})).map(([name, label]) => ({ name, where: 'browser', label }));
+  if (sharedLabels()) {
+    for (const [name, entry] of Object.entries(serverLabels)) list.push({ name, where: 'server', label: entry.label });
+  }
+  return list.sort((a, b) => a.name.localeCompare(b.name) || a.where.localeCompare(b.where));
 }
 
 async function refreshSaved() {
@@ -721,13 +725,16 @@ async function refreshSaved() {
 
 function renderSaved() {
   const saved = savedLabels();
-  const local = Object.keys(load(STORE_SAVED, {}));
-  $('#saved-where').textContent = sharedLabels() ? 'Saved on the server, for every browser.' : 'Saved in this browser.';
-  $('#saved-local').hidden = !(sharedLabels() && local.length);
-  $('#saved-local span').textContent = `${local.length} ${local.length === 1 ? 'label is' : 'labels are'} saved only in this browser.`;
-  const names = Object.keys(saved).sort((a, b) => a.localeCompare(b));
-  $('#saved-list').innerHTML = names.length
-    ? names.map((n) => `<li><button type="button" class="link" data-load="${esc(n)}" data-no-i18n>${esc(n)}</button><button type="button" class="icon" data-remove="${esc(n)}" aria-label="Delete saved label ${esc(n)}">${icon('trash')}</button></li>`).join('')
+  $('#save-server-label').hidden = !sharedLabels();
+  if (!sharedLabels()) $('#save-server').checked = false;
+  $('#saved-where').textContent = sharedLabels()
+    ? 'Saved in this browser, or on the server for every browser when checked.'
+    : 'Saved in this browser.';
+  $('#saved-list').innerHTML = saved.length
+    ? saved.map(({ name, where }) => {
+      const badge = where === 'server' ? '<span class="badge" title="Saved on the server, for every browser">Server</span>' : '';
+      return `<li><button type="button" class="link" data-load="${esc(name)}" data-where="${where}" data-no-i18n>${esc(name)}</button>${badge}<button type="button" class="icon" data-remove="${esc(name)}" data-where="${where}" aria-label="Delete saved label ${esc(name)}">${icon('trash')}</button></li>`;
+    }).join('')
     : '<li class="muted">No saved labels yet.</li>';
 }
 
@@ -737,7 +744,7 @@ async function onSave(e) {
   if (!name) return;
   await statusLoading;
   await savedLoading;
-  if (sharedLabels()) {
+  if (sharedLabels() && $('#save-server').checked) {
     const res = await saveLabel(name, state.label);
     if (!res.ok) {
       toast(`Not saved: ${res.data.error}`, 'bad');
@@ -745,7 +752,7 @@ async function onSave(e) {
     }
     $('#save-name').value = '';
     await refreshSaved();
-    toast(`Saved "${name}"`, 'ok');
+    toast(`Saved "${name}" on the server`, 'ok');
     return;
   }
   const saved = load(STORE_SAVED, {});
@@ -759,38 +766,28 @@ async function onSave(e) {
   toast(`Saved "${name}"`, 'ok');
 }
 
-async function copyLocalLabels() {
-  const local = load(STORE_SAVED, {});
-  for (const [name, label] of Object.entries(local)) {
-    const res = await saveLabel(name, label);
-    if (!res.ok) {
-      toast(`"${name}" not copied: ${res.data.error}`, 'bad');
-      return;
-    }
-    delete local[name];
-    store(STORE_SAVED, local);
-  }
-  await refreshSaved();
-  toast('Copied to the server', 'ok');
-}
-
 async function onSavedClick(e) {
-  const saved = savedLabels();
-  const loadName = e.target.closest('[data-load]')?.dataset.load;
-  const removeName = e.target.closest('[data-remove]')?.dataset.remove;
-  if (loadName && saved[loadName]) {
+  const target = e.target.closest('[data-load], [data-remove]');
+  if (!target) return;
+  const { where } = target.dataset;
+  if ('load' in target.dataset) {
+    const entry = savedLabels().find((s) => s.name === target.dataset.load && s.where === where);
+    if (!entry) return;
     persist();
-    state.label = normalizeLabel(saved[loadName]);
+    state.label = normalizeLabel(entry.label);
     renderSettings();
     renderBlocks();
     commit();
-    toast(`Loaded "${loadName}"`, 'ok');
+    toast(`Loaded "${entry.name}"`, 'ok');
+    return;
   }
-  if (removeName && sharedLabels()) {
-    await deleteLabel(removeName);
+  const name = target.dataset.remove;
+  if (where === 'server') {
+    await deleteLabel(name);
     await refreshSaved();
-  } else if (removeName) {
-    delete saved[removeName];
+  } else {
+    const saved = load(STORE_SAVED, {});
+    delete saved[name];
     store(STORE_SAVED, saved);
     renderSaved();
   }
@@ -1151,7 +1148,6 @@ function init() {
   $('#save-form').addEventListener('submit', onSave);
   $('#saved-list').addEventListener('click', onSavedClick);
   $('#history-list').addEventListener('click', onHistoryClick);
-  $('#copy-local').addEventListener('click', copyLocalLabels);
   $('#print').addEventListener('click', onPrint);
   $('#download').addEventListener('click', onDownload);
   $('#status').addEventListener('click', openDetails);

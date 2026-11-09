@@ -225,7 +225,9 @@ fieldset.segmented { border: 0; padding: 0; grid-column: 1 / -1; }
 .history .when { font-size: 13px; color: var(--muted); }
 .history .actions { display: flex; gap: 4px; }
 .saved { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 2px; }
-.saved li { display: flex; justify-content: space-between; align-items: center; }
+.saved li { display: flex; gap: 8px; align-items: center; }
+.saved li .link { margin-right: auto; text-align: left; }
+.badge { font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
 
 footer { max-width: 1180px; margin: 8px auto 32px; padding: 0 16px; color: var(--muted); font-size: 13px; }
 footer a { color: var(--link); }
