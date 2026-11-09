@@ -2,7 +2,7 @@
 # contract test against it. No printer is needed: --force-tape-width with --writepng.
 #   docker build -t labeler-contract --build-arg PTOUCH_REF=v1.9 tools/contract
 #   docker run --rm -v "$PWD:/work" labeler-contract
-FROM node:22-bookworm
+FROM node:24-bookworm
 ARG PTOUCH_REF=v1.9
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
