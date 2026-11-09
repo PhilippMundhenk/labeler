@@ -154,6 +154,7 @@ set the environment variable (in `labeler.service`: `Environment=`).
 | `printer_url` | `LABELER_PRINTER_URL` | empty | Printer agent to print with, e.g. `http://printer-pi:8631`; empty prints on this computer |
 | `printer_token` | `LABELER_PRINTER_TOKEN` | empty | Access token of that agent |
 | `icon_api` | `LABELER_ICON_API` | `https://api.iconify.design` | Iconify API the browser searches icons with; your own Iconify server, or empty to switch icons off |
+| `allowed_hosts` | `LABELER_ALLOWED_HOSTS` | empty | Without password and token the API answers only by IP address, `localhost` or a local name (`labeler`, `*.local`, `*.lan`, `*.home.arpa`, `*.internal`); further names, comma-separated, e.g. behind a reverse proxy; `*` for all |
 | `password` | `LABELER_PASSWORD` | empty | Password for the interface, plain or a `password_hash()` hash; empty: no login |
 
 Without a password, anyone who can open the page can print. On a home network that is usually

@@ -307,9 +307,13 @@ if [ "$AGENT" = 1 ]; then
     token=$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')
     printf "<?php\n\n// Access token of this printer agent; the interface needs it as printer_token.\nreturn ['token' => '%s'];\n" "$token" > "$DIR/config.php"
   fi
+  token=$(sed -n "s/.*'token' => '\([0-9a-f]*\)'.*/\1/p" "$DIR/config.php")
+fi
+
+# config.php holds the password and tokens: readable only by root and the service
+if [ -f "$DIR/config.php" ]; then
   chown root:labeler "$DIR/config.php"
   chmod 640 "$DIR/config.php"
-  token=$(sed -n "s/.*'token' => '\([0-9a-f]*\)'.*/\1/p" "$DIR/config.php")
 fi
 
 if [ "$SERVICE" = 1 ]; then
