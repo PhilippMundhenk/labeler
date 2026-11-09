@@ -93,6 +93,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Changed
 
+- Wide screens (from 1400 px): the page uses up to 1600 px; Print and all print options sit in a
+  column beside the preview and are always open (#86).
 - New QR codes, also in the templates, start without a quiet zone (0 modules); the label's
   margins keep them clear of the tape edge (#88).
 

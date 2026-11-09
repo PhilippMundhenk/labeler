@@ -536,3 +536,23 @@ test('printer not ready, older status without colours', async ({ page }) => {
   await expect(page.locator('#details-info')).toContainText('Serial');
   await expect(page.locator('#details-info')).toContainText('http://printer-pi:8631 (not reachable)');
 });
+
+test('wide screens: print options beside the preview, always open (#86)', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await ready(page);
+  await expect(page.locator('details.options')).toHaveAttribute('open', '');
+  await expect(page.locator('details.options summary')).toBeHidden();
+  await expect(page.locator('#chain')).toBeVisible();
+  const box = async (sel) => page.locator(sel).boundingBox();
+  const tape = await box('.preview-card .tape');
+  for (const sel of ['#print', '#copies', '#chain', '#feed', '#download']) {
+    const b = await box(sel);
+    expect(b.x, `${sel} is right of the preview`).toBeGreaterThanOrEqual(tape.x + tape.width);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  // narrower again: the options go back under the preview and can be closed
+  await page.setViewportSize({ width: 1100, height: 900 });
+  await expect(page.locator('details.options summary')).toBeVisible();
+  await page.locator('details.options summary').click();
+  await expect(page.locator('#chain')).toBeHidden();
+});
