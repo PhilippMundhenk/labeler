@@ -48,11 +48,20 @@ export const test = base.extend({
         const q = url.searchParams.get('query');
         if (q === 'offline') return route.abort();
         if (q === 'busy') return route.fulfill({ status: 503, body: 'busy' });
+        if (q === 'locked') return route.fulfill({ json: { icons: ['mdi:lock'] } });
         const all = ['mdi:wifi', 'mdi:wifi-off', 'simple-icons:wifi'];
         const sets = url.searchParams.get('prefixes').split(',');
         return route.fulfill({ json: { icons: q === 'nothing' ? [] : all.filter((id) => sets.includes(id.split(':')[0])) } });
       }
       if (url.pathname.endsWith('/wifi-off.svg')) return route.fulfill({ status: 404, body: 'Not found' });
+      if (url.pathname.endsWith('.json')) {
+        // previews of a page of results in one request; "lock" stands for a refusing service
+        const names = url.searchParams.get('icons').split(',');
+        if (names.includes('lock')) return route.fulfill({ status: 429, body: 'Too many requests' });
+        const icons = Object.fromEntries(names.filter((n) => n === 'wifi').map((n) => [n, { body: '<path fill="currentColor" d="M12 3L2 21h20z"/>' }]));
+        const aliases = names.includes('wlan') ? { wlan: { parent: 'wifi' } } : {};
+        return route.fulfill({ json: { prefix: url.pathname.slice(1, -5), width: 24, height: 24, icons: names.includes('wlan') ? { ...icons, wifi: icons.wifi || { body: '<path d="M0 0h1v1z"/>' } } : icons, aliases } });
+      }
       return route.fulfill({
         contentType: 'image/svg+xml',
         body: '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 24 24"><path fill="#000" d="M12 3L2 21h20z"/></svg>',

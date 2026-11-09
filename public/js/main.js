@@ -7,7 +7,7 @@ import {
 } from './label.js';
 import { renderLabel, renderHires, drawPreview, thumbnail } from './render.js';
 import { encodePng, toBase64 } from './png.js';
-import { COLLECTIONS, searchIcons, fetchIcon, iconUrl, parseId } from './icons.js';
+import { COLLECTIONS, searchIcons, fetchIcon, iconPreviews, parseId } from './icons.js';
 import { resolveLabel, usesCounter, usesColumns } from './placeholders.js';
 import { parseBatch } from './csv.js';
 import { KINDS } from './qrcontent.js';
@@ -319,14 +319,18 @@ let searchTimer = null;
 const iconApi = () => (state.status && state.status.icon_api) || '';
 
 function picker(id) {
-  if (!pickers.has(id)) pickers.set(id, { query: '', set: 'all', results: [], message: '' });
+  if (!pickers.has(id)) pickers.set(id, { query: '', set: 'all', results: [], previews: new Map(), message: '' });
   return pickers.get(id);
 }
 
 function resultsHtml(block) {
   const p = picker(block.id);
-  const api = iconApi();
-  const buttons = p.results.map((id) => `<button type="button" class="icon-result${id === block.icon ? ' selected' : ''}" data-icon-pick="${esc(id)}" title="${esc(id)}" aria-label="${esc(id)}"><img src="${esc(iconUrl(api, id, 32))}" alt="" width="32" height="32" loading="lazy"></button>`).join('');
+  const buttons = p.results.map((id) => {
+    const src = p.previews.get(id);
+    // without a preview (service refused it), the name keeps the result usable
+    const face = src ? `<img src="${esc(src)}" alt="" width="32" height="32">` : `<span class="icon-name" data-no-i18n>${esc(parseId(id).name)}</span>`;
+    return `<button type="button" class="icon-result${id === block.icon ? ' selected' : ''}" data-icon-pick="${esc(id)}" title="${esc(id)}" aria-label="${esc(id)}">${face}</button>`;
+  }).join('');
   return `${buttons}${p.message ? `<p class="muted small">${esc(p.message)}</p>` : ''}`;
 }
 
@@ -356,6 +360,13 @@ async function runSearch(block) {
     if (query !== p.query) return; // a newer search is on its way
     p.results = results;
     p.message = query.trim().length < 2 ? '' : results.length ? '' : 'No icons found.';
+    try {
+      p.previews = await iconPreviews(iconApi(), results);
+    } catch (err) {
+      p.previews = new Map();
+      p.message = `No previews: ${err.message}`;
+    }
+    if (query !== p.query) return;
   } catch (err) {
     p.results = [];
     p.message = err.message;

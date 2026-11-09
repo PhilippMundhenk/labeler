@@ -211,6 +211,7 @@ fieldset.segmented { border: 0; padding: 0; grid-column: 1 / -1; }
 .icon-result:hover { border-color: var(--primary); }
 .icon-result.selected { border: 2px solid var(--primary); }
 .icon-result img { width: 100%; height: auto; max-width: 32px; }
+.icon-name { font-size: 10px; line-height: 1.1; color: #333; overflow-wrap: anywhere; text-align: center; }
 #local-fonts { margin-top: 10px; font-size: 14px; }
 
 .batch-tools { margin-top: 8px; }

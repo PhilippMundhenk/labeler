@@ -198,6 +198,7 @@ export const DE = {
   'Material': 'Material',
   'Brands': 'Marken',
   'Icons come from the Iconify API and are stored in the label.': 'Symbole kommen von der Iconify-API und werden im Etikett gespeichert.',
+  'No previews: {error}': 'Keine Vorschau: {error}',
   'No icons found.': 'Keine Symbole gefunden.',
   '{id} · Material Design Icons, Apache 2.0': '{id} · Material Design Icons, Apache 2.0',
   '{id} · Simple Icons, CC0; brand logos are trademarks of their owners': '{id} · Simple Icons, CC0; Markenlogos sind Marken ihrer Inhaber',
