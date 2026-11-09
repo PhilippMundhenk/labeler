@@ -1,4 +1,4 @@
-# Labeler
+# <img src="public/icon.svg" alt="" width="48" height="48" align="absmiddle"> Labeler
 
 Design and print labels on a Brother P-Touch printer from any browser on your network: text in
 any font, thousands of icons, QR codes, barcodes and images, with a live preview that shows exactly what the printer
@@ -54,8 +54,8 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
   folder spine, address, name tag, shelf label with barcode.
 - **Undo and redo** for every change, also with Ctrl+Z and Ctrl+Shift+Z.
 - **Recent prints** with a small picture of each label, to load or print again.
-- **Saved labels** on the server, shared by phone and computer (or in the browser when the server
-  cannot store them); the current label is kept between visits.
+- **Saved labels** in the browser, or with *On the server* checked on the server, shared by phone
+  and computer; the current label is kept between visits.
 - English and German, optional password, light and dark mode, works on phones, can be added to the home screen.
 
 ## Try it in Docker
