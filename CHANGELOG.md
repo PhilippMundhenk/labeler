@@ -128,6 +128,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Security
 
+- A `printer_url` with `user:password@` showed the credentials in the status and in messages;
+  the address is now shown without them (#113).
 - `install.sh` runs only after it was downloaded completely (`curl | sh`), and checks a release
   package against the release's `SHA256SUMS` (#112).
 - The login cookie is signed with a random secret in the data folder (`session.key`) instead of a
