@@ -1,0 +1,92 @@
+From 820e7a4231a397932f1a9056a32b28dc616e546b Mon Sep 17 00:00:00 2001
+From: Philipp Mundhenk <philipp@mundhenk.org>
+Date: Mon, 9 Nov 2026 20:04:38 +0100
+Subject: [PATCH 4/5] add --hires for 2x resolution along the tape
+
+Sets the high resolution bit of ESC i K. The image is sent as it is, so it has
+to be twice as long; --writepng records the doubled horizontal resolution in
+the PNG.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ ptouch-print.1     |  6 ++++++
+ src/ptouch-print.c | 14 ++++++++++++--
+ 2 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/ptouch-print.1 b/ptouch-print.1
+index 0d143aa..6154f55 100644
+--- a/ptouch-print.1
++++ b/ptouch-print.1
+@@ -94,6 +94,12 @@ PT-P900 series); other printers ignore it.
+ .BR \-\-cut-every\  \fI<n>
+ Together with \-\-copies: turn on auto cut and cut only after every <n>
+ labels (1 to 99), so the labels in between stay joined.
++.TP
++.BR \-\-hires
++Print with twice the resolution along the tape (180x360 dpi, or 360x720 dpi on
++360 dpi printers). Every image column is half as long, so images must be
++twice as long as for normal printing. Only some printers support it (for example
++the PT-P750W and the PT-P900 series); it is slower.
+ 
+ .SS "Getting help and display information"
+ .TP
+diff --git a/src/ptouch-print.c b/src/ptouch-print.c
+index bf1f400..c1f05d0 100644
+--- a/src/ptouch-print.c
++++ b/src/ptouch-print.c
+@@ -69,6 +69,7 @@ struct arguments {
+ 	int feed;
+ 	bool halfcut;
+ 	int cut_every;
++	bool hires;
+ };
+ 
+ typedef enum { JOB_CUTMARK, JOB_IMAGE, JOB_PAD, JOB_TEXT, JOB_UNDEFINED } job_type_t;
+@@ -125,6 +126,7 @@ static struct argp_option options[] = {
+ 	{ "feed", 13, "<dots>", 0, "Blank tape before and after the label in dots (printer default: 14)", 2},
+ 	{ "halfcut", 14, 0, 0, "Cut only the tape, not its backing, between labels (printers with a half cutter)", 2},
+ 	{ "cut-every", 15, "<n>", 0, "With --copies, cut only after every <n> labels (1-99)", 2},
++	{ "hires", 16, 0, 0, "High resolution: twice the dpi along the tape. Images must be twice as long (printers that support it)", 2},
+ 	{ "newline", 'n', "<text>", 0, "Add text in a new line (up to 4 lines). \\n will be replaced by a newline", 2},
+ 	{ "align", 'a', "<l|c|r>", 0, "Align text (when printing multiple lines)", 2},
+ 
+@@ -154,7 +156,8 @@ struct arguments arguments = {
+ 	.serial = NULL,
+ 	.feed = -1,		/* -1 = printer default */
+ 	.halfcut = false,
+-	.cut_every = 0		/* 0 = not given */
++	.cut_every = 0,		/* 0 = not given */
++	.hires = false
+ };
+ 
+ job_t *jobs = NULL;
+@@ -199,6 +202,9 @@ static uint8_t advanced_mode(void)
+ 	if (arguments.halfcut) {
+ 		mode |= ADV_HALF_CUT;
+ 	}
++	if (arguments.hires) {
++		mode |= ADV_HIGH_RES;
++	}
+ 	return mode;
+ }
+ 
+@@ -753,6 +759,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
+ 		case 14: // halfcut
+ 			arguments->halfcut = true;
+ 			break;
++		case 16: // hires
++			arguments->hires = true;
++			break;
+ 		case 15: { // cut-every
+ 			char *end = NULL;
+ 			long v = strtol(arg, &end, 10);
+@@ -923,7 +932,8 @@ int main(int argc, char *argv[])
+ 	if (out) {
+ 		if (arguments.save_png) {
+ 			int dpi = ptouch_get_dpi(ptdev);
+-			gdImageSetResolution(out, dpi, dpi);
++			/* in high resolution a pixel is half as long along the tape */
++			gdImageSetResolution(out, arguments.hires ? 2*dpi : dpi, dpi);
+ 			write_png(out, arguments.save_png);
+ 		} else {
+ 			for (int i = 0; i < arguments.copies; ++i) {

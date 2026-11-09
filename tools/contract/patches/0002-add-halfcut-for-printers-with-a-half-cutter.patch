@@ -1,0 +1,154 @@
+From d495f782637cded9b7244a55deb22ef78cdc01bc Mon Sep 17 00:00:00 2001
+From: Philipp Mundhenk <philipp@mundhenk.org>
+Date: Mon, 9 Nov 2026 20:04:37 +0100
+Subject: [PATCH 2/5] add --halfcut for printers with a half cutter
+
+Sends ESC i K (advanced mode settings) with the half cut bit, and the chain bit
+according to --chain. The command is only sent when an option needs it, so
+printers that do not know it see no change; on the PT-D460BT family it
+replaces the separate chain command, which is the same command.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ include/ptouch.h   |  8 ++++++++
+ ptouch-print.1     |  5 +++++
+ src/libptouch.c    |  8 ++++++++
+ src/ptouch-print.c | 29 +++++++++++++++++++++++++++--
+ 4 files changed, 48 insertions(+), 2 deletions(-)
+
+diff --git a/include/ptouch.h b/include/ptouch.h
+index 3a3d4d2..9c1b5cf 100644
+--- a/include/ptouch.h
++++ b/include/ptouch.h
+@@ -49,6 +49,13 @@ typedef enum _pt_page_flags {
+ 	MIRROR		= (1 << 7),
+ } pt_page_flags;
+ 
++/* ESC i K - advanced mode settings */
++#define ADV_HALF_CUT		(1 << 2)	/* cut the tape, but not its backing */
++#define ADV_NO_CHAIN		(1 << 3)	/* feed and cut after the last label */
++#define ADV_SPECIAL_TAPE	(1 << 4)	/* no cutting at all */
++#define ADV_HIGH_RES		(1 << 6)	/* 2x resolution along the tape */
++#define ADV_NO_BUFFER_CLEAR	(1 << 7)
++
+ struct _pt_dev_info {
+ 	int vid;		/* USB vendor ID */
+ 	int pid;		/* USB product ID */
+@@ -128,6 +135,7 @@ int ptouch_enable_packbits(ptouch_dev ptdev);
+ int ptouch_info_cmd(ptouch_dev ptdev, int size_x);
+ int ptouch_send_precut_cmd(ptouch_dev ptdev, int precut);
+ int ptouch_send_margin(ptouch_dev ptdev, int dots);
++int ptouch_send_advanced_mode(ptouch_dev ptdev, uint8_t mode);
+ int ptouch_rasterstart(ptouch_dev ptdev);
+ int ptouch_sendraster(ptouch_dev ptdev, uint8_t *data, size_t len);
+ void ptouch_rawstatus(uint8_t raw[32]);
+diff --git a/ptouch-print.1 b/ptouch-print.1
+index 341ad07..7ef9866 100644
+--- a/ptouch-print.1
++++ b/ptouch-print.1
+@@ -85,6 +85,11 @@ that would otherwise cut off parts of the printed text or image.
+ Blank tape the printer adds before and after the label, in dots (0 to 1000).
+ Without this option the printer uses its default of 14 dots (2 mm at 180 dpi).
+ Small values save tape, mostly in chain mode.
++.TP
++.BR \-\-halfcut
++Cut through the tape but not its backing between labels, so a strip of labels
++stays in one piece. Only for printers with a half cutter (for example the
++PT-P900 series); other printers ignore it.
+ 
+ .SS "Getting help and display information"
+ .TP
+diff --git a/src/libptouch.c b/src/libptouch.c
+index fbbc56e..a865222 100644
+--- a/src/libptouch.c
++++ b/src/libptouch.c
+@@ -352,6 +352,14 @@ int ptouch_send_margin(ptouch_dev ptdev, int dots)
+ 	return ptouch_send(ptdev, cmd, sizeof(cmd)-1);
+ }
+ 
++/* 1B 69 4B {n} = ESC i K = advanced mode settings, see ADV_* in ptouch.h */
++int ptouch_send_advanced_mode(ptouch_dev ptdev, uint8_t mode)
++{
++	uint8_t cmd[] = "\x1b\x69\x4b\x00";
++	cmd[3] = mode;
++	return ptouch_send(ptdev, cmd, sizeof(cmd)-1);
++}
++
+ int ptouch_rasterstart(ptouch_dev ptdev)
+ {
+ 	if (!ptdev) {
+diff --git a/src/ptouch-print.c b/src/ptouch-print.c
+index f9a9dad..ee3e5d3 100644
+--- a/src/ptouch-print.c
++++ b/src/ptouch-print.c
+@@ -67,6 +67,7 @@ struct arguments {
+ 	int timeout;
+ 	char *serial;
+ 	int feed;
++	bool halfcut;
+ };
+ 
+ typedef enum { JOB_CUTMARK, JOB_IMAGE, JOB_PAD, JOB_TEXT, JOB_UNDEFINED } job_type_t;
+@@ -121,6 +122,7 @@ static struct argp_option options[] = {
+ 	{ "chain", 10, 0, 0, "Skip final feed of label and any automatic cut", 2},
+ 	{ "precut", 11, 0, 0, "Add a cut before the label (useful in chain mode for cuts with minimal waste)", 2},
+ 	{ "feed", 13, "<dots>", 0, "Blank tape before and after the label in dots (printer default: 14)", 2},
++	{ "halfcut", 14, 0, 0, "Cut only the tape, not its backing, between labels (printers with a half cutter)", 2},
+ 	{ "newline", 'n', "<text>", 0, "Add text in a new line (up to 4 lines). \\n will be replaced by a newline", 2},
+ 	{ "align", 'a', "<l|c|r>", 0, "Align text (when printing multiple lines)", 2},
+ 
+@@ -148,7 +150,8 @@ struct arguments arguments = {
+ 	.verbose = 0,
+ 	.timeout = -1,		/* -1 = not given; 0 is already "infinity" */
+ 	.serial = NULL,
+-	.feed = -1		/* -1 = printer default */
++	.feed = -1,		/* -1 = printer default */
++	.halfcut = false
+ };
+ 
+ job_t *jobs = NULL;
+@@ -185,6 +188,17 @@ void rasterline_setpixel(uint8_t* rasterline, size_t size, int pixel)
+ 	return;
+ }
+ 
++/* The ESC i K bits the options ask for, without the chain bit; 0 = do not
++   send the command, so printers without it see no change. */
++static uint8_t advanced_mode(void)
++{
++	uint8_t mode = 0;
++	if (arguments.halfcut) {
++		mode |= ADV_HALF_CUT;
++	}
++	return mode;
++}
++
+ int print_img(ptouch_dev ptdev, gdImage *im, int chain, int precut)
+ {
+ 	uint8_t rasterline[(ptdev->devinfo->max_px)/8];
+@@ -242,7 +256,15 @@ int print_img(ptouch_dev ptdev, gdImage *im, int chain, int precut)
+ 		}
+ 	}
+ 	/* send chain command after precut, to allow precutting before chain */
+-	if ((ptdev->devinfo->flags & FLAG_D460BT_MAGIC) == FLAG_D460BT_MAGIC) {
++	uint8_t advanced = advanced_mode();
++	if (advanced) {
++		/* ESC i K also carries the chain bit, so it replaces the PT-D460BT
++		   chain command */
++		ptouch_send_advanced_mode(ptdev, advanced | (chain ? 0 : ADV_NO_CHAIN));
++		if (arguments.debug) {
++			printf(_("send advanced mode command (0x%02x)\n"), advanced | (chain ? 0 : ADV_NO_CHAIN));
++		}
++	} else if ((ptdev->devinfo->flags & FLAG_D460BT_MAGIC) == FLAG_D460BT_MAGIC) {
+ 		if (chain) {
+ 			ptouch_send_d460bt_chain(ptdev);
+ 			if (arguments.debug) {
+@@ -714,6 +736,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
+ 			arguments->feed = (int)v;
+ 			break;
+ 		}
++		case 14: // halfcut
++			arguments->halfcut = true;
++			break;
+ 		case 'a': // align
+ 			if ((strcmp(arg, "c") == 0) || (strcmp(arg, "center") == 0)) {
+ 				arguments->align = ALIGN_CENTER;
