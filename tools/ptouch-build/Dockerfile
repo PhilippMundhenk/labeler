@@ -49,7 +49,10 @@ RUN for i in 1 2 3; do git clone -q https://git.familie-radermacher.ch/linux/pto
  && ./b/ptouch-print --version \
  && file_info=$(readelf -d b/ptouch-print 2>/dev/null | grep -c NEEDED || true) \
  && [ "$file_info" = 0 ] \
- && mkdir /out && cp b/ptouch-print /out/  && suffix=$([ "$PTOUCH_PATCHES" = 1 ] && echo -labeler || true)  && git archive --format=tar.gz --prefix="ptouch-print-$PTOUCH_REF$suffix/" -o "/out/ptouch-print-$PTOUCH_REF$suffix-source.tar.gz" HEAD  && cp /build/gd.tar.gz "/out/libgd-$GD_VERSION.tar.gz" && cp /build/usb.tar.bz2 "/out/libusb-$USB_VERSION.tar.bz2"
+ && mkdir /out && cp b/ptouch-print /out/ \
+ && suffix=$([ "$PTOUCH_PATCHES" = 1 ] && echo -labeler || true) \
+ && git archive --format=tar.gz --prefix="ptouch-print-$PTOUCH_REF$suffix/" -o "/out/ptouch-print-$PTOUCH_REF$suffix-source.tar.gz" HEAD \
+ && cp /build/gd.tar.gz "/out/libgd-$GD_VERSION.tar.gz" && cp /build/usb.tar.bz2 "/out/libusb-$USB_VERSION.tar.bz2"
 
 # ptouch-print is GPL-3.0 and libusb LGPL-2.1: the binary is published with the exact sources
 # it was built from (see NOTICE.md)
