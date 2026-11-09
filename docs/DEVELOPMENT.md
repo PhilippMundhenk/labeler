@@ -94,12 +94,21 @@ loaded before coverage starts), `public/api.php` (request wiring, exercised by e
 
 The interface is written in English; `public/js/i18n.js` translates it as it appears on the page
 (a MutationObserver over text nodes and the placeholder, title, aria-label and label attributes).
-The English text is the key, so a new string needs only an entry in `public/js/i18n-de.js`;
-`{name}` in a key stands for a part that is taken over (numbers, names). Content the user typed,
-font names and saved label names sit inside `[data-no-i18n]` and are never translated. In German,
-texts without a translation are collected, and `tests/e2e/i18n.spec.js` walks every screen and
-fails on any. A new language: copy `i18n-de.js`, translate, add it to `DICTIONARIES` and
-`LANGUAGES` in `i18n.js`.
+The English text is the key; `{name}` in a key stands for a part that is taken over (numbers,
+names). Content the user typed, font names and saved label names sit inside `[data-no-i18n]` and
+are never translated.
+
+There are 15 languages, one file `public/js/i18n-<code>.js` each, loaded only when chosen
+(`loadLanguage`). German (`i18n-de.js`) is the reference: in German, texts without a translation
+are collected, and `tests/e2e/i18n.spec.js` walks every screen and fails on any. A new string
+needs an entry in every file; `tests/js/i18n.test.js` checks that every language has exactly the
+keys of the German file, in the same order, with the same placeholders. Arabic and Urdu set
+`dir="rtl"`, so CSS uses logical properties (`margin-inline-start`, `inset-inline-end`, ...).
+
+English is the original; every other language, German included, was translated by machine
+(Claude) and is waiting for a review by native speakers; corrections are welcome as pull requests. A new language: copy
+`i18n-de.js` to `i18n-<code>.js`, translate the values, add the code to `LANGUAGES` in `i18n.js`
+(and to `RTL` for a right-to-left script).
 
 ## Screenshots
 

@@ -55,3 +55,19 @@ test('switching the language', async ({ page }) => {
   await page.locator('#lang').selectOption('de');
   await expect(page.locator('#print')).toContainText('Drucken');
 });
+
+test.describe('right to left', () => {
+  test.use({ locale: 'ar' });
+  test('Arabic: translated, right to left, no horizontal scrolling (#104)', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+    await expect(page.locator('#status')).toHaveAttribute('data-state', 'ok');
+    await expect(page.locator('#print')).not.toContainText('Print');
+    await expect(page.locator('#lang')).toHaveValue('ar');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.locator('#lang').selectOption('ja');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
+  });
+});

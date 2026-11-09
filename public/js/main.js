@@ -13,7 +13,7 @@ import { parseBatch } from './csv.js';
 import { KINDS } from './qrcontent.js';
 import { History } from './history.js';
 import { TEMPLATES, findTemplate } from './templates.js';
-import { LANGUAGES, detectLanguage, setLanguage, language, watch, misses } from './i18n.js';
+import { LANGUAGES, detectLanguage, loadLanguage, language, watch, misses } from './i18n.js';
 import { FORMATS } from './barcodes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -1136,8 +1136,8 @@ async function openDetails() {
 
 /* ---------- start ---------- */
 
-function initLanguage() {
-  setLanguage(detectLanguage(load(STORE_LANG, ''), navigator.languages || [navigator.language]));
+async function initLanguage() {
+  await loadLanguage(detectLanguage(load(STORE_LANG, ''), navigator.languages || [navigator.language]));
   $('#lang').innerHTML = LANGUAGES.map(([code, name]) => `<option value="${code}"${code === language() ? ' selected' : ''}>${name}</option>`).join('');
   $('#lang').addEventListener('change', (e) => {
     store(STORE_LANG, e.target.value);
@@ -1146,8 +1146,8 @@ function initLanguage() {
   watch(document.body);
 }
 
-function init() {
-  initLanguage();
+async function init() {
+  await initLanguage();
   state.label = normalizeLabel(load(STORE_LABEL, null) || defaultLabel());
 
   const select = $('#tape-select');
