@@ -43,7 +43,8 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
   spines and shelf edges.
 - **Layout**: margins, gap, minimum length with position, frame, cut marks, cable flags (content on both sides of a cable), mirrored for clear tape.
 - **Printing**: copies, chain printing and auto cut where the installed ptouch-print and the
-  printer support them; download the label as PNG.
+  printer support them; half cut, margin, cut after every n labels and high resolution with
+  [patched ptouch-print](docs/PTOUCH-PRINT.md); download the label as PNG.
 - **Several printers** on one computer (ptouch-print 1.9): pick one in the printer details.
 - **Printer status** with tape width and colour, clear messages for a missing printer, missing
   tape, open cover, cutter jam, overheating, weak batteries, P-Lite mode or missing USB permissions,
@@ -166,6 +167,7 @@ Dark mode and more: [docs/screenshots.md](docs/screenshots.md).
 - [docs/INSTALL.md](docs/INSTALL.md): installing ptouch-print and Labeler, the printer agent, web
   servers, updates, troubleshooting.
 - [docs/DOCKER.md](docs/DOCKER.md): the container image, demo mode, printer agent or USB.
+- [docs/PTOUCH-PRINT.md](docs/PTOUCH-PRINT.md): ptouch-print with Labeler's patches (half cut, margin, cut every n labels, high resolution).
 - [docs/DESIGN.md](docs/DESIGN.md): how it works, ptouch-print versions, and the
   [architecture decision records](docs/adr/README.md).
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): tests (simulated printer, browser tests, contract

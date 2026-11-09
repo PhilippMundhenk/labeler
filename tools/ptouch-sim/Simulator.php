@@ -7,7 +7,9 @@ namespace Labeler\Sim;
 /**
  * A stand-in for the ptouch-print command line tool and a connected P-Touch printer.
  *
- * It accepts the same arguments as the selected ptouch-print version (1.5 to 1.9),
+ * It accepts the same arguments as the selected ptouch-print version (1.5 to 1.9), and with
+ * "extensions" the options of Labeler's patches (tools/ptouch-patches: --feed, --halfcut,
+ * --cut-every, --hires),
  * prints the same messages, and returns the same exit codes. Printed labels are not
  * sent anywhere: each one is stored as PNG plus a JSON record in the output folder.
  *
@@ -74,6 +76,7 @@ final class Simulator
             'others' => [],          // more printers: list of {printer, serial, tape_mm}
             'fail' => '',            // "print": USB write error; "jam": the print looks fine (exit 0, like
                                      // the real tool) but the printer then reports a cutter jam
+            'extensions' => 0,       // 1: a ptouch-print with tools/ptouch-patches (1.7+ only)
         ];
     }
 
@@ -97,7 +100,7 @@ final class Simulator
                 $state = $json + $state;
             }
         }
-        foreach (['tape_mm', 'media_type', 'tape_color', 'text_color', 'error', 'delay_ms'] as $key) {
+        foreach (['tape_mm', 'media_type', 'tape_color', 'text_color', 'error', 'delay_ms', 'extensions'] as $key) {
             if (isset($state[$key])) {
                 $state[$key] = (int) $state[$key];
             }
@@ -137,6 +140,10 @@ final class Simulator
         $args = $this->v('1.7') ? $this->parseArgp($argv) : $this->parseLegacy($argv);
         if (is_int($args)) {
             return $args;
+        }
+        if ($args['help']) {
+            $this->help();
+            return 0;
         }
         if ($args['version']) {
             $this->say($this->v('1.7')
@@ -356,6 +363,10 @@ final class Simulator
             'copies' => $args['copies'],
             'chain' => $args['chain'],
             'precut' => $args['precut'],
+            'feed' => $args['feed'],
+            'halfcut' => $args['halfcut'],
+            'cut_every' => $args['cut_every'],
+            'hires' => $args['hires'],
             'width_px' => $label['width'],
             'height_px' => $label['height'],
             'tape_px' => $tapePx,
@@ -372,7 +383,8 @@ final class Simulator
         return [
             'version' => false, 'info' => false, 'list_supported' => false, 'list_connected' => false,
             'writepng' => null, 'force_tape_width' => 0, 'copies' => 1, 'chain' => false,
-            'precut' => false, 'serial' => null, 'jobs' => [],
+            'precut' => false, 'serial' => null, 'jobs' => [], 'help' => false,
+            'feed' => null, 'halfcut' => false, 'cut_every' => null, 'hires' => false,
         ];
     }
 
@@ -387,7 +399,11 @@ final class Simulator
         $a = self::emptyArgs();
         $withArg = ['font', 'fontsize', 'font-size', 'writepng', 'write-png', 'force-tape-width', 'copies',
             'image', 'text', 'pad', 'newline', 'align', 'timeout', 'serial', 'font-margin', 'fontmargin'];
-        $flags = ['debug', 'cutmark', 'chain', 'precut', 'info', 'list-supported', 'list-connected', 'version'];
+        $flags = ['debug', 'cutmark', 'chain', 'precut', 'info', 'list-supported', 'list-connected', 'version', 'help'];
+        if ($this->extensions()) {
+            array_push($withArg, 'feed', 'cut-every');
+            array_push($flags, 'halfcut', 'hires');
+        }
         $since = ['precut' => '1.8', 'align' => '1.8', 'timeout' => '1.8', 'serial' => '1.9',
             'font-margin' => '1.9', 'fontmargin' => '1.9', 'list-connected' => '1.9',
             'write-png' => '1.9', 'font-size' => '1.9'];
@@ -414,6 +430,9 @@ final class Simulator
                     return 64;
                 }
                 $value = $argv[++$i];
+            }
+            if (!$this->checkRange($name, $value)) {
+                return 1;
             }
             $this->apply($a, $name, $value);
         }
@@ -506,6 +525,21 @@ final class Simulator
             case 'serial':
                 $a['serial'] = $value;
                 break;
+            case 'help':
+                $a['help'] = true;
+                break;
+            case 'feed':
+                $a['feed'] = (int) $value;
+                break;
+            case 'cut-every':
+                $a['cut_every'] = (int) $value;
+                break;
+            case 'halfcut':
+                $a['halfcut'] = true;
+                break;
+            case 'hires':
+                $a['hires'] = true;
+                break;
             case 'image':
                 $a['jobs'][] = ['image', (string) $value];
                 break;
@@ -529,6 +563,48 @@ final class Simulator
             default:
                 // font, fontsize, align, timeout, debug: accepted, no effect in the simulator
                 break;
+        }
+    }
+
+    private function extensions(): bool
+    {
+        return (bool) $this->state['extensions'] && $this->v('1.7');
+    }
+
+    /** The patched tool's range checks for --feed and --cut-every. */
+    private function checkRange(string $name, ?string $value): bool
+    {
+        $ranges = ['feed' => [0, 1000, '--feed needs a number of dots between 0 and 1000'],
+            'cut-every' => [1, 99, '--cut-every needs a number between 1 and 99']];
+        if (!isset($ranges[$name])) {
+            return true;
+        }
+        [$min, $max, $message] = $ranges[$name];
+        if (preg_match('/^\d+$/', (string) $value) && (int) $value >= $min && (int) $value <= $max) {
+            return true;
+        }
+        $this->warn("ptouch-print: $message: Invalid argument");
+        return false;
+    }
+
+    /** argp's --help: the options this version knows (Labeler looks for the extensions here). */
+    private function help(): void
+    {
+        $this->say('Usage: ptouch-print [OPTION...]');
+        $options = ['--debug', '--font=<file>', '--fontsize=<size>', '--writepng=<file>', '--force-tape-width=<px>',
+            '--copies=<number>', '--image=<file>', '--text=<text>', '--cutmark', '--pad=<n>', '--chain',
+            '--newline=<text>', '--info', '--list-supported'];
+        if ($this->v('1.8')) {
+            array_push($options, '--precut', '--align=<l|c|r>', '--timeout=<seconds>');
+        }
+        if ($this->v('1.9')) {
+            array_push($options, '--serial=<serial>', '--list-connected');
+        }
+        if ($this->extensions()) {
+            array_push($options, '--feed=<dots>', '--halfcut', '--cut-every=<n>', '--hires');
+        }
+        foreach ($options as $option) {
+            $this->say('      ' . $option);
         }
     }
 

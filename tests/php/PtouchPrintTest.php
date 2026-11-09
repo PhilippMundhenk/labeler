@@ -94,11 +94,13 @@ final class PtouchPrintTest extends TestCase
         $this->simulate(['version' => '1.5']);
         $old = $this->printer();
         $this->assertSame('1.5', $old->version());
-        $this->assertSame(['copies' => false, 'chain' => false, 'precut' => false, 'serial' => false], $old->features());
+        $this->assertSame(['copies' => false, 'chain' => false, 'precut' => false, 'serial' => false,
+            'feed' => false, 'halfcut' => false, 'cut_every' => false, 'hires' => false], $old->features());
         $this->assertFalse($old->supports('teleport'));
 
         $this->simulate(['version' => '1.8']);
-        $this->assertSame(['copies' => true, 'chain' => true, 'precut' => true, 'serial' => false], $this->printer()->features());
+        $this->assertSame(['copies' => true, 'chain' => true, 'precut' => true, 'serial' => false],
+            array_diff_key($this->printer()->features(), PtouchPrint::EXTENSIONS));
 
         $missing = $this->printer('', null, $this->tmp . '/missing');
         $this->assertNull($missing->version());
@@ -137,6 +139,45 @@ final class PtouchPrintTest extends TestCase
         $this->assertSame([true, true, 2], [$printed[0]['chain'], $printed[0]['precut'], $printed[0]['copies']]);
         $this->assertSame(40 * 76 / 2, $printed[0]['black_px']);
         $this->assertSame(['--chain', '--precut', '--copies', '2', '--image', 'label.png'], $log->entries()[0]['args']);
+    }
+
+    public function testExtensionsAreFoundInHelp(): void
+    {
+        $this->simulate(['version' => '1.9']);
+        $this->assertSame(['feed' => false, 'halfcut' => false, 'cut_every' => false, 'hires' => false],
+            array_intersect_key($this->printer()->features(), PtouchPrint::EXTENSIONS));
+        $this->simulate(['version' => '1.9', 'extensions' => 1]);
+        $features = $this->printer()->features();
+        $this->assertTrue($features['halfcut'] && $features['feed'] && $features['cut_every'] && $features['hires']);
+        $this->assertTrue($features['serial']);
+        $this->simulate(['version' => '1.6', 'extensions' => 1]);
+        $this->assertFalse($this->printer()->supports('halfcut'), 'no --help before 1.7');
+        $this->assertFalse($this->printer('', null, $this->tmp . '/missing')->supports('halfcut'));
+    }
+
+    public function testPrintsWithExtensions(): void
+    {
+        $this->simulate(['version' => '1.9', 'extensions' => 1]);
+        file_put_contents($this->tmp . '/l.png', self::labelPng(40, 76));
+        $log = new Log($this->tmp . '/data', 10);
+        $extra = ['feed' => 2, 'halfcut' => true, 'cut_every' => 5, 'hires' => true];
+        $result = $this->printer('', $log)->printImage($this->tmp . '/l.png', 10, false, false, $extra);
+        $this->assertTrue($result['ok'], $result['output']);
+        $this->assertSame([], $result['notes']);
+        $this->assertSame(['--feed', '2', '--halfcut', '--cut-every', '5', '--hires', '--copies', '10', '--image', 'label.png'],
+            $log->entries()[0]['args']);
+        $this->assertSame([2, true, 5, true], [$this->printed()[0]['feed'], $this->printed()[0]['halfcut'],
+            $this->printed()[0]['cut_every'], $this->printed()[0]['hires']]);
+
+        // cut every n only means something with several copies
+        $one = $this->printer('', $log)->printImage($this->tmp . '/l.png', 1, false, false, ['cut_every' => 5]);
+        $this->assertNotContains('--cut-every', $log->entries()[0]['args'], json_encode($one));
+
+        $this->simulate(['version' => '1.9', 'extensions' => 0]);
+        $plain = $this->printer()->printImage($this->tmp . '/l.png', 1, false, false, ['feed' => 2, 'halfcut' => true, 'hires' => true]);
+        $this->assertTrue($plain['ok'], $plain['output']);
+        $this->assertCount(3, $plain['notes']);
+        $this->assertStringContainsString("--halfcut needs a ptouch-print with Labeler's patches", $plain['notes'][1]);
     }
 
     public function testOldVersionsRepeatTheRunAndExplainMissingOptions(): void

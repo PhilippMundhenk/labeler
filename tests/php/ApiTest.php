@@ -85,6 +85,26 @@ final class ApiTest extends TestCase
         $this->assertSame(0, $log['entries'][0]['code']);
     }
 
+    public function testPrintWithExtensions(): void
+    {
+        $this->simulate(['version' => '1.9', 'tape_mm' => 12, 'extensions' => 1]);
+        [, $status] = $this->call('GET', 'status');
+        $this->assertTrue($status['features']['halfcut']);
+        [$code, $body] = $this->call('POST', 'print', $this->printBody(360, 76, ['copies' => 2, 'feed' => 4, 'halfcut' => true, 'cut_every' => 2, 'hires' => true]));
+        $this->assertSame(200, $code, (string) json_encode($body));
+        $this->assertSame(25.4, $body['length_mm'], 'high resolution: 360 columns are 25.4 mm at 180 dpi');
+        $printed = $this->printed();
+        $this->assertSame([4, true, 2, true], [$printed[0]['feed'], $printed[0]['halfcut'], $printed[0]['cut_every'], $printed[0]['hires']]);
+
+        foreach ([['feed' => -1], ['feed' => 1001], ['feed' => '4'], ['cut_every' => 0], ['cut_every' => 100]] as $bad) {
+            [$code, $body] = $this->call('POST', 'print', $this->printBody(60, 76, $bad));
+            $this->assertSame(400, $code, (string) json_encode($bad));
+            $this->assertStringContainsString('must be a whole number', $body['error']);
+        }
+        [$code] = $this->call('POST', 'print', $this->printBody(60, 76, ['feed' => '', 'cut_every' => null]));
+        $this->assertSame(200, $code, 'empty values mean the printer default');
+    }
+
     public function testPrintAcceptsADataUrl(): void
     {
         $this->simulate(['version' => '1.9']);

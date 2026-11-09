@@ -1,8 +1,8 @@
 # The real ptouch-print, built from the upstream sources, plus PHP and Node to run the
 # contract test against it. No printer is needed: --force-tape-width with --writepng, and a
 # fake libusb (fake-libusb.c) that records the bytes ptouch-print sends to the printer.
-#   docker build -t labeler-contract --build-arg PTOUCH_REF=v1.9 tools/contract
-#   docker build -t labeler-contract --build-arg PTOUCH_PATCHES=1 tools/contract   # with patches/
+#   docker build -t labeler-contract --build-arg PTOUCH_REF=v1.9 -f tools/contract/Dockerfile tools
+#   docker build -t labeler-contract --build-arg PTOUCH_PATCHES=1 -f tools/contract/Dockerfile tools   # with tools/ptouch-patches
 #   docker run --rm -v "$PWD:/work" labeler-contract
 FROM node:24-bookworm
 ARG PTOUCH_REF=v1.9
@@ -11,7 +11,7 @@ RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       cmake gcc make pkg-config gettext git libgd-dev libusb-1.0-0-dev php-cli \
  && rm -rf /var/lib/apt/lists/*
-COPY patches /patches
+COPY ptouch-patches /patches
 # upstream is a small self-hosted server: try the clone up to three times
 RUN for i in 1 2 3; do git clone https://git.familie-radermacher.ch/linux/ptouch-print.git /src/ptouch-print && break; rm -rf /src/ptouch-print; sleep 10; done \
  && cd /src/ptouch-print && git -c advice.detachedHead=false checkout "$PTOUCH_REF" \
@@ -19,7 +19,7 @@ RUN for i in 1 2 3; do git clone https://git.familie-radermacher.ch/linux/ptouch
  && cmake -S . -B build && cmake --build build -j"$(nproc)" \
  && install -m 755 build/ptouch-print /usr/local/bin/ptouch-print \
  && ptouch-print --version
-COPY fake-libusb.c /src/fake-libusb.c
+COPY contract/fake-libusb.c /src/fake-libusb.c
 RUN mkdir -p /usr/local/lib/fake-usb \
  && gcc -shared -fPIC -Wall -Wextra -Werror -Wl,-soname,libusb-1.0.so.0 \
       -o /usr/local/lib/fake-usb/libusb-1.0.so.0 /src/fake-libusb.c

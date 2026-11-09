@@ -34,6 +34,32 @@ final class SimulatorTest extends TestCase
         $this->assertSame(1, $this->sim(['--force-tape-width', '76'])['code']);
     }
 
+    public function testHelpListsTheOptionsOfTheVersion(): void
+    {
+        $this->assertStringNotContainsString('--precut', $this->sim(['--help'], ['version' => '1.7'])['stdout']);
+        $help = $this->sim(['--help'])['stdout'];
+        $this->assertStringContainsString('--list-connected', $help);
+        $this->assertStringNotContainsString('--halfcut', $help);
+        $this->assertStringContainsString('--halfcut', $this->sim(['--help'], ['extensions' => 1])['stdout']);
+        $this->assertStringNotContainsString('--halfcut', $this->sim(['--help'], ['extensions' => 1, 'version' => '1.6'])['stdout']);
+    }
+
+    public function testExtensionsOfThePatchedTool(): void
+    {
+        file_put_contents($this->tmp . '/l.png', self::labelPng(40, 76));
+        $this->assertStringContainsString("unrecognized option '--halfcut'", $this->sim(['--halfcut', '--image', $this->tmp . '/l.png'])['stderr']);
+        $ext = ['extensions' => 1];
+        $r = $this->sim(['--feed', '4', '--halfcut', '--cut-every', '2', '--copies', '2', '--hires', '--image', $this->tmp . '/l.png'], $ext);
+        $this->assertSame(0, $r['code'], $r['stderr']);
+        $label = json_decode((string) file_get_contents($this->tmp . '/out/label-0001.json'), true);
+        $this->assertSame([4, true, 2, true], [$label['feed'], $label['halfcut'], $label['cut_every'], $label['hires']]);
+        foreach ([['--feed', 'x'], ['--feed', '1001'], ['--cut-every', '0'], ['--cut-every', '100']] as $bad) {
+            $r = $this->sim(array_merge($bad, ['--image', $this->tmp . '/l.png']), $ext);
+            $this->assertSame(1, $r['code'], implode(' ', $bad));
+            $this->assertStringContainsString('Invalid argument', $r['stderr']);
+        }
+    }
+
     public function testLegacyCommandLine(): void
     {
         $state = ['version' => '1.5'];

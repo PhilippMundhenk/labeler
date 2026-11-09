@@ -4,15 +4,19 @@
 # See docker-compose.yml and docs/DOCKER.md.
 
 # ptouch-print from the upstream sources, for a printer plugged into the Docker host
+# (--build-arg PTOUCH_PATCHES=1: with tools/ptouch-patches, see docs/PTOUCH-PRINT.md)
 FROM debian:bookworm-slim AS ptouch
 ARG PTOUCH_REF=v1.9
+ARG PTOUCH_PATCHES=0
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       ca-certificates git cmake gcc make pkg-config gettext libgd-dev libusb-1.0-0-dev \
  && rm -rf /var/lib/apt/lists/*
+COPY tools/ptouch-patches /patches
 # upstream is a small self-hosted server: try the clone up to three times
 RUN for i in 1 2 3; do git clone https://git.familie-radermacher.ch/linux/ptouch-print.git /src && break; rm -rf /src; sleep 10; done \
  && cd /src && git -c advice.detachedHead=false checkout "$PTOUCH_REF" \
+ && if [ "$PTOUCH_PATCHES" = 1 ]; then git -c user.name=build -c user.email=build@localhost am -q /patches/*.patch; fi \
  && cmake -S . -B build && cmake --build build -j"$(nproc)" \
  && install -m 755 build/ptouch-print /usr/local/bin/ptouch-print
 

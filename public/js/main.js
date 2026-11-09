@@ -5,7 +5,7 @@ import {
 import {
   BLOCK_NAMES, FONTS, TAPES, defaultLabel, newBlock, newId, normalizeLabel, pxToMm, tapePx,
 } from './label.js';
-import { renderLabel, drawPreview, thumbnail } from './render.js';
+import { renderLabel, renderHires, drawPreview, thumbnail } from './render.js';
 import { encodePng, toBase64 } from './png.js';
 import { COLLECTIONS, searchIcons, fetchIcon, iconUrl, parseId } from './icons.js';
 import { resolveLabel, usesCounter, usesColumns } from './placeholders.js';
@@ -156,7 +156,7 @@ async function refreshStatus() {
     $('#status-text').textContent = p && p.connected ? 'Printer not ready' : 'No printer';
   }
   $('#logout').hidden = !(state.status && state.status.password);
-  if (Boolean(state.status && state.status.shared_labels) !== sharedLabels()) refreshSaved();
+  if (Boolean(state.status && state.status.shared_labels) !== sharedLabels()) savedLoading = refreshSaved();
   let message = res.ok ? (p && !p.ready ? p.message : '') : res.data.error;
   if (p && !p.connected && state.wasReady) {
     // the printer was there a moment ago: P-Touch printers switch themselves off after a while
@@ -172,19 +172,45 @@ async function refreshStatus() {
   scheduleRender();
 }
 
+const PATCHED = "needs a ptouch-print with Labeler's patches (see docs/PTOUCH-PRINT.md)";
+// print options: element, feature, explanation, what is missing without the feature
+const PRINT_OPTIONS = [
+  ['chain', 'chain', '', 'needs ptouch-print 1.6 or newer'],
+  ['precut', 'precut', 'Cuts the tape automatically; only printers with a cutter (e.g. PT-P700, PT-P750W, PT-P900)', 'needs ptouch-print 1.8 or newer'],
+  ['halfcut', 'halfcut', 'Cuts through the tape but not its backing, so the labels stay together; only printers with a half cutter (e.g. PT-P900)', PATCHED],
+  ['hires', 'hires', 'Twice the resolution along the tape; only some printers (e.g. PT-P750W, PT-P900)', PATCHED],
+  ['cut-every', 'cut_every', 'With several copies: cut only after every n labels, the ones between stay joined', PATCHED],
+  ['feed', 'feed', 'Blank tape before and after the label; empty: the printer default (2 mm)', PATCHED],
+];
+
 function updateFeatures() {
   const f = (state.status && state.status.features) || {};
-  for (const [id, key, min] of [['chain', 'chain', '1.6'], ['precut', 'precut', '1.8']]) {
+  for (const [id, key, help, missing] of PRINT_OPTIONS) {
     const input = $(`#${id}`);
     input.disabled = !f[key];
-    input.closest('label').title = f[key]
-      ? (key === 'precut' ? 'Cuts the tape automatically; only printers with a cutter (e.g. PT-P700, PT-P750W, PT-P900)' : '')
-      : `needs ptouch-print ${min} or newer`;
-    if (!f[key]) input.checked = false;
+    input.closest('label').title = f[key] ? help : missing;
+    if (!f[key]) {
+      input.checked = false;
+      if (input.type === 'number') input.value = '';
+    }
   }
   const max = (state.status && state.status.max_copies) || 50;
   $('#copies').max = String(max);
   updatePrintButton();
+}
+
+/** The options of the patched ptouch-print, as the API expects them; empty fields are left out. */
+function extraOptions() {
+  const on = (id) => !$(`#${id}`).disabled && $(`#${id}`).checked;
+  const number = (id) => ($(`#${id}`).disabled || $(`#${id}`).value === '' ? null : Number($(`#${id}`).value));
+  const extra = {};
+  if (on('halfcut')) extra.halfcut = true;
+  if (on('hires')) extra.hires = true;
+  const every = number('cut-every');
+  if (every !== null && every >= 1) extra.cut_every = Math.min(99, Math.round(every));
+  const mm = number('feed');
+  if (mm !== null && mm >= 0) extra.feed = Math.min(1000, Math.round((mm / 25.4) * state.tape.dpi));
+  return extra;
 }
 
 function updatePrintButton() {
@@ -663,6 +689,9 @@ function onHistoryClick(e) {
 // Saved labels live on the server when its data folder allows it (shared by every browser),
 // otherwise in this browser.
 let serverLabels = null;
+// the first status and the server's list: until both are known, saving would pick the wrong place
+let statusLoading = Promise.resolve();
+let savedLoading = Promise.resolve();
 const sharedLabels = () => serverLabels !== null;
 
 function savedLabels() {
@@ -695,6 +724,8 @@ async function onSave(e) {
   e.preventDefault();
   const name = $('#save-name').value.trim();
   if (!name) return;
+  await statusLoading;
+  await savedLoading;
   if (sharedLabels()) {
     const res = await saveLabel(name, state.label);
     if (!res.ok) {
@@ -955,7 +986,9 @@ async function onPrint() {
     for (let i = 0; i < jobs.length; i++) {
       const job = jobs[i];
       if (jobs.length > 1) $('#print-hint').textContent = `Printing ${i + 1} of ${jobs.length}…`;
-      const { bitmap, errors } = await renderLabel(resolveLabel(state.label, job.ctx), state.tape);
+      const extra = extraOptions();
+      const draw = extra.hires ? renderHires : renderLabel;
+      const { bitmap, errors } = await draw(resolveLabel(state.label, job.ctx), state.tape);
       const problem = Object.values(errors)[0];
       if (problem || !bitmap.countBlack()) {
         toast(`Label ${i + 1} cannot be printed: ${problem || 'it is empty'}`, 'bad');
@@ -965,6 +998,7 @@ async function onPrint() {
         copies: job.copies,
         chain: $('#chain').checked || i < jobs.length - 1,
         precut: $('#precut').checked,
+        ...extra,
       });
       if (!res.ok) {
         toast(res.data.error || 'Printing failed', 'bad', res.data.output);
@@ -1210,7 +1244,7 @@ function init() {
   renderSaved();
   renderHistory();
   initBatch();
-  refreshStatus();
+  statusLoading = refreshStatus();
   loadServerFonts();
 }
 

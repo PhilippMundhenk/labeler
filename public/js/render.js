@@ -210,6 +210,17 @@ export async function renderLabel(label, tape) {
 }
 
 /**
+ * The label for high-resolution printing (ptouch-print --hires): twice the dots along the tape.
+ * Drawn at twice the resolution in both directions, then every two rows across the tape are
+ * merged, so the label has the same size but finer detail along its length.
+ */
+export async function renderHires(label, tape) {
+  const doubled = { ...label, frameWidth: (label.frameWidth || 0) * 2 };
+  const { bitmap, errors } = await renderLabel(doubled, { ...tape, px: tape.px * 2, dpi: tape.dpi * 2 });
+  return { bitmap: bitmap.halveRows(), errors };
+}
+
+/**
  * Draws the bitmap as it will look on the tape: tape and ink colour, the tape's full
  * width with the printable band in the middle.
  */
