@@ -41,8 +41,11 @@ jobs:
           docker buildx build --platform ${{ matrix.platform }} -f tools/ptouch-build/Dockerfile \
             --build-arg PTOUCH_REF=$PTOUCH_REF --build-arg PTOUCH_PATCHES=${{ matrix.patches }} \
             --output type=local,dest=out tools
-          name=ptouch-print-$PTOUCH_REF${{ matrix.patches == 1 && '-labeler' || '' }}-${{ matrix.arch }}
+          variant=ptouch-print-$PTOUCH_REF${{ matrix.patches == 1 && '-labeler' || '' }}
+          name=$variant-${{ matrix.arch }}
           mkdir dist && mv out/ptouch-print "dist/$name"
+          # the sources are the same for every architecture: publish them once per variant (GPL)
+          if [ "${{ matrix.arch }}" = amd64 ]; then mv out/*.tar.* dist/; fi
           echo "NAME=$name" >> "$GITHUB_ENV"
       - name: Runs on Debian without any library
         run: |
@@ -51,7 +54,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.NAME }}
-          path: dist/${{ env.NAME }}
+          path: dist/
           if-no-files-found: error
 
   publish:
@@ -62,11 +65,16 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: dist
           merge-multiple: true
-      - run: cd dist && sha256sum ptouch-print-* > SHA256SUMS && cat SHA256SUMS
+      - name: Checksums and license texts
+        run: |
+          cp tools/ptouch-build/NOTICE.md dist/
+          for f in tools/ptouch-build/licenses/*.txt; do cp "$f" "dist/LICENSE-$(basename "$f")"; done
+          cd dist && sha256sum ptouch-print-* libgd-* libusb-* > SHA256SUMS && cat SHA256SUMS
       - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           tag_name: ptouch-print-${{ env.PTOUCH_REF }}
@@ -80,3 +88,8 @@ jobs:
             for `deploy/install.sh`: one file without library dependencies, built with musl and libgd
             (PNG only) from `tools/ptouch-build`. `armv6` runs on every Raspberry Pi with a 32-bit OS,
             `arm64` on 64-bit Raspberry Pi OS. Built from ${{ github.sha }}.
+
+            ptouch-print is © Dominic Radermacher and licensed under the GPL-3.0, not under Labeler's
+            MIT license; libusb is LGPL-2.1. The `*-source.tar.gz`, `libgd-*` and `libusb-*` archives
+            here are the exact sources of these binaries; `NOTICE.md` and the `LICENSE-*` files list
+            every component and its license.
