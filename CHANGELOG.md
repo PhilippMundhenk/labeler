@@ -111,6 +111,10 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Fixed
 
+- Phones and narrow windows: the preview card no longer stays pinned and takes half the screen;
+  it scrolls with the page and the small floating label takes over. Older browsers (Chrome before
+  105) no longer depend on `:has()` for this, and the interface avoids JavaScript that older
+  browsers lack (#123).
 - The container image tag `latest` was set from a push to main once and then went stale;
   it is now only set by a release, and docker-compose.yml and the docs use `:main` until the
   first release (#100).
