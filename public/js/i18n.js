@@ -2,10 +2,17 @@
 // MutationObserver translates text nodes and a few attributes as they appear, so new strings
 // only need a dictionary entry. Keys with {placeholders} match texts with numbers or names in
 // them. Elements inside [data-no-i18n] (label names, fonts, user content) are left alone.
-import { DE } from './i18n-de.js';
+// Each language is a file i18n-<code>.js, loaded only when it is chosen (loadLanguage).
 
-export const LANGUAGES = [['en', 'English'], ['de', 'Deutsch']];
-const DICTIONARIES = { de: DE };
+// the 15 most spoken languages (Ethnologue, total speakers), in that order
+export const LANGUAGES = [
+  ['en', 'English'], ['zh', '中文（简体）'], ['hi', 'हिन्दी'], ['es', 'Español'], ['ar', 'العربية'],
+  ['fr', 'Français'], ['bn', 'বাংলা'], ['pt', 'Português'], ['ru', 'Русский'], ['id', 'Bahasa Indonesia'],
+  ['ur', 'اردو'], ['de', 'Deutsch'], ['ja', '日本語'], ['mr', 'मराठी'], ['te', 'తెలుగు'],
+];
+const CODES = new Set(LANGUAGES.map(([code]) => code));
+const RTL = new Set(['ar', 'ur']);
+const DICTIONARIES = { en: {} };
 const ATTRIBUTES = ['placeholder', 'title', 'aria-label', 'label'];
 
 let lang = 'en';
@@ -40,20 +47,37 @@ export function language() {
   return lang;
 }
 
+/** Switches to a language whose dictionary is loaded (else English). */
 export function setLanguage(code) {
   lang = DICTIONARIES[code] ? code : 'en';
-  compile(DICTIONARIES[lang] || {});
+  compile(DICTIONARIES[lang]);
   produced.clear();
   misses.clear();
-  if (typeof document !== 'undefined') document.documentElement.lang = lang;
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = RTL.has(lang) ? 'rtl' : 'ltr';
+  }
+}
+
+/** Loads the dictionary of a language (once) and switches to it; English when it cannot be loaded. */
+export async function loadLanguage(code) {
+  if (CODES.has(code) && !DICTIONARIES[code]) {
+    try {
+      DICTIONARIES[code] = (await import(`./i18n-${code}.js`)).default;
+    } catch {
+      code = 'en';
+    }
+  }
+  setLanguage(code);
+  return lang;
 }
 
 /** Picks the language: saved choice, else the browser's. */
 export function detectLanguage(saved, navigatorLanguages = []) {
-  if (saved && (saved === 'en' || DICTIONARIES[saved])) return saved;
+  if (saved && CODES.has(saved)) return saved;
   for (const l of navigatorLanguages) {
     const code = String(l).slice(0, 2).toLowerCase();
-    if (code === 'en' || DICTIONARIES[code]) return code;
+    if (CODES.has(code)) return code;
   }
   return 'en';
 }

@@ -57,7 +57,10 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 - **Recent prints** with a small picture of each label, to load or print again.
 - **Saved labels** in the browser, or with *On the server* checked on the server, shared by phone
   and computer; the current label is kept between visits.
-- English and German, optional password, light and dark mode, works on phones, can be added to the home screen.
+- **15 languages**: English, 中文, हिन्दी, Español, العربية, Français, বাংলা, Português, Русский,
+  Bahasa Indonesia, اردو, Deutsch, 日本語, मराठी, తెలుగు (translated by machine,
+  [corrections welcome](docs/DEVELOPMENT.md#translations)); optional password, light and dark mode,
+  works on phones, can be added to the home screen.
 
 ## Try it in Docker
 

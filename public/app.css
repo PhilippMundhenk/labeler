@@ -124,7 +124,7 @@ h3 { font-size: 14px; margin: 16px 0 8px; }
 .mini-switch input { margin: 0; }
 /* floating mini preview: just the label, while the preview card is out of view */
 .mini-preview {
-  position: fixed; top: 64px; right: 16px; z-index: 25; padding: 6px; max-width: min(420px, calc(100vw - 32px));
+  position: fixed; top: 64px; inset-inline-end: 16px; z-index: 25; padding: 6px; max-width: min(420px, calc(100vw - 32px));
   background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 20px #0000002e; cursor: pointer;
 }
 .mini-preview canvas { display: block; max-width: 100%; height: auto; image-rendering: pixelated; border-radius: 2px; }
@@ -160,7 +160,7 @@ button { font: inherit; }
 .primary.busy { cursor: progress; }
 .secondary { background: transparent; color: var(--link); border: 1px solid var(--line); }
 .secondary:hover, .link:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
-.link { background: none; border: 0; color: var(--link); cursor: pointer; padding: 4px; border-radius: 6px; text-align: left; }
+.link { background: none; border: 0; color: var(--link); cursor: pointer; padding: 4px; border-radius: 6px; text-align: start; }
 .icon {
   display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0;
   border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer;
@@ -179,7 +179,7 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
 input[type="checkbox"], input[type="radio"] { accent-color: var(--primary); }
 input[type="file"] { font: inherit; font-size: 14px; max-width: 100%; color: var(--muted); }
 input[type="file"]::file-selector-button {
-  margin-right: 12px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px;
+  margin-inline-end: 12px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px;
   background: var(--field); color: var(--link); font: inherit; font-weight: 600; cursor: pointer;
 }
 .row { display: flex; gap: 8px; align-items: center; }
@@ -194,7 +194,7 @@ input[type="file"]::file-selector-button {
 .block.has-error { border-color: var(--bad); }
 .block-head { display: flex; align-items: center; gap: 8px; }
 .block-title { font-weight: 650; }
-.grip { display: inline-grid; place-items: center; width: 22px; height: 32px; margin-left: -6px; color: var(--muted); cursor: grab; }
+.grip { display: inline-grid; place-items: center; width: 22px; height: 32px; margin-inline-start: -6px; color: var(--muted); cursor: grab; }
 .grip svg { width: 18px; height: 18px; fill: currentColor; }
 .block.dragging { opacity: .45; }
 .block.drop-target { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent); }
@@ -205,7 +205,7 @@ input[type="file"]::file-selector-button {
 .drop-overlay p { padding: 14px 20px; border-radius: 12px; background: var(--card); color: var(--fg); font-weight: 600; box-shadow: 0 6px 24px #0003; }
 .block-error { margin: 0 0 8px; padding: 6px 10px; border-radius: 8px; color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, transparent); font-size: 13px; line-height: 1.35; }
 .block-error:empty { display: none; }
-.tools { display: flex; margin-left: auto; }
+.tools { display: flex; margin-inline-start: auto; }
 .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 14px; align-items: start; }
 .field { display: grid; gap: 4px; font-size: 13px; color: var(--muted); margin: 0; min-width: 0; }
 .field.wide { grid-column: 1 / -1; }
@@ -232,10 +232,10 @@ fieldset.segmented { border: 0; padding: 0; grid-column: 1 / -1; }
 .segmented input { position: absolute; opacity: 0; pointer-events: none; }
 .segmented span {
   display: block; padding: 8px 10px; text-align: center; white-space: nowrap; cursor: pointer;
-  border: 1px solid var(--line); margin-left: -1px; background: var(--field); color: var(--fg); font-size: 13px;
+  border: 1px solid var(--line); margin-inline-start: -1px; background: var(--field); color: var(--fg); font-size: 13px;
 }
-.segmented label:first-of-type span { border-radius: 8px 0 0 8px; margin-left: 0; }
-.segmented label:last-of-type span { border-radius: 0 8px 8px 0; }
+.segmented label:first-of-type span { border-start-start-radius: 8px; border-end-start-radius: 8px; margin-inline-start: 0; }
+.segmented label:last-of-type span { border-start-end-radius: 8px; border-end-end-radius: 8px; }
 .segmented input:checked + span { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 .segmented input:focus-visible + span { outline: 3px solid color-mix(in srgb, var(--primary) 60%, transparent); }
 .add { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
@@ -264,13 +264,13 @@ fieldset.segmented { border: 0; padding: 0; grid-column: 1 / -1; }
 .history .actions { display: flex; gap: 4px; }
 .saved { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 2px; }
 .saved li { display: flex; gap: 8px; align-items: center; }
-.saved li .link { margin-right: auto; text-align: left; }
+.saved li .link { margin-inline-end: auto; text-align: start; }
 .badge { font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
 
 footer { max-width: 1180px; margin: 8px auto 32px; padding: 0 16px; color: var(--muted); font-size: 13px; }
 footer a { color: var(--link); }
 footer .link { font-size: 13px; }
-footer .lang { margin-left: 12px; font-size: 13px; }
+footer .lang { margin-inline-start: 12px; font-size: 13px; }
 footer .lang select { width: auto; min-height: 32px; padding: 4px 8px; }
 #login-dialog { width: min(380px, calc(100vw - 32px)); }
 #login-dialog .field { margin: 12px 0; }
@@ -290,14 +290,14 @@ dialog::backdrop { background: #0008; }
 .info dd { margin: 0; overflow-wrap: anywhere; }
 .templates { list-style: none; padding: 0; margin: 12px 0 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
 .templates button {
-  display: grid; gap: 4px; width: 100%; height: 100%; padding: 12px 14px; text-align: left; cursor: pointer;
+  display: grid; gap: 4px; width: 100%; height: 100%; padding: 12px 14px; text-align: start; cursor: pointer;
   border: 1px solid var(--line); border-radius: 10px; background: var(--field); color: var(--fg); font: inherit;
 }
 .templates button:hover { border-color: var(--primary); }
 .templates strong { font-size: 15px; }
 .templates span { color: var(--muted); font-size: 13px; }
 .log { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 8px; font-size: 13px; }
-.log li { border-left: 3px solid var(--ok); padding: 4px 10px; background: var(--field); border-radius: 0 6px 6px 0; }
+.log li { border-inline-start: 3px solid var(--ok); padding: 4px 10px; background: var(--field); border-start-end-radius: 6px; border-end-end-radius: 6px; }
 .log li.failed { border-color: var(--bad); }
 .log li.muted { border: 0; background: none; padding: 0; }
 .log pre { white-space: pre-wrap; margin: 4px 0 0; max-height: 120px; overflow: auto; }
