@@ -12,6 +12,8 @@ SupplementaryGroups=lp
 WorkingDirectory=/opt/labeler-agent
 ExecStart=/usr/bin/php -S 0.0.0.0:8631 -t /opt/labeler-agent/public
 Environment=LABELER_DATA_DIR=/var/lib/labeler-agent
+# several requests at once: a print or a wrong password must not block everyone else
+Environment=PHP_CLI_SERVER_WORKERS=3
 StateDirectory=labeler-agent
 Restart=on-failure
 RestartSec=5
