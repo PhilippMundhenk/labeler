@@ -14,6 +14,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  consistency:
+    name: Docs and code consistency
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0          # the screenshot check compares commit dates
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_ARG: ${{ startsWith(github.ref, 'refs/tags/v') && format('--version {0}', github.ref_name) || '' }}
+        run: python3 tools/consistency_check.py --config tools/consistency.json $VERSION_ARG
+
   test:
     name: Lint, unit, browser tests and coverage gates
     runs-on: ubuntu-latest

@@ -30,10 +30,27 @@ Icons are searched and downloaded by the browser from an Iconify API (`icon_api`
 the chosen icon is stored in the label and rendered like an image, so neither the Pi nor printing
 depend on that service.
 
+Server side, `src/`:
+
+| File | Does |
+| --- | --- |
+| `bootstrap.php` | loads the classes and `Config` for `public/api.php` |
+| `Api.php` | the JSON API ([API.md](API.md)): routing, access (token, password), checks, answers |
+| `Config.php` | settings: defaults, `config.php`, `LABELER_*` environment variables |
+| `PtouchPrint.php` | runs ptouch-print, reads its version, `--help` and `--info`, explains printer errors |
+| `Process.php` | starts a program with an argument list (no shell) and a time limit |
+| `Png.php` | checks an uploaded label PNG (size, height against the tape) |
+| `Log.php` | the print log in the data folder |
+| `Labels.php` | labels saved on the server (`labels.json`, file lock, limits) |
+| `Session.php` | the login cookie (HMAC-signed, no server-side state) |
+| `Remote.php` | HTTP client for a printer agent (`printer_url`) |
+| `Response.php` | an HTTP answer (status, headers, body) |
+| `StaticFiles.php` and `router.php` | caching and compression for PHP's built-in server |
+
 The browser does all the drawing (ADR [0001](adr/0001-render-in-the-browser.md)). The server knows
-nothing about fonts, QR codes or layout; it answers four questions: what is attached (`status`),
-print this image (`print`), which fonts are in the folder (`fonts`, `font`), and what happened
-(`log`).
+nothing about fonts, QR codes or layout; it answers a few questions: what is attached (`status`,
+`printers`), print this image (`print`), which fonts are in the folder (`fonts`, `font`), what
+happened (`log`), and keeps saved labels (`labels`); [API.md](API.md) lists all actions.
 
 Split setup ([ADR 0006](adr/0006-printer-agent.md)): the interface can forward `status`, `print`
 and `log` to a printer agent elsewhere (`printer_url`), which is the same API without the
@@ -49,7 +66,7 @@ and adds the others when `--version` says they are there.
 | --- | --- | --- |
 | 1.5 | 2021-10 | `--info` without printer width; `--text a b` takes several lines. No `--copies`: Labeler runs ptouch-print once per copy. |
 | 1.6 | 2024-10 | `--copies`, `--chain`, `--force-tape-width`; `--info` shows colour names (`01 (White)`). |
-| 1.7 | 2025-08 | argp command line: positional arguments are rejected, so `--text "a" "b"` fails with "No arguments supported" (the cause of #1); second line is `--newline`. `--info` adds the printer width. |
+| 1.7 | 2025-08 | argp command line: positional arguments are rejected, so `--text "a" "b"` fails with "No arguments supported" (what broke the first version of Labeler); second line is `--newline`. `--info` adds the printer width. |
 | 1.8 | 2026-03 | `--precut`, `--align`, `--timeout`; hex values with `0x`; PNG resolution 180 dpi. `--precut` sends `ESC i M 0x40`, which Brother's raster command reference defines as **auto cut**; Labeler calls it that. Without it, the printer's own cut setting applies. |
 | 1.9 | 2026-09 | `printer has N dpi` line (360 dpi printers), `--serial`, `--list-connected`, serial in the USB message. |
 

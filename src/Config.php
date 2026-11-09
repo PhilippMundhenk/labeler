@@ -10,7 +10,7 @@ namespace Labeler;
  */
 final class Config
 {
-    public const VERSION = '1.0.0-dev';
+    public const VERSION = '1.0.0';
 
     /** @var array<string, mixed> */
     private array $values;

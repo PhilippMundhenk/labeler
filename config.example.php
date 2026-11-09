@@ -29,6 +29,16 @@ return [
     // Entries kept in the print log.
     'log_entries' => 50,
 
+    // Access token for this API. When set, every request except health needs
+    // "Authorization: Bearer <token>" (or "X-Labeler-Token: <token>"). Always set it on a
+    // printer agent; install.sh --agent generates one.
+    'token' => '',
+
+    // Printer agent to use instead of a local ptouch-print, e.g. 'http://printer-pi:8631', and
+    // its token. Empty: print locally.
+    'printer_url' => '',
+    'printer_token' => '',
+
     // Password for the interface: plain text or, better, a hash made with
     //   php -r 'echo password_hash("your password", PASSWORD_DEFAULT);'
     // Empty: no login (fine on a home network).

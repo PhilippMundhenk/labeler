@@ -68,7 +68,7 @@ Three layers plus a contract test, all in CI:
    upstream sources and checks that the labels from our PNG encoder are read back pixel for pixel,
    that `--copies`, `--chain` and `--precut` are accepted where Labeler uses them, that our parser
    understands the real "no printer" output, and records whether `--text a b` still works (it
-   stopped in 1.7, which is what broke the first version of Labeler, #1). A weekly workflow runs it
+   stopped in 1.7, which is what broke the first version of Labeler). A weekly workflow runs it
    against upstream's main branch.
 
 ### The simulated printer
@@ -82,8 +82,8 @@ comes from `PTSIM_*` variables or a JSON file that tests rewrite while the serve
 
 | Part | Tool | Gate | Measured 2026-11-09 |
 | --- | --- | --- | --- |
-| PHP (`src/`, simulator) | PHPUnit + pcov, `tools/coverage-gate.php` | 95 % lines per file | 99.6 % (111 tests) |
-| JS (`public/js/`) | c8 over node tests **and** browser tests | 95 % lines per file | 99.1 % (68 node tests, 69 browser tests) |
+| PHP (`src/`, simulator) | PHPUnit + pcov, `tools/coverage-gate.php` | 95 % lines per file | 99.7 % (120 tests) |
+| JS (`public/js/`) | c8 over node tests **and** browser tests | 95 % lines per file | 99.7 % (73 node tests, 77 browser tests) |
 
 The browser tests collect V8 coverage of every page and write it in the format c8 reads
 (`tests/e2e/fixtures.js`), so `npm run coverage` merges it with the node tests and applies one gate.
@@ -124,8 +124,9 @@ starts a demo instance on the simulator and writes `docs/screenshots/*.png` (dem
 2. Set the version in `package.json` and `src/Config.php` (lint checks they match).
 3. `git tag vX.Y.Z && git push --tags`: the release workflow builds `labeler-X.Y.Z.zip` with
    `tools/package.sh` and attaches it to a GitHub release.
-   The first release also publishes `latest`: switch `docker-compose.yml`, README and
-   docs/DOCKER.md from `:main` to `:latest` in the same change.
+   It also pushes the image as `X.Y.Z`, `X.Y` and `latest`. The tag pipeline runs
+   `tools/consistency_check.py --version X.Y.Z` first (docs and code agree, the changelog has
+   the version); run it locally before tagging.
 
 The QR library is vendored: `public/lib/qrcode.mjs` is `dist/qrcode.mjs` of
 [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 2.0.4. Update it by copying

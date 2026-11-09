@@ -6,10 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-09
+
 The first versioned release: Labeler was rewritten from a single PHP page into a label editor.
 
 ### Added
 
+- docs/API.md describes the JSON API, e.g. for printing from scripts; a consistency check in CI
+  keeps docs and code in step (config keys, API actions, changelog) and runs before every release.
 - Translations for the 15 most spoken languages: Chinese (Simplified), Hindi, Spanish, Arabic,
   French, Bengali, Portuguese, Russian, Indonesian, Urdu, Japanese, Marathi and Telugu besides
   English and German, translated by machine and open for review; each language loads only when
@@ -114,6 +118,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Fixed
 
+- Several image builds running at the same time on main could fail to push to the registry; a
+  newer run on main now replaces an older one.
 - The container image carries Labeler's license and the QR code library's full MIT license in
   `/usr/share/doc/labeler`; the QR library's license also ships next to it in `public/lib` (#115).
 - The ptouch-print builds also publish their build files (`ptouch-build.Dockerfile`,
