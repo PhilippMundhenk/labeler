@@ -124,6 +124,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Security
 
+- `install.sh` runs only after it was downloaded completely (`curl | sh`), and checks a release
+  package against the release's `SHA256SUMS` (#112).
 - The login cookie is signed with a random secret in the data folder (`session.key`) instead of a
   key derived from the password alone, so a captured cookie does not help to guess the password (#111).
 - PHP's built-in server answered one request at a time, so a print or a wrong password blocked
