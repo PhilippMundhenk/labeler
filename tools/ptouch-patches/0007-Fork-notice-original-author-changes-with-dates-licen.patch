@@ -1,0 +1,86 @@
+From 1f90d9c310d362f4a8f56ee7c4b455d5785374b8 Mon Sep 17 00:00:00 2001
+From: Philipp Mundhenk <philipp@mundhenk.org>
+Date: Mon, 9 Nov 2026 21:43:33 +0100
+Subject: [PATCH] Fork notice: original author, changes with dates, license
+
+README.md says that this is a fork of Dominic Radermacher's ptouch-print, what it changes and
+that it stays under the GPL-3.0; CHANGES.fork lists the modifications with their date (GPLv3
+section 5a). The original README is unchanged.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ CHANGES.fork | 13 +++++++++++++
+ README.md    | 44 ++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 57 insertions(+)
+ create mode 100644 CHANGES.fork
+ create mode 100644 README.md
+
+diff --git a/CHANGES.fork b/CHANGES.fork
+new file mode 100644
+index 0000000..6e1f674
+--- /dev/null
++++ b/CHANGES.fork
+@@ -0,0 +1,13 @@
++Changes in this fork of ptouch-print compared to ptouch-print v1.9 by Dominic Radermacher
++(GNU GPL v3, section 5a: notice of modification). One commit per change, see "git log v1.9..".
++
++2026-11-09  Philipp Mundhenk
++  * --feed <dots>: send ESC i d (margin amount); nothing changes without the option.
++  * --halfcut: send ESC i K with the half cut bit and the chain bit from --chain; replaces the
++    separate PT-D460BT chain command when sent.
++  * --cut-every <n>: send ESC i A n together with auto cut (ESC i M 0x40).
++  * --hires: set the high resolution bit of ESC i K; --writepng records the doubled
++    horizontal resolution.
++  * udev/20-usb-ptouch-permissions.rules: also GROUP="lp", for services.
++  * Print size_t values with %zu instead of %ld (src/*.c, po/*); translations updated.
++  * README.md and CHANGES.fork: notes about this fork.
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..f5e251b
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,44 @@
++# ptouch-print (fork with extra print options)
++
++This is a fork of **[ptouch-print](https://git.familie-radermacher.ch/linux/ptouch-print)** by
++**Dominic Radermacher**, a command line tool to print labels on Brother P-Touch printers on
++Linux. All credit for ptouch-print goes to him; see [`README`](README) for the original
++description and <https://dominic.familie-radermacher.ch/projekte/ptouch-print/> for the project
++page. Please report problems with this fork here, not to the original author.
++
++The fork exists for [Labeler](https://github.com/PhilippMundhenk/labeler), a web interface for
++P-Touch printers, and adds options from Brother's raster command reference that ptouch-print 1.9
++does not offer. The changes are meant to go back to the original project.
++
++## Branches
++
++- `master` and the tags: unchanged copy of the original repository.
++- `labeler` (this branch): ptouch-print v1.9 plus the changes below, one commit each.
++
++## Changes
++
++See [CHANGES.fork](CHANGES.fork) for the list with dates.
++
++| Option | Command sent to the printer |
++| --- | --- |
++| `--feed <dots>` | `ESC i d`: blank tape before and after the label (printer default 14 dots) |
++| `--halfcut` | `ESC i K` half cut bit: cut the tape but not its backing (printers with a half cutter) |
++| `--cut-every <n>` | `ESC i A n` with auto cut: with `--copies`, cut only after every n labels |
++| `--hires` | `ESC i K` high resolution bit: twice the dots along the tape; images must be twice as long |
++
++Also: the udev rule gives the group `lp` access (for services), and `size_t` values are printed
++with `%zu` (no warnings on 32-bit systems such as Raspberry Pi OS).
++
++Without the new options the program sends exactly the same bytes as the original. Labeler's
++contract test checks every option byte for byte against a simulated USB printer; the options
++are not yet tested on every printer model.
++
++## Build
++
++As the original: `cmake -S . -B build && cmake --build build`.
++
++## License
++
++GPL-3.0, the same license as ptouch-print ([COPYING](COPYING)). Copyright of ptouch-print
++© 2013-2026 Dominic Radermacher; changes in this fork © 2026 Philipp Mundhenk, under the same
++license.

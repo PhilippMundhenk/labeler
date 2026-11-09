@@ -18,4 +18,6 @@ flags and checksums of every download) and the patches in [`../ptouch-patches`](
 With the source archives above and this Dockerfile anyone can rebuild ptouch-print, also against
 a modified libusb, as the GPL and the LGPL require.
 
-The patches in `tools/ptouch-patches` change ptouch-print and are under its license, GPL-3.0.
+The patches in `tools/ptouch-patches` change ptouch-print and are under its license, GPL-3.0. The
+patched sources carry `CHANGES.fork`, which says what was changed and when; the same commits are
+in the fork <https://github.com/PhilippMundhenk/ptouch-print>.
