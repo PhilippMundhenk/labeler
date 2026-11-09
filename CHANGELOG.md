@@ -124,5 +124,7 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Security
 
+- PHP's built-in server answered one request at a time, so a print or a wrong password blocked
+  everyone else; the services run 3 workers, the container 4 (`PHP_CLI_SERVER_WORKERS`) (#110).
 - Label text was passed to a shell unescaped (command injection) and echoed without HTML
   escaping (#2).
