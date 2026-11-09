@@ -18,6 +18,13 @@ From 1400 px wide, Print and every print option sit in a column beside the previ
 
 ![Wide screen](screenshots/wide.png)
 
+## Floating preview
+
+When the preview has scrolled out of view, a small copy of the label floats in the corner; a
+click on it scrolls back. *Floating preview* next to the preview switches it off.
+
+![Floating preview](screenshots/floating.png)
+
 ## Phone
 
 | Editor | No printer attached |

@@ -25,7 +25,8 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 
 ## Features
 
-- **Live preview** at the printer's resolution, in the colours of the inserted tape.
+- **Live preview** at the printer's resolution, in the colours of the inserted tape; a small
+  floating copy of the label stays in view while you edit further down (can be switched off).
 - **Blocks** side by side on one label: text, icon, QR code, Code 128 barcode, image, space.
   Drag them into order, duplicate and remove them; drop image files onto the page to add them.
 - **Icons** with search: about 7,400 [Material Design Icons](https://pictogrammers.com/library/mdi/)

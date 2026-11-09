@@ -71,6 +71,15 @@ const browser = await chromium.launch();
 try {
   await shot(browser, 'wide', { width: 1920, height: 1080 });
   await shot(browser, 'editor', { width: 1100, height: 1000 });
+  await shot(browser, 'floating', {
+    width: 1100,
+    height: 800,
+    before: async (page) => {
+      await page.locator('details.options summary').click(); // the card no longer sticks
+      await page.locator('#batch-title').scrollIntoViewIfNeeded();
+      await page.waitForTimeout(400);
+    },
+  });
   await shot(browser, 'editor-dark', { width: 1100, height: 1000, scheme: 'dark' });
   await shot(browser, 'phone', { width: 390, height: 844 });
   await shot(browser, 'no-printer', { width: 390, height: 844, state: { printer: 'none' } });

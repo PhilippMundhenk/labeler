@@ -119,6 +119,15 @@ h3 { font-size: 14px; margin: 16px 0 8px; }
   .preview-card, .preview-card:has(.options[open]) { position: sticky; }
 }
 .meta { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+.meta-end { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+.mini-switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.mini-switch input { margin: 0; }
+/* floating mini preview: just the label, while the preview card is out of view */
+.mini-preview {
+  position: fixed; top: 64px; right: 16px; z-index: 25; padding: 6px; max-width: min(420px, calc(100vw - 32px));
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 20px #0000002e; cursor: pointer;
+}
+.mini-preview canvas { display: block; max-width: 100%; height: auto; image-rendering: pixelated; border-radius: 2px; }
 .tape {
   display: flex; justify-content: center; align-items: center; overflow-x: auto;
   min-height: 72px; padding: 14px 0;
