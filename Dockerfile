@@ -18,7 +18,9 @@ RUN for i in 1 2 3; do git clone https://git.familie-radermacher.ch/linux/ptouch
  && cd /src && git -c advice.detachedHead=false checkout "$PTOUCH_REF" \
  && if [ "$PTOUCH_PATCHES" = 1 ]; then git -c user.name=build -c user.email=build@localhost am -q /patches/*.patch; fi \
  && cmake -S . -B build && cmake --build build -j"$(nproc)" \
- && install -m 755 build/ptouch-print /usr/local/bin/ptouch-print  && mkdir -p /doc && cp COPYING /doc/  && git archive --format=tar.gz --prefix="ptouch-print-$PTOUCH_REF/" -o "/doc/ptouch-print-$PTOUCH_REF-source.tar.gz" HEAD
+ && install -m 755 build/ptouch-print /usr/local/bin/ptouch-print \
+ && mkdir -p /doc && cp COPYING /doc/ \
+ && git archive --format=tar.gz --prefix="ptouch-print-$PTOUCH_REF/" -o "/doc/ptouch-print-$PTOUCH_REF-source.tar.gz" HEAD
 
 FROM debian:bookworm-slim
 ARG VERSION=dev
