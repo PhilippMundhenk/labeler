@@ -89,6 +89,35 @@ h3 { font-size: 14px; margin: 16px 0 8px; }
 @media (max-height: 640px) { .preview-card { position: static; } }
 /* with the print options open the card is too tall to stay on top of the editor */
 .preview-card:has(.options[open]) { position: static; }
+
+/* wide screens (16:9 and up): the label on the left, a column with Print and every print option
+   on the right, always open; the page uses more of the width */
+@media (min-width: 1400px) {
+  main { max-width: 1600px; }
+  .preview-card {
+    display: grid; grid-template-columns: minmax(0, 1fr) 320px; column-gap: 24px; align-items: start;
+    grid-template-areas: "meta print" "tape options" "notice options";
+  }
+  .preview-card > .meta { grid-area: meta; align-self: center; margin-bottom: 0; }
+  .preview-card > .tape { grid-area: tape; min-height: 160px; margin-top: 12px; }
+  .preview-card > .notice { grid-area: notice; }
+  .preview-card > .print-row { grid-area: print; margin-top: 0; flex-wrap: wrap; justify-content: stretch; }
+  .preview-card > .print-row #print { flex: 1; justify-content: center; }
+  .preview-card > .print-row .print-hint { order: 3; flex-basis: 100%; }
+  .preview-card > .print-row .print-hint:empty { display: none; }
+  .preview-card > .options { grid-area: options; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .preview-card > .options summary { display: none; }
+  .preview-card > .options .row { margin-top: 0; flex-direction: column; align-items: stretch; gap: 8px; }
+  .preview-card > .options .row { gap: 2px; }
+  .preview-card > .options .check { min-height: 30px; }
+  .preview-card > .options .row .inline { min-height: 40px; }
+  .preview-card > .options .row .inline input { width: 72px; flex: none; }
+  .preview-card > .options #download { margin-top: 8px; }
+}
+/* the two-column card stays on top while editing only when the window is high enough for it */
+@media (min-width: 1400px) and (min-height: 1150px) {
+  .preview-card, .preview-card:has(.options[open]) { position: sticky; }
+}
 .meta { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
 .tape {
   display: flex; justify-content: center; align-items: center; overflow-x: auto;

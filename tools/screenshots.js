@@ -69,6 +69,7 @@ async function shot(browser, name, { width, height, scheme = 'light', label = DE
 await waitForServer();
 const browser = await chromium.launch();
 try {
+  await shot(browser, 'wide', { width: 1920, height: 1080 });
   await shot(browser, 'editor', { width: 1100, height: 1000 });
   await shot(browser, 'editor-dark', { width: 1100, height: 1000, scheme: 'dark' });
   await shot(browser, 'phone', { width: 390, height: 844 });

@@ -12,6 +12,12 @@ is the printout pixel for pixel, in the colours of the inserted tape.
 | --- | --- |
 | ![Editor](screenshots/editor.png) | ![Editor in dark mode](screenshots/editor-dark.png) |
 
+## Wide screen
+
+From 1400 px wide, Print and every print option sit in a column beside the preview, always open.
+
+![Wide screen](screenshots/wide.png)
+
 ## Phone
 
 | Editor | No printer attached |

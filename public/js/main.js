@@ -1252,6 +1252,11 @@ function init() {
   renderHistory();
   initBatch();
   statusLoading = refreshStatus();
+  // wide screens show the print options beside the preview, always open
+  const wide = window.matchMedia('(min-width: 1400px)');
+  const openOptions = () => { if (wide.matches) $('details.options').open = true; };
+  wide.addEventListener('change', openOptions);
+  openOptions();
   loadServerFonts();
 }
 
