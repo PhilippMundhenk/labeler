@@ -1,6 +1,6 @@
 {
     "name": "philippmundhenk/labeler",
-    "description": "Web interface for Brother P-Touch label printers through ptouch-print",
+    "description": "Web interface for Brother P-touch label printers through ptouch-print",
     "type": "project",
     "license": "MIT",
     "require": {

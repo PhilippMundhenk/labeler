@@ -102,6 +102,9 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Changed
 
+- README lists all third-party software with its license and how it reaches you; SECURITY.md is
+  exact about what goes to the icon service and about earlier versions; INSTALL.md warns that
+  PHP 7.4 on Debian bullseye gets no security updates; Brother's spelling P-touch (#116).
 - Wide screens (from 1400 px): the page uses up to 1600 px; Print and all print options sit in a
   column beside the preview and are always open (#86).
 - Saved labels go to the browser by default; *On the server (for every browser)* next to the name

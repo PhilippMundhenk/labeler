@@ -1,6 +1,6 @@
 # <img src="public/icon.svg" alt="" width="48" height="48" align="absmiddle"> Labeler
 
-Design and print labels on a Brother P-Touch printer from any browser on your network: text in
+Design and print labels on a Brother P-touch printer from any browser on your network: text in
 any font, thousands of icons, QR codes, barcodes and images, with a live preview that shows exactly what the printer
 will print.
 
@@ -16,10 +16,10 @@ step. The label is drawn in your browser, so the Pi only passes it on. The inter
 in Docker on a server, with only a small printer agent next to the printer.
 
 > Labeler is an independent open-source project. It has no relation to Brother Industries and is
-> neither endorsed nor supported by them. "Brother" and "P-Touch" only say which printers it
+> neither endorsed nor supported by them. "Brother" and "P-touch" only say which printers it
 > works with.
 
-**Works with:** the P-Touch printers ptouch-print supports (`ptouch-print --list-supported`), for
+**Works with:** the P-touch printers ptouch-print supports (`ptouch-print --list-supported`), for
 example PT-P700, PT-P750W, PT-H500, PT-D600, PT-P300BT and PT-P900W, with ptouch-print 1.5 or
 newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
 
@@ -185,8 +185,22 @@ Questions and problems: [GitHub issues](https://github.com/PhilippMundhenk/label
 
 ## License
 
-[MIT](LICENSE). The bundled QR code generator (`public/lib/qrcode.mjs`) is by Kazuhiko Arase,
-also MIT.
+Labeler itself: [MIT](LICENSE).
+
+Third-party software, by how it reaches you:
+
+| Software | License | How |
+| --- | --- | --- |
+| [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) by Kazuhiko Arase | MIT ([text](public/lib/qrcode-LICENSE.txt)) | bundled as `public/lib/qrcode.mjs`; "QR Code" is a registered trademark of DENSO WAVE INCORPORATED |
+| [ptouch-print](https://git.familie-radermacher.ch/linux/ptouch-print) by Dominic Radermacher | GPL-3.0 | a separate program Labeler runs; in the container image, the ready-made builds and, patched, in [the fork](https://github.com/PhilippMundhenk/ptouch-print) |
+| libusb, libgd, libpng, zlib, musl | LGPL-2.1, GD, libpng, zlib, MIT | inside the ready-made ptouch-print builds ([NOTICE](tools/ptouch-build/NOTICE.md)) |
+| PHP and the Debian packages of the image | their own licenses (PHP License, GPL, ...) | in the container image, from Debian; sources at [sources.debian.org](https://sources.debian.org) |
+| [Material Design Icons](https://pictogrammers.com/library/mdi/) | Apache 2.0 | fetched from the Iconify API when chosen, not shipped |
+| [Simple Icons](https://simpleicons.org/) | CC0 1.0; the logos are trademarks of their owners | fetched from the Iconify API when chosen, not shipped |
+| [Iconify API](https://iconify.design/) | MIT (the server software) | a public service the browser asks; `icon_api` points elsewhere or switches it off |
+
+The test and build tools in `package.json` and `composer.json` (PHPUnit, Playwright, ESLint, axe,
+zxing, c8) are only used for development and are not part of the release.
 
 ptouch-print is not part of Labeler: Labeler runs it as a separate program. It is © Dominic
 Radermacher under the GPL-3.0. The ready-made ptouch-print builds and the copy in the container
