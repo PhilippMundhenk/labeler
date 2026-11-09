@@ -303,31 +303,61 @@ test('mirrored printing flips the label (#50)', async ({ page }) => {
   await expect(page.locator('#mirror')).toBeChecked();
 });
 
-test('saved labels are shared through the server (#34)', async ({ page, browser }) => {
-  await page.addInitScript(() => localStorage.setItem('labeler.saved', JSON.stringify({ Local: { blocks: [{ type: 'text', text: 'from this browser' }] } })));
+test('saved labels: in the browser by default, on the server when checked (#34, #92)', async ({ page, browser }) => {
+  await page.addInitScript(() => { if (!localStorage.getItem('labeler.saved')) localStorage.setItem('labeler.saved', JSON.stringify({ Local: { blocks: [{ type: 'text', text: 'from this browser' }] } })); });
   await ready(page);
-  await expect(page.locator('#saved-where')).toHaveText('Saved on the server, for every browser.');
-  await expect(page.locator('#saved-local')).toContainText('1 label is saved only in this browser.');
-  await page.locator('#copy-local').click();
-  await expect(page.locator('.toast.ok')).toContainText('Copied to the server');
-  await expect(page.locator('#saved-local')).toBeHidden();
+  await expect(page.locator('#saved-where')).toHaveText('Saved in this browser, or on the server for every browser when checked.');
+  await expect(page.locator('#save-server')).not.toBeChecked();
   await block(page, 'text').locator('textarea').fill('Shared');
+  await page.locator('#save-name').fill('Mine');
+  await page.locator('#save-form button').click();
+  await expect(page.locator('.toast.ok')).toContainText('Saved "Mine"');
+  await expect(page.locator('[data-load="Mine"]')).toHaveAttribute('data-where', 'browser');
+  await page.locator('#save-server').check();
   await page.locator('#save-name').fill('Second');
   await page.locator('#save-form button').click();
-  await expect(page.locator('#saved-list')).toContainText('Second');
+  await expect(page.locator('.toast.ok').last()).toContainText('Saved "Second" on the server');
+  await expect(page.locator('[data-load="Second"]')).toHaveAttribute('data-where', 'server');
+  await expect(page.locator('#saved-list li', { hasText: 'Second' }).locator('.badge')).toHaveText('Server');
 
+  // another browser sees only the server's labels; the same name can exist in both places
   const other = await browser.newPage();
   await other.goto('/');
-  await expect(other.locator('[data-load="Local"]')).toBeVisible();
+  await expect(other.locator('[data-load="Second"]')).toBeVisible();
+  await expect(other.locator('[data-load="Mine"]')).toHaveCount(0);
+  await expect(other.locator('[data-load="Local"]')).toHaveCount(0);
   await other.locator('[data-load="Second"]').click();
   await expect(other.locator('.block textarea')).toHaveValue('Shared');
-  await other.locator('[data-remove="Local"]').click();
-  await expect(other.locator('[data-load="Local"]')).toHaveCount(0);
+  await other.locator('#save-server').check();
+  await other.locator('#save-name').fill('Mine');
+  await other.locator('#save-form button').click();
+  await expect(other.locator('[data-load="Mine"]')).toHaveCount(1);
   await other.close();
+
+  await page.reload();
+  await expect(page.locator('[data-load="Mine"]')).toHaveCount(2);
+  await page.locator('[data-load="Local"]').click();
+  await expect(block(page, 'text').locator('textarea')).toHaveValue('from this browser');
+  await page.locator('[data-load="Mine"][data-where="server"]').click();
+  await expect(block(page, 'text').locator('textarea')).toHaveValue('Shared');
+  await page.locator('[data-remove="Mine"][data-where="server"]').click();
+  await expect(page.locator('[data-load="Mine"]')).toHaveCount(1);
+  await page.locator('[data-remove="Mine"][data-where="browser"]').click();
+  await expect(page.locator('[data-load="Mine"]')).toHaveCount(0);
+  await page.locator('[data-remove="Second"]').click();
+
   await page.route('**/api.php?action=label-save', (route) => route.fulfill({ status: 422, json: { error: 'the label is too large (big images?)' } }));
+  await page.locator('#save-server').check();
   await page.locator('#save-name').fill('Big');
   await page.locator('#save-form button').click();
   await expect(page.locator('.toast.bad')).toContainText('too large');
+});
+
+test('without server storage there is no server choice', async ({ page }) => {
+  await browserLabels(page);
+  await ready(page);
+  await expect(page.locator('#save-server-label')).toBeHidden();
+  await expect(page.locator('#saved-where')).toHaveText('Saved in this browser.');
 });
 
 test('the label survives a reload; saved labels', async ({ page }) => {

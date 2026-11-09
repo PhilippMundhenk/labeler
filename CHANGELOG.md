@@ -91,6 +91,8 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 
 ### Changed
 
+- Saved labels go to the browser by default; *On the server (for every browser)* next to the name
+  saves them on the server. The list shows both, server labels marked (#92).
 - New QR codes, also in the templates, start without a quiet zone (0 modules); the label's
   margins keep them clear of the tape edge (#88).
 
