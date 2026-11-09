@@ -179,3 +179,10 @@ Questions and problems: [GitHub issues](https://github.com/PhilippMundhenk/label
 
 [MIT](LICENSE). The bundled QR code generator (`public/lib/qrcode.mjs`) is by Kazuhiko Arase,
 also MIT.
+
+ptouch-print is not part of Labeler: Labeler runs it as a separate program. It is © Dominic
+Radermacher under the GPL-3.0. The ready-made ptouch-print builds and the copy in the container
+image come with their license and their exact sources (next to the builds, and in
+`/usr/share/doc/ptouch-print` in the image); the patches in `tools/ptouch-patches` are GPL-3.0
+as well. [tools/ptouch-build/NOTICE.md](tools/ptouch-build/NOTICE.md) lists every component of
+the builds and its license.

@@ -31,6 +31,7 @@ code=$(curl -s -o /tmp/print.json -w '%{http_code}' -H 'Content-Type: applicatio
 agent_status=$(docker exec "$net-agent" php -r 'echo @file_get_contents("http://127.0.0.1:8631/api.php?action=status") === false ? "denied" : "open";')
 [ "$agent_status" = denied ] || fail "agent answered without token"
 [ "$(docker exec "$net-ui" id -u)" = 1000 ] || fail "not running as uid 1000"
+docker exec "$net-ui" sh -c 'grep -q "GNU GENERAL PUBLIC LICENSE" /usr/share/doc/ptouch-print/COPYING && tar -tzf /usr/share/doc/ptouch-print/ptouch-print-*-source.tar.gz | grep -q src/libptouch.c'   || fail "ptouch-print's license and source are missing (GPL)"
 docker logs "$net-ui" 2>&1 | grep -q "printer agent at" || fail "start message"
 for i in $(seq 1 40); do
   [ "$(docker inspect -f '{{.State.Health.Status}}' "$net-ui")" = healthy ] && break

@@ -17,6 +17,9 @@ The first versioned release: Labeler was rewritten from a single PHP page into a
 - Ready-made static ptouch-print builds (`armv6` for every Raspberry Pi, `arm64`, `amd64`,
   about 0.5 MB without library dependencies), so the install script no longer needs a compiler
   and about 100 packages on the device (#81).
+- The ptouch-print builds and the container image come with ptouch-print's license (GPL-3.0)
+  and the exact sources of the binary, plus libusb and libgd sources and the license texts of
+  every component (`tools/ptouch-build/NOTICE.md`) (#83).
 - Labels are drawn in the browser and printed as a 1-bit PNG with `ptouch-print --image`; the
   preview is the printout and updates while typing (#3).
 - Font selection (built-in list, fonts in the server's `fonts/` folder, fonts of the device),
