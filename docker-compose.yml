@@ -2,7 +2,7 @@
 # and open http://<server>:8080/. Details: docs/DOCKER.md
 services:
   labeler:
-    image: ghcr.io/philippmundhenk/labeler:latest
+    image: ghcr.io/philippmundhenk/labeler:main   # :latest once there is a release
     # build: .                       # or build the image from this checkout
     restart: unless-stopped
     ports:

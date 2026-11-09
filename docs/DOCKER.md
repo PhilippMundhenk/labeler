@@ -1,13 +1,32 @@
 # Docker
 
 The image `ghcr.io/philippmundhenk/labeler` contains the interface, PHP and ptouch-print. It
-runs as user 1000, listens on port 8080 and keeps the print log and fonts in `/data`. Tags:
-`latest` (newest release), `X.Y.Z`, `X.Y`, and `main` (current development).
+runs as user 1000, listens on port 8080 and keeps the print log and fonts in `/data`.
+
+## Image tags
+
+| Tag | What it is | Updated | Use it for |
+| --- | --- | --- | --- |
+| `main` | the newest state of the branch `main`, every merged change | on every change, within minutes | testing new changes; **the tag to use until the first release** |
+| `latest` | the newest release | only when a version is released (tag `vX.Y.Z`) | normal use, once there is a release |
+| `X.Y.Z` (e.g. `1.0.0`) | exactly that release | never | pinning a version |
+| `X.Y` (e.g. `1.0`) | the newest bug-fix release of that version | with each `X.Y.*` release | staying on a version but getting fixes |
+
+Every tag is built for `linux/amd64`, `linux/arm64` and `linux/arm/v7`. There is no release yet, so
+`docker-compose.yml` uses `main`; an old `latest` from before that rule may still exist and is out
+of date. Check what you run with
+`docker image inspect ghcr.io/philippmundhenk/labeler:main --format '{{.Created}}'`, and update
+with `docker compose pull && docker compose up -d`.
+
+The image also carries the standard OCI labels (`org.opencontainers.image.title`, `description`,
+`source`, `licenses`, `version`, `revision`, `created`), so
+`docker image inspect ghcr.io/philippmundhenk/labeler:main --format '{{json .Config.Labels}}'` shows
+the version and the commit it was built from.
 
 ## Try it without a printer
 
 ```sh
-docker run --rm -p 8080:8080 -e LABELER_DEMO=1 ghcr.io/philippmundhenk/labeler
+docker run --rm -p 8080:8080 -e LABELER_DEMO=1 ghcr.io/philippmundhenk/labeler:main
 ```
 
 Open <http://localhost:8080/>. The demo uses the simulated printer (12 mm tape, ptouch-print 1.9);

@@ -32,6 +32,11 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository }}
+          # latest only for a release (the raw rule below), never for a push to main
+          flavor: latest=false
+          # Labeler is MIT; the image also contains ptouch-print (GPL-3.0, see /usr/share/doc/ptouch-print)
+          labels: |
+            org.opencontainers.image.licenses=MIT AND GPL-3.0-only
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}

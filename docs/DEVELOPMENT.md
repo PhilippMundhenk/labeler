@@ -115,6 +115,8 @@ starts a demo instance on the simulator and writes `docs/screenshots/*.png` (dem
 2. Set the version in `package.json` and `src/Config.php` (lint checks they match).
 3. `git tag vX.Y.Z && git push --tags`: the release workflow builds `labeler-X.Y.Z.zip` with
    `tools/package.sh` and attaches it to a GitHub release.
+   The first release also publishes `latest`: switch `docker-compose.yml`, README and
+   docs/DOCKER.md from `:main` to `:latest` in the same change.
 
 The QR library is vendored: `public/lib/qrcode.mjs` is `dist/qrcode.mjs` of
 [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 2.0.4. Update it by copying
