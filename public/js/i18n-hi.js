@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': 'सफ़ेद', 'Black': 'काला', 'Clear': 'पारदर्शी', 'Red': 'लाल', 'Blue': 'नीला', 'Yellow': 'पीला',
   'Green': 'हरा', 'Gold': 'सुनहरा', 'Other': 'अन्य', 'Unknown': 'अज्ञात',
+  // the interface cannot use its server (#133)
+  "Access refused": "पहुँच अस्वीकृत",
+  "Server not reachable": "सर्वर तक नहीं पहुँचा जा सकता",
+  "Server error": "सर्वर त्रुटि",
+  "Try again": "फिर से प्रयास करें",
+  "Edit without the server": "सर्वर के बिना संपादित करें",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "Labeler को उसके IP पते से खोलें, इस होस्ट नाम को config.php में allowed_hosts में जोड़ें (Docker में LABELER_ALLOWED_HOSTS), या पासवर्ड सेट करें। यदि Labeler इंटरनेट से पहुँचा जा सकता है, तो पासवर्ड सेट करें।",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "सर्वर को एक्सेस टोकन चाहिए, जिसे ब्राउज़र नहीं भेज सकता। वेब इंटरफ़ेस के लिए इसके बजाय पासवर्ड सेट करें (config.php में password, Docker में LABELER_PASSWORD); टोकन स्क्रिप्ट और अन्य Labeler सर्वरों के लिए है।",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "जाँचें कि Labeler सर्वर या कंटेनर चल रहा है और यह डिवाइस उस तक पहुँच सकता है (एक ही नेटवर्क या VPN), फिर दोबारा प्रयास करें।",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "सर्वर लॉग कारण बताता है: डिवाइस पर journalctl -u labeler, Docker में docker compose logs। फिर दोबारा प्रयास करें।",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "होस्ट नाम {host} की अनुमति नहीं है: इसे allowed_hosts में जोड़ें, या पासवर्ड सेट करें",
+  "access token missing or wrong": "एक्सेस टोकन नहीं है या गलत है",
 };

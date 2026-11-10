@@ -276,6 +276,8 @@ footer .lang { margin-inline-start: 12px; font-size: 13px; }
 footer .lang select { width: auto; min-height: 32px; padding: 4px 8px; }
 #login-dialog { width: min(380px, calc(100vw - 32px)); }
 #login-dialog .field { margin: 12px 0; }
+#blocked-dialog { width: min(480px, calc(100vw - 32px)); }
+#blocked-hint { margin: 12px 0; }
 
 /* toasts */
 .toasts { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); display: grid; gap: 8px; z-index: 30; width: min(560px, calc(100vw - 32px)); }

@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': 'সাদা', 'Black': 'কালো', 'Clear': 'স্বচ্ছ', 'Red': 'লাল', 'Blue': 'নীল', 'Yellow': 'হলুদ',
   'Green': 'সবুজ', 'Gold': 'সোনালি', 'Other': 'অন্যান্য', 'Unknown': 'অজানা',
+  // the interface cannot use its server (#133)
+  "Access refused": "প্রবেশাধিকার প্রত্যাখ্যাত",
+  "Server not reachable": "সার্ভারে পৌঁছানো যাচ্ছে না",
+  "Server error": "সার্ভার ত্রুটি",
+  "Try again": "আবার চেষ্টা করুন",
+  "Edit without the server": "সার্ভার ছাড়া সম্পাদনা করুন",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "Labeler তার IP ঠিকানা দিয়ে খুলুন, এই হোস্ট নামটি config.php-এর allowed_hosts-এ যোগ করুন (Docker-এ LABELER_ALLOWED_HOSTS), অথবা একটি পাসওয়ার্ড সেট করুন। Labeler ইন্টারনেট থেকে পৌঁছানো গেলে পাসওয়ার্ড সেট করুন।",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "সার্ভার একটি অ্যাক্সেস টোকেন চায়, যা ব্রাউজার পাঠাতে পারে না। ওয়েব ইন্টারফেসের জন্য বরং একটি পাসওয়ার্ড সেট করুন (config.php-এ password, Docker-এ LABELER_PASSWORD); টোকেনটি স্ক্রিপ্ট ও অন্যান্য Labeler সার্ভারের জন্য।",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "Labeler সার্ভার বা কন্টেইনার চলছে কি না এবং এই ডিভাইস সেখানে পৌঁছাতে পারে কি না (একই নেটওয়ার্ক বা VPN) তা দেখুন, তারপর আবার চেষ্টা করুন।",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "সার্ভারের লগে কারণ পাওয়া যাবে: ডিভাইসে journalctl -u labeler, Docker-এ docker compose logs। তারপর আবার চেষ্টা করুন।",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "হোস্ট নাম {host} অনুমোদিত নয়: এটি allowed_hosts-এ যোগ করুন, অথবা একটি পাসওয়ার্ড সেট করুন",
+  "access token missing or wrong": "অ্যাক্সেস টোকেন নেই বা ভুল",
 };

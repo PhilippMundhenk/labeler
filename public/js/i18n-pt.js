@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': 'Branco', 'Black': 'Preto', 'Clear': 'Transparente', 'Red': 'Vermelho', 'Blue': 'Azul', 'Yellow': 'Amarelo',
   'Green': 'Verde', 'Gold': 'Dourado', 'Other': 'Outro', 'Unknown': 'Desconhecido',
+  // the interface cannot use its server (#133)
+  "Access refused": "Acesso recusado",
+  "Server not reachable": "Servidor inacessível",
+  "Server error": "Erro do servidor",
+  "Try again": "Tentar novamente",
+  "Edit without the server": "Editar sem o servidor",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "Abra o Labeler pelo endereço IP, adicione este nome de host a allowed_hosts em config.php (LABELER_ALLOWED_HOSTS no Docker) ou defina uma senha. Se o Labeler puder ser acessado pela internet, defina uma senha.",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "O servidor exige um token de acesso, que um navegador não pode enviar. Para a interface web, defina uma senha (password em config.php, LABELER_PASSWORD no Docker); o token é para scripts e outros servidores Labeler.",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "Verifique se o servidor ou o contêiner do Labeler está em execução e se este dispositivo consegue alcançá-lo (mesma rede ou VPN) e tente novamente.",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "O log do servidor indica o motivo: journalctl -u labeler no dispositivo, docker compose logs no Docker. Depois tente novamente.",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "o nome de host {host} não é permitido: adicione-o a allowed_hosts ou defina uma senha",
+  "access token missing or wrong": "token de acesso ausente ou incorreto",
 };

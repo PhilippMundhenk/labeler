@@ -159,6 +159,17 @@
     </form>
   </dialog>
 
+  <!-- the interface cannot use its server: blocks everything until a retry succeeds -->
+  <dialog id="blocked-dialog" aria-labelledby="blocked-title" aria-describedby="blocked-message blocked-hint">
+    <h2 id="blocked-title">Server error</h2>
+    <p id="blocked-message" class="block-error" role="alert"></p>
+    <p id="blocked-hint"></p>
+    <div class="row end">
+      <button type="button" id="blocked-offline" class="secondary" hidden>Edit without the server</button>
+      <button type="button" id="blocked-retry" class="primary">Try again</button>
+    </div>
+  </dialog>
+
   <dialog id="template-dialog" aria-labelledby="template-title">
     <h2 id="template-title">Start from a template</h2>
     <p class="muted small">Replaces the current label; Undo brings it back.</p>

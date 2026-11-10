@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': 'తెలుపు', 'Black': 'నలుపు', 'Clear': 'పారదర్శకం', 'Red': 'ఎరుపు', 'Blue': 'నీలం', 'Yellow': 'పసుపు',
   'Green': 'ఆకుపచ్చ', 'Gold': 'బంగారు', 'Other': 'ఇతర', 'Unknown': 'తెలియదు',
+  // the interface cannot use its server (#133)
+  "Access refused": "ప్రవేశం నిరాకరించబడింది",
+  "Server not reachable": "సర్వర్‌ను చేరుకోలేము",
+  "Server error": "సర్వర్ లోపం",
+  "Try again": "మళ్లీ ప్రయత్నించండి",
+  "Edit without the server": "సర్వర్ లేకుండా సవరించండి",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "Labeler ను దాని IP చిరునామాతో తెరవండి, ఈ హోస్ట్ పేరును config.php లోని allowed_hosts కు జోడించండి (Docker లో LABELER_ALLOWED_HOSTS), లేదా పాస్‌వర్డ్ సెట్ చేయండి. Labeler ఇంటర్నెట్ నుండి చేరుకోగలిగితే, పాస్‌వర్డ్ సెట్ చేయండి.",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "సర్వర్‌కు యాక్సెస్ టోకెన్ అవసరం, దాన్ని బ్రౌజర్ పంపలేదు. వెబ్ ఇంటర్‌ఫేస్ కోసం బదులుగా పాస్‌వర్డ్ సెట్ చేయండి (config.php లో password, Docker లో LABELER_PASSWORD); టోకెన్ స్క్రిప్ట్‌లు మరియు ఇతర Labeler సర్వర్‌ల కోసం.",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "Labeler సర్వర్ లేదా కంటైనర్ నడుస్తోందా, ఈ పరికరం దాన్ని చేరుకోగలదా (అదే నెట్‌వర్క్ లేదా VPN) తనిఖీ చేసి, మళ్లీ ప్రయత్నించండి.",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "కారణం సర్వర్ లాగ్‌లో ఉంటుంది: పరికరంలో journalctl -u labeler, Docker లో docker compose logs. తర్వాత మళ్లీ ప్రయత్నించండి.",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "హోస్ట్ పేరు {host} కు అనుమతి లేదు: దాన్ని allowed_hosts కు జోడించండి, లేదా పాస్‌వర్డ్ సెట్ చేయండి",
+  "access token missing or wrong": "యాక్సెస్ టోకెన్ లేదు లేదా తప్పు",
 };

@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': 'पांढरा', 'Black': 'काळा', 'Clear': 'पारदर्शक', 'Red': 'लाल', 'Blue': 'निळा', 'Yellow': 'पिवळा',
   'Green': 'हिरवा', 'Gold': 'सोनेरी', 'Other': 'इतर', 'Unknown': 'अज्ञात',
+  // the interface cannot use its server (#133)
+  "Access refused": "प्रवेश नाकारला",
+  "Server not reachable": "सर्व्हरपर्यंत पोहोचता येत नाही",
+  "Server error": "सर्व्हर त्रुटी",
+  "Try again": "पुन्हा प्रयत्न करा",
+  "Edit without the server": "सर्व्हरशिवाय संपादित करा",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "Labeler त्याच्या IP पत्त्याने उघडा, हे होस्ट नाव config.php मधील allowed_hosts मध्ये जोडा (Docker मध्ये LABELER_ALLOWED_HOSTS), किंवा पासवर्ड सेट करा. Labeler इंटरनेटवरून पोहोचण्याजोगा असल्यास पासवर्ड सेट करा.",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "सर्व्हरला ॲक्सेस टोकन हवा आहे, जो ब्राउझर पाठवू शकत नाही. वेब इंटरफेससाठी त्याऐवजी पासवर्ड सेट करा (config.php मध्ये password, Docker मध्ये LABELER_PASSWORD); टोकन स्क्रिप्ट आणि इतर Labeler सर्व्हरसाठी आहे.",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "Labeler सर्व्हर किंवा कंटेनर चालू आहे आणि हे डिव्हाइस त्यापर्यंत पोहोचू शकते का (समान नेटवर्क किंवा VPN) ते तपासा, मग पुन्हा प्रयत्न करा.",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "सर्व्हर लॉग कारण सांगतो: डिव्हाइसवर journalctl -u labeler, Docker मध्ये docker compose logs. मग पुन्हा प्रयत्न करा.",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "होस्ट नाव {host} ला परवानगी नाही: ते allowed_hosts मध्ये जोडा, किंवा पासवर्ड सेट करा",
+  "access token missing or wrong": "ॲक्सेस टोकन नाही किंवा चुकीचा आहे",
 };

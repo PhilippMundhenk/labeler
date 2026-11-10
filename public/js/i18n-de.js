@@ -323,6 +323,18 @@ export const DE = {
   // tape and ink colours
   'White': 'Weiß', 'Black': 'Schwarz', 'Clear': 'Klar', 'Red': 'Rot', 'Blue': 'Blau', 'Yellow': 'Gelb',
   'Green': 'Grün', 'Gold': 'Gold', 'Other': 'Andere', 'Unknown': 'Unbekannt',
+  // the interface cannot use its server (#133)
+  "Access refused": "Zugriff verweigert",
+  "Server not reachable": "Server nicht erreichbar",
+  "Server error": "Serverfehler",
+  "Try again": "Erneut versuchen",
+  "Edit without the server": "Ohne Server bearbeiten",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "Öffne Labeler über seine IP-Adresse, trage diesen Hostnamen in allowed_hosts in config.php ein (LABELER_ALLOWED_HOSTS in Docker) oder setze ein Passwort. Ist Labeler aus dem Internet erreichbar, setze ein Passwort.",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "Der Server verlangt ein Zugriffstoken, das ein Browser nicht senden kann. Setze für die Weboberfläche stattdessen ein Passwort (password in config.php, LABELER_PASSWORD in Docker); das Token ist für Skripte und andere Labeler-Server.",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "Prüfe, ob der Labeler-Server oder -Container läuft und dieses Gerät ihn erreicht (gleiches Netz oder VPN), und versuche es dann erneut.",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "Das Serverprotokoll nennt den Grund: journalctl -u labeler auf dem Gerät, docker compose logs in Docker. Dann erneut versuchen.",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "der Hostname {host} ist nicht erlaubt: trage ihn in allowed_hosts ein oder setze ein Passwort",
+  "access token missing or wrong": "Zugriffstoken fehlt oder ist falsch",
 };
 
 export default DE;

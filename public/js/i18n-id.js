@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': 'Putih', 'Black': 'Hitam', 'Clear': 'Bening', 'Red': 'Merah', 'Blue': 'Biru', 'Yellow': 'Kuning',
   'Green': 'Hijau', 'Gold': 'Emas', 'Other': 'Lainnya', 'Unknown': 'Tidak diketahui',
+  // the interface cannot use its server (#133)
+  "Access refused": "Akses ditolak",
+  "Server not reachable": "Server tidak dapat dijangkau",
+  "Server error": "Kesalahan server",
+  "Try again": "Coba lagi",
+  "Edit without the server": "Edit tanpa server",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "Buka Labeler melalui alamat IP-nya, tambahkan nama host ini ke allowed_hosts di config.php (LABELER_ALLOWED_HOSTS di Docker), atau tetapkan kata sandi. Jika Labeler dapat dijangkau dari internet, tetapkan kata sandi.",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "Server memerlukan token akses yang tidak dapat dikirim oleh browser. Untuk antarmuka web, tetapkan kata sandi sebagai gantinya (password di config.php, LABELER_PASSWORD di Docker); token untuk skrip dan server Labeler lain.",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "Periksa apakah server atau kontainer Labeler berjalan dan perangkat ini dapat menjangkaunya (jaringan yang sama atau VPN), lalu coba lagi.",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "Log server menunjukkan penyebabnya: journalctl -u labeler di perangkat, docker compose logs di Docker. Lalu coba lagi.",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "nama host {host} tidak diizinkan: tambahkan ke allowed_hosts, atau tetapkan kata sandi",
+  "access token missing or wrong": "token akses tidak ada atau salah",
 };

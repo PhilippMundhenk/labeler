@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': 'سفید', 'Black': 'سیاہ', 'Clear': 'شفاف', 'Red': 'سرخ', 'Blue': 'نیلا', 'Yellow': 'پیلا',
   'Green': 'سبز', 'Gold': 'سنہرا', 'Other': 'دیگر', 'Unknown': 'نامعلوم',
+  // the interface cannot use its server (#133)
+  "Access refused": "رسائی مسترد",
+  "Server not reachable": "سرور تک رسائی نہیں ہو سکی",
+  "Server error": "سرور کی خرابی",
+  "Try again": "دوبارہ کوشش کریں",
+  "Edit without the server": "سرور کے بغیر ترمیم کریں",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "Labeler کو اس کے IP پتے سے کھولیں، اس ہوسٹ نام کو config.php میں allowed_hosts میں شامل کریں (Docker میں LABELER_ALLOWED_HOSTS)، یا پاس ورڈ سیٹ کریں۔ اگر Labeler انٹرنیٹ سے قابل رسائی ہے تو پاس ورڈ سیٹ کریں۔",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "سرور کو رسائی ٹوکن درکار ہے جو براؤزر نہیں بھیج سکتا۔ ویب انٹرفیس کے لیے اس کے بجائے پاس ورڈ سیٹ کریں (config.php میں password، Docker میں LABELER_PASSWORD)؛ ٹوکن اسکرپٹس اور دوسرے Labeler سرورز کے لیے ہے۔",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "جانچیں کہ Labeler سرور یا کنٹینر چل رہا ہے اور یہ ڈیوائس اس تک پہنچ سکتی ہے (ایک ہی نیٹ ورک یا VPN)، پھر دوبارہ کوشش کریں۔",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "سرور لاگ وجہ بتاتا ہے: ڈیوائس پر journalctl -u labeler، Docker میں docker compose logs۔ پھر دوبارہ کوشش کریں۔",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "ہوسٹ نام {host} کی اجازت نہیں ہے: اسے allowed_hosts میں شامل کریں، یا پاس ورڈ سیٹ کریں",
+  "access token missing or wrong": "رسائی ٹوکن موجود نہیں یا غلط ہے",
 };

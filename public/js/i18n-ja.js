@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': '白', 'Black': '黒', 'Clear': '透明', 'Red': '赤', 'Blue': '青', 'Yellow': '黄',
   'Green': '緑', 'Gold': '金', 'Other': 'その他', 'Unknown': '不明',
+  // the interface cannot use its server (#133)
+  "Access refused": "アクセスが拒否されました",
+  "Server not reachable": "サーバーに接続できません",
+  "Server error": "サーバーエラー",
+  "Try again": "再試行",
+  "Edit without the server": "サーバーなしで編集",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "IP アドレスで Labeler を開くか、このホスト名を config.php の allowed_hosts（Docker では LABELER_ALLOWED_HOSTS）に追加するか、パスワードを設定してください。Labeler にインターネットからアクセスできる場合は、パスワードを設定してください。",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "サーバーはアクセストークンを要求していますが、ブラウザーからは送信できません。Web インターフェースにはパスワードを設定してください（config.php の password、Docker では LABELER_PASSWORD）。トークンはスクリプトと他の Labeler サーバー用です。",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "Labeler のサーバーまたはコンテナーが動作していて、このデバイスから接続できること（同じネットワークまたは VPN）を確認してから、再試行してください。",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "原因はサーバーのログに出ます：デバイスでは journalctl -u labeler、Docker では docker compose logs。その後、再試行してください。",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "ホスト名 {host} は許可されていません：allowed_hosts に追加するか、パスワードを設定してください",
+  "access token missing or wrong": "アクセストークンがないか、間違っています",
 };

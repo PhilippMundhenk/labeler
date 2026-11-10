@@ -510,14 +510,62 @@ test('tape colours from the printer are used in the preview', async ({ page }) =
   expect(color).toEqual([0xf5, 0xd3, 0x27]);
 });
 
-test('the server cannot be reached', async ({ page }) => {
-  await page.route('**/api.php?action=*', (route) => route.abort());
+test('the server cannot be reached: an overlay blocks the interface until it is back (#133)', async ({ page }) => {
+  let down = true;
+  await page.route('**/api.php?action=*', (route) => (down ? route.abort() : route.fallback()));
   await page.goto('/');
-  await expect(page.locator('#status')).toHaveAttribute('data-state', 'bad');
+  const dialog = page.locator('#blocked-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(page.locator('#blocked-title')).toHaveText('Server not reachable');
+  await expect(page.locator('#blocked-message')).toHaveText('the server cannot be reached');
+  await expect(page.locator('#blocked-hint')).toContainText('same network or VPN');
+  await expect(page.locator('#status-text')).toHaveText('Server not reachable');
+  await expect(page.locator('#printer-notice')).toBeHidden();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await page.locator('#blocked-retry').click();
+  await expect(dialog).toBeVisible();
+  // editing without the server: the overlay stays away while it is unreachable
+  await page.locator('#blocked-offline').click();
+  await expect(dialog).toBeHidden();
   await expect(page.locator('#printer-message')).toHaveText('the server cannot be reached');
-  await page.locator('#status').click();
-  await expect(page.locator('#details-info')).toContainText('server not reachable');
-  await expect(page.locator('#details-log')).toContainText('Nothing printed yet');
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await expect(page.locator('#status-text')).toHaveText('Server not reachable');
+  await expect(dialog).toBeHidden();
+  down = false;
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ok');
+  down = true;
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await expect(dialog).toBeVisible();
+  down = false;
+  const fonts = page.waitForRequest(/action=fonts/);
+  await page.locator('#blocked-retry').click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ok');
+  await fonts; // what the failed start could not fetch
+});
+
+test('a refused host name, a token the browser cannot send and server errors block with a hint (#133)', async ({ page }) => {
+  let answer = { status: 403, json: { error: 'the host name labels.example.org is not allowed: add it to allowed_hosts, or set a password' } };
+  await page.route('**/api.php?action=status*', (route) => (answer ? route.fulfill(answer) : route.fallback()));
+  await page.goto('/');
+  await expect(page.locator('#blocked-title')).toHaveText('Access refused');
+  await expect(page.locator('#blocked-message')).toContainText('labels.example.org is not allowed');
+  await expect(page.locator('#blocked-hint')).toContainText('LABELER_ALLOWED_HOSTS');
+  await expect(page.locator('#blocked-offline')).toBeHidden();
+  answer = { status: 401, json: { error: 'access token missing or wrong' } };
+  await page.locator('#blocked-retry').click();
+  await expect(page.locator('#blocked-hint')).toContainText('LABELER_PASSWORD');
+  answer = { status: 500, body: 'Fatal error' };
+  await page.locator('#blocked-retry').click();
+  await expect(page.locator('#blocked-title')).toHaveText('Server error');
+  await expect(page.locator('#blocked-message')).toHaveText('unexpected answer from the server (HTTP 500)');
+  await expect(page.locator('#blocked-hint')).toContainText('journalctl -u labeler');
+  answer = null;
+  await page.locator('#blocked-retry').click();
+  await expect(page.locator('#blocked-dialog')).toBeHidden();
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ok');
 });
 
 test('the page comes back to the foreground', async ({ page }) => {
