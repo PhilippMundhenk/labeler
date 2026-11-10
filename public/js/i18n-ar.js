@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': 'أبيض', 'Black': 'أسود', 'Clear': 'شفاف', 'Red': 'أحمر', 'Blue': 'أزرق', 'Yellow': 'أصفر',
   'Green': 'أخضر', 'Gold': 'ذهبي', 'Other': 'أخرى', 'Unknown': 'غير معروف',
+  // the interface cannot use its server (#133)
+  "Access refused": "تم رفض الوصول",
+  "Server not reachable": "تعذر الوصول إلى الخادم",
+  "Server error": "خطأ في الخادم",
+  "Try again": "إعادة المحاولة",
+  "Edit without the server": "التحرير بدون الخادم",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "افتح Labeler عبر عنوان IP الخاص به، أو أضف اسم المضيف هذا إلى allowed_hosts في config.php (LABELER_ALLOWED_HOSTS في Docker)، أو عيّن كلمة مرور. إذا كان Labeler متاحًا من الإنترنت، فعيّن كلمة مرور.",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "يتطلب الخادم رمز وصول لا يستطيع المتصفح إرساله. للواجهة الويب عيّن كلمة مرور بدلًا من ذلك (password في config.php، وLABELER_PASSWORD في Docker)؛ الرمز مخصص للنصوص البرمجية وخوادم Labeler الأخرى.",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "تحقق من أن خادم Labeler أو حاويته تعمل وأن هذا الجهاز يستطيع الوصول إليه (الشبكة نفسها أو VPN)، ثم أعد المحاولة.",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "سجل الخادم يوضح السبب: journalctl -u labeler على الجهاز، وdocker compose logs في Docker. ثم أعد المحاولة.",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "اسم المضيف {host} غير مسموح به: أضفه إلى allowed_hosts أو عيّن كلمة مرور",
+  "access token missing or wrong": "رمز الوصول مفقود أو خاطئ",
 };

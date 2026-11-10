@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': 'Blanc', 'Black': 'Noir', 'Clear': 'Transparent', 'Red': 'Rouge', 'Blue': 'Bleu', 'Yellow': 'Jaune',
   'Green': 'Vert', 'Gold': 'Or', 'Other': 'Autre', 'Unknown': 'Inconnu',
+  // the interface cannot use its server (#133)
+  "Access refused": "Accès refusé",
+  "Server not reachable": "Serveur injoignable",
+  "Server error": "Erreur du serveur",
+  "Try again": "Réessayer",
+  "Edit without the server": "Modifier sans le serveur",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "Ouvrez Labeler par son adresse IP, ajoutez ce nom d’hôte à allowed_hosts dans config.php (LABELER_ALLOWED_HOSTS dans Docker) ou définissez un mot de passe. Si Labeler est accessible depuis Internet, définissez un mot de passe.",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "Le serveur exige un jeton d’accès, qu’un navigateur ne peut pas envoyer. Pour l’interface web, définissez plutôt un mot de passe (password dans config.php, LABELER_PASSWORD dans Docker) ; le jeton sert aux scripts et aux autres serveurs Labeler.",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "Vérifiez que le serveur ou le conteneur Labeler fonctionne et que cet appareil peut l’atteindre (même réseau ou VPN), puis réessayez.",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "Le journal du serveur en donne la raison : journalctl -u labeler sur l’appareil, docker compose logs dans Docker. Puis réessayez.",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "le nom d’hôte {host} n’est pas autorisé : ajoutez-le à allowed_hosts ou définissez un mot de passe",
+  "access token missing or wrong": "jeton d’accès manquant ou incorrect",
 };

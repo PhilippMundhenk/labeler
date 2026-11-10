@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': 'Белый', 'Black': 'Чёрный', 'Clear': 'Прозрачный', 'Red': 'Красный', 'Blue': 'Синий', 'Yellow': 'Жёлтый',
   'Green': 'Зелёный', 'Gold': 'Золотой', 'Other': 'Другой', 'Unknown': 'Неизвестный',
+  // the interface cannot use its server (#133)
+  "Access refused": "Доступ запрещён",
+  "Server not reachable": "Сервер недоступен",
+  "Server error": "Ошибка сервера",
+  "Try again": "Повторить",
+  "Edit without the server": "Редактировать без сервера",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "Откройте Labeler по IP-адресу, добавьте это имя хоста в allowed_hosts в config.php (LABELER_ALLOWED_HOSTS в Docker) или задайте пароль. Если Labeler доступен из интернета, задайте пароль.",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "Сервер требует токен доступа, который браузер отправить не может. Для веб-интерфейса задайте вместо этого пароль (password в config.php, LABELER_PASSWORD в Docker); токен предназначен для скриптов и других серверов Labeler.",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "Проверьте, что сервер или контейнер Labeler запущен и это устройство может до него достучаться (та же сеть или VPN), затем повторите попытку.",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "Причину покажет журнал сервера: journalctl -u labeler на устройстве, docker compose logs в Docker. Затем повторите попытку.",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "имя хоста {host} не разрешено: добавьте его в allowed_hosts или задайте пароль",
+  "access token missing or wrong": "токен доступа отсутствует или неверен",
 };

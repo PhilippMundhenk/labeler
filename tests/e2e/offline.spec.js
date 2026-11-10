@@ -21,6 +21,10 @@ test('the app shell starts without the server', async ({ browser, baseURL }) => 
   await context.setOffline(true);
   await page.reload();
   await expect(page.locator('.brand')).toHaveText('Labeler');
+  // the overlay says the server is gone; labels can still be edited without it (#133)
+  await expect(page.locator('#blocked-title')).toHaveText('Server not reachable');
+  await page.locator('#blocked-offline').click();
+  await expect(page.locator('#blocked-dialog')).toBeHidden();
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'bad');
   await expect(page.locator('#printer-message')).toHaveText('the server cannot be reached');
   await context.close();

@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- When the interface cannot use its server (a host name not in `allowed_hosts`, a token the
+  browser cannot send, the server unreachable or failing), an overlay blocks the interface with
+  the reason and a hint how to fix it, until *Try again* succeeds; the status chip names the
+  problem instead of "No printer". When the server is unreachable, *Edit without the server*
+  keeps the offline start working (#133)
+
 ### Added
 
 - The release workflow stops before publishing anything unless the tag, `package.json`,

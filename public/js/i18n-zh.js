@@ -323,4 +323,16 @@ export default {
   // tape and ink colours
   'White': '白色', 'Black': '黑色', 'Clear': '透明', 'Red': '红色', 'Blue': '蓝色', 'Yellow': '黄色',
   'Green': '绿色', 'Gold': '金色', 'Other': '其他', 'Unknown': '未知',
+  // the interface cannot use its server (#133)
+  "Access refused": "访问被拒绝",
+  "Server not reachable": "无法连接服务器",
+  "Server error": "服务器错误",
+  "Try again": "重试",
+  "Edit without the server": "不连接服务器继续编辑",
+  "Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.": "请通过 IP 地址打开 Labeler，或将此主机名添加到 config.php 的 allowed_hosts（Docker 中为 LABELER_ALLOWED_HOSTS），或设置密码。如果 Labeler 可从互联网访问，请设置密码。",
+  "The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.": "服务器要求访问令牌，而浏览器无法发送令牌。请改为网页界面设置密码（config.php 中的 password，Docker 中的 LABELER_PASSWORD）；令牌用于脚本和其他 Labeler 服务器。",
+  "Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.": "请检查 Labeler 服务器或容器是否在运行，以及此设备能否连接到它（同一网络或 VPN），然后重试。",
+  "The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.": "服务器日志会说明原因：设备上运行 journalctl -u labeler，Docker 中运行 docker compose logs。然后重试。",
+  "the host name {host} is not allowed: add it to allowed_hosts, or set a password": "主机名 {host} 不被允许：请将其添加到 allowed_hosts，或设置密码",
+  "access token missing or wrong": "访问令牌缺失或错误",
 };

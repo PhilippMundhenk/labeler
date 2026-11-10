@@ -131,11 +131,52 @@ function store(key, value) {
 
 /* ---------- printer status ---------- */
 
+const HINTS = {
+  host: 'Open Labeler by its IP address, add this host name to allowed_hosts in config.php (LABELER_ALLOWED_HOSTS in Docker), or set a password. If Labeler can be reached from the internet, set a password.',
+  token: 'The server requires an access token, which a browser cannot send. For the web interface, set a password instead (password in config.php, LABELER_PASSWORD in Docker); the token is for scripts and other Labeler servers.',
+  offline: 'Check that the Labeler server or container is running and that this device can reach it (same network or VPN), then try again.',
+  error: 'The server log tells why: journalctl -u labeler on the device, docker compose logs in Docker. Then try again.',
+};
+
+/**
+ * A failed status call that leaves the interface unusable, as {title, hint}; null when the
+ * server answered, or when only a login is missing (the login dialog takes care of that).
+ */
+function blockingProblem(res) {
+  if (res.ok || (res.status === 401 && res.data.login)) return null;
+  if (res.status === 403) return { title: 'Access refused', hint: HINTS.host };
+  if (res.status === 401) return { title: 'Access refused', hint: HINTS.token };
+  if (res.status === 0) return { title: 'Server not reachable', hint: HINTS.offline };
+  return { title: 'Server error', hint: HINTS.error };
+}
+
+// the user chose to edit without a reachable server (offline start, #32) until it answers again
+let workOffline = false;
+
+/** Shows or hides the overlay that blocks the interface; returns the problem, if any. */
+function showBlocking(res) {
+  const problem = blockingProblem(res);
+  if (!problem) workOffline = false;
+  const dialog = $('#blocked-dialog');
+  if (!problem || (workOffline && res.status === 0)) {
+    if (dialog.open) dialog.close();
+    return problem;
+  }
+  $('#blocked-title').textContent = problem.title;
+  $('#blocked-message').textContent = res.data.error || '';
+  $('#blocked-hint').textContent = problem.hint;
+  $('#blocked-offline').hidden = res.status !== 0;
+  if (!dialog.open) dialog.showModal();
+  return problem;
+}
+
 async function refreshStatus() {
   const chip = $('#status');
   chip.dataset.state = 'busy';
   $('#status-text').textContent = 'Checking printer…';
   const res = await getStatus();
+  const problem = showBlocking(res);
+  const blocked = $('#blocked-dialog').open;
   state.status = res.ok ? res.data : null;
   const p = state.status && state.status.printer;
   if (p && p.ready) {
@@ -154,11 +195,13 @@ async function refreshStatus() {
     const manual = load(STORE_TAPE, 12);
     state.tape = { mm: manual, px: tapePx(manual, 180), dpi: 180, tapeColor: 'White', inkColor: 'Black', live: false };
     chip.dataset.state = p && p.connected ? 'warn' : 'bad';
-    $('#status-text').textContent = p && p.connected ? 'Printer not ready' : 'No printer';
+    if (problem) $('#status-text').textContent = problem.title;
+    else $('#status-text').textContent = p && p.connected ? 'Printer not ready' : 'No printer';
   }
   $('#logout').hidden = !(state.status && state.status.password);
   if (Boolean(state.status && state.status.shared_labels) !== sharedLabels()) savedLoading = refreshSaved();
-  let message = res.ok ? (p && !p.ready ? p.message : '') : res.data.error;
+  // when blocked, the overlay shows the error
+  let message = res.ok ? (p && !p.ready ? p.message : '') : (blocked ? '' : res.data.error);
   if (p && !p.connected && state.wasReady) {
     // the printer was there a moment ago: P-touch printers switch themselves off after a while
     message = 'The printer was ready a moment ago and is gone now: it has probably switched itself off (auto power off) or was unplugged. Press its power button, then check again.';
@@ -1200,6 +1243,18 @@ async function init() {
     if (!$('#login-dialog').open) $('#login-dialog').showModal();
   });
   $('#login-dialog').addEventListener('cancel', (e) => e.preventDefault());
+  $('#blocked-dialog').addEventListener('cancel', (e) => e.preventDefault());
+  $('#blocked-retry').addEventListener('click', async () => {
+    $('#blocked-retry').disabled = true;
+    await refreshStatus();
+    $('#blocked-retry').disabled = false;
+    // the first start failed too: fetch what it could not
+    if (!$('#blocked-dialog').open) loadServerFonts();
+  });
+  $('#blocked-offline').addEventListener('click', () => {
+    workOffline = true;
+    refreshStatus();
+  });
   $('#login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const res = await login($('#login-password').value);
