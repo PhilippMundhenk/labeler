@@ -32,6 +32,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION_ARG: ${{ startsWith(github.ref, 'refs/tags/v') && format('--version {0}', github.ref_name) || '' }}
         run: python3 tools/consistency_check.py --config tools/consistency.json $VERSION_ARG
+      # tag, package.json, package-lock.json, Config::VERSION, docs/API.md and the newest
+      # changelog section agree (Node comes with the runner, the script needs no packages)
+      - name: Version numbers agree
+        env:
+          TAG_ARG: ${{ startsWith(github.ref, 'refs/tags/v') && format('--tag {0}', github.ref_name) || '' }}
+        run: node tools/check-versions.js $TAG_ARG
 
   image:
     name: Container image
@@ -43,6 +49,12 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # what the app reports (health, footer): X.Y.Z for a release, X.Y.Z-<short sha> otherwise
+      - id: version
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then v=${GITHUB_REF_NAME#v}
+          else v="$(jq -r .version package.json)-$(git rev-parse --short HEAD)"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
@@ -64,7 +76,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=ref,event=branch
-      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+      - id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           # ptouch-print is a few C files, compiling it under QEMU takes a few minutes
@@ -72,11 +85,21 @@ jobs:
           push: true
           provenance: true
           sbom: true
-          build-args: VERSION=${{ github.ref_type == 'tag' && github.ref_name || 'main' }}
+          build-args: VERSION=${{ steps.version.outputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: The image reports the version
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}@$DIGEST"    # image names are lower case
+          got=$(docker run --rm --platform linux/amd64 --entrypoint php "$image" -r \
+            'require "/app/src/Config.php"; echo Labeler\Config::VERSION;')
+          echo "image reports $got"
+          [ "$got" = "$VERSION" ] || { echo "::error::image reports $got, expected $VERSION"; exit 1; }
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -91,6 +114,13 @@ jobs:
         run: |
           sh tools/package.sh "${GITHUB_REF_NAME#v}"
           (cd build && sha256sum labeler-*.zip > SHA256SUMS)
+      - name: The packages report the version
+        run: |
+          v=${GITHUB_REF_NAME#v}
+          for zip in "build/labeler-$v.zip:labeler" "build/labeler-agent-$v.zip:labeler-agent"; do
+            unzip -p "${zip%%:*}" "${zip#*:}/src/Config.php" | grep -q "VERSION = '$v';" \
+              || { echo "::error::${zip%%:*} does not report $v"; exit 1; }
+          done
       - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           generate_release_notes: true
