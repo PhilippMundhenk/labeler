@@ -12,7 +12,9 @@ runs as user 1000, listens on port 8080 and keeps the print log and fonts in `/d
 | `X.Y.Z` (e.g. `1.0.0`) | exactly that release | never | pinning a version |
 | `X.Y` (e.g. `1.0`) | the newest bug-fix release of that version | with each `X.Y.*` release | staying on a version but getting fixes |
 
-Every tag is built for `linux/amd64`, `linux/arm64` and `linux/arm/v7`. Check what you run with
+Every tag is built for `linux/amd64`, `linux/arm64` and `linux/arm/v7`. A release image reports
+its version (`X.Y.Z`) in the footer and at `/api.php?action=health`; a `main` image reports the
+version it builds on and the commit, e.g. `1.0.0-92f25cf`. Check what you run with
 `docker image inspect ghcr.io/philippmundhenk/labeler:latest --format '{{.Created}}'`, and update
 with `docker compose pull && docker compose up -d`.
 

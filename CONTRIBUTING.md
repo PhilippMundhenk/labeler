@@ -28,6 +28,7 @@ material; tests build their own.
 
 ## Releases
 
-Add the notable changes to `CHANGELOG.md`, set the version in `package.json` and
-`src/Config.php`, then `git tag vX.Y.Z && git push --tags`. The release workflow builds
+Add the notable changes to `CHANGELOG.md`, set the version in `package.json`, `package-lock.json`,
+`src/Config.php` and `docs/API.md` (`node tools/check-versions.js --tag vX.Y.Z` checks them), then
+`git tag vX.Y.Z && git push --tags`. The release workflow builds
 `labeler-X.Y.Z.zip` and publishes a GitHub release with it.

@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- The release workflow stops before publishing anything unless the tag, `package.json`,
+  `package-lock.json`, `Config::VERSION`, the examples in docs/API.md and the newest changelog
+  section name the same version, and checks the version inside the zips and the image (#131)
+
+### Fixed
+
+- The container image of a release reported its version as `vX.Y.Z` instead of `X.Y.Z`; images
+  from `main` report `X.Y.Z-<commit>` instead of `main` (#131)
+
 ## [1.0.0] - 2026-11-09
 
 The first versioned release: Labeler was rewritten from a single PHP page into a label editor.

@@ -121,12 +121,16 @@ starts a demo instance on the simulator and writes `docs/screenshots/*.png` (dem
 ## Releases
 
 1. Move the `Unreleased` entries in `CHANGELOG.md` under the new version and date.
-2. Set the version in `package.json` and `src/Config.php` (lint checks they match).
+2. Set the version in `package.json`, `package-lock.json` (`npm version X.Y.Z --no-git-tag-version`
+   does both), `src/Config.php` and the examples in `docs/API.md`. Lint runs
+   `tools/check-versions.js`, which checks they match.
 3. `git tag vX.Y.Z && git push --tags`: the release workflow builds `labeler-X.Y.Z.zip` with
    `tools/package.sh` and attaches it to a GitHub release.
    It also pushes the image as `X.Y.Z`, `X.Y` and `latest`. The tag pipeline runs
-   `tools/consistency_check.py --version X.Y.Z` first (docs and code agree, the changelog has
-   the version); run it locally before tagging.
+   `tools/consistency_check.py --version X.Y.Z` (docs and code agree, the changelog has the
+   version) and `tools/check-versions.js --tag vX.Y.Z` (the tag, the files above and the newest
+   changelog section name the same version) before it builds anything; run both locally before
+   tagging. After the build it checks that the zips and the pushed image report `X.Y.Z`.
 
 The QR library is vendored: `public/lib/qrcode.mjs` is `dist/qrcode.mjs` of
 [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 2.0.4. Update it by copying
