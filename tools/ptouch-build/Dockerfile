@@ -13,7 +13,7 @@
 #   docker buildx build --build-arg PTOUCH_PATCHES=1 ...      # with tools/ptouch-patches
 #
 # The build context is the tools/ folder (for ptouch-patches/).
-FROM alpine:3.22 AS build
+FROM alpine:3.24 AS build
 ARG PTOUCH_REF=v1.9
 ARG PTOUCH_PATCHES=0
 ARG GD_VERSION=2.3.3
