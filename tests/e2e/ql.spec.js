@@ -23,13 +23,16 @@ test('a 62 mm DK roll: 300 dpi, a shortest label, only the options a QL printer 
   await expect(page.locator('#status-text')).toHaveText('QL-570 · 62 mm DK roll');
   await expect(page.locator('#tape-info')).toHaveText('62 mm DK roll · 696 px at 300 dpi');
   await expect(page.locator('#manual-tape')).toBeHidden();
+  await page.locator('details.options summary').click();
   for (const id of ['precut', 'halfcut', 'hires', 'feed']) await expect(page.locator(`#${id}`)).toBeHidden();
   for (const id of ['chain', 'cut-every']) await expect(page.locator(`#${id}`)).toBeVisible();
+  await page.locator('.block[data-type="text"] input[data-k="size"]').fill('6');
   await setText(page, 'A');
   const size = await previewSize(page);
   expect(size.height).toBe(696);
   expect(size.width).toBe(150);
   await expect(page.locator('#length-info')).toHaveText('12.7 mm long');
+  await page.locator('.block[data-type="text"] input[data-k="size"]').fill('');
   await setText(page, 'Flour');
   await page.locator('#copies').fill('2');
   await page.locator('#cut-every').fill('2');
@@ -77,7 +80,13 @@ test('without a DK roll: design for any DK media, templates pick theirs', async 
   await page.locator('#tape-select').selectOption('dk:d24');
   await settled(page);
   await expect(page.locator('#tape-info')).toHaveText('Ø 24 mm DK labels · 236 × 236 px at 300 dpi');
+  // the default label is longer than a 24 mm round label: flagged, not cut off
+  expect(await previewSize(page)).toMatchObject({ height: 236 });
+  await expect(page.locator('#length-info')).toHaveClass(/over/);
+  await page.locator('.block[data-type="text"] input[data-k="size"]').fill('6');
+  await setText(page, 'A');
   expect(await previewSize(page)).toMatchObject({ width: 236, height: 236 });
+  await expect(page.locator('#length-info')).toHaveText('20 mm long');
 
   await page.locator('#templates').click();
   await page.locator('[data-template="dk-shipping"]').click();
