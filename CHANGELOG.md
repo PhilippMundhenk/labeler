@@ -12,6 +12,9 @@ All notable changes to this project are documented here. The format follows
   ptouch-print sources five times with growing pauses and aborts stalled transfers, and retries
   its curl and apt downloads; the container images and CI do the same for git, apt, apk, curl, pip
   and npm
+- When ptouch-print's upstream server cannot be reached, its release tags (1.5 to 1.9) come from
+  the GitHub fork, but only as the commits pinned in `tools/ptouch-fetch.sh` (and `install.sh`);
+  the weekly upstream workflow checks the pins against upstream, CI tries the way over the fork
 - When the interface cannot use its server (a host name not in `allowed_hosts`, a token the
   browser cannot send, the server unreachable or failing), an overlay blocks the interface with
   the reason and a hint how to fix it, until *Try again* succeeds; the status chip names the
