@@ -76,7 +76,7 @@ final class DriversTest extends TestCase
         $this->assertNull($body['ptouch_version']);
         $this->assertSame([], $body['features']);
         $this->assertFalse($body['printer']['ready']);
-        $this->assertSame('Unknown printer driver "laser" in printer_driver: use ptouch.', $body['printer']['message']);
+        $this->assertSame('Unknown printer driver "laser" in printer_driver: use ptouch or ql.', $body['printer']['message']);
 
         $png = (string) json_encode(['png' => base64_encode(self::labelPng(40, 76))]);
         [$status, $body] = $this->call($api, 'POST', 'print', $png);

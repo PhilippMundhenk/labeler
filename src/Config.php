@@ -25,8 +25,11 @@ final class Config
     public static function defaults(string $root): array
     {
         return [
-            // Printer driver: "ptouch" (Brother P-Touch printers through ptouch-print).
+            // Printer driver: "ptouch" (Brother P-Touch printers through ptouch-print) or "ql"
+            // (Brother QL printers on DK media).
             'printer_driver' => 'ptouch',
+            // ql: the printer's device, e.g. /dev/usb/lp0. Empty: the first Brother QL found.
+            'ql_device' => '',
             // ptouch-print executable: a name on PATH or an absolute path.
             'ptouch_bin' => 'ptouch-print',
             // Seconds a single ptouch-print run may take before it is stopped.
@@ -90,7 +93,7 @@ final class Config
         foreach (['timeout', 'max_upload_bytes', 'max_copies', 'log_entries'] as $key) {
             $values[$key] = max(0, (int) $values[$key]);
         }
-        foreach (['printer_driver', 'ptouch_bin', 'serial', 'data_dir', 'fonts_dir', 'token', 'printer_url', 'printer_token', 'icon_api', 'allowed_hosts'] as $key) {
+        foreach (['printer_driver', 'ql_device', 'ptouch_bin', 'serial', 'data_dir', 'fonts_dir', 'token', 'printer_url', 'printer_token', 'icon_api', 'allowed_hosts'] as $key) {
             $values[$key] = trim((string) $values[$key]);
         }
         $values['printer_driver'] = strtolower($values['printer_driver']) ?: 'ptouch';

@@ -5,8 +5,12 @@
 // which wins over this file. Keys not listed here keep their default.
 
 return [
-    // Printer driver: "ptouch" for Brother P-Touch printers through ptouch-print.
+    // Printer driver: "ptouch" for Brother P-Touch printers through ptouch-print, "ql" for
+    // Brother QL printers on DK labels (built in, nothing to install).
     'printer_driver' => 'ptouch',
+
+    // ql: the printer's USB printer device, e.g. /dev/usb/lp0. Empty: the first Brother QL found.
+    'ql_device' => '',
 
     // ptouch-print executable: a name on PATH or an absolute path.
     'ptouch_bin' => 'ptouch-print',

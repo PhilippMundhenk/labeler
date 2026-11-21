@@ -13,7 +13,8 @@
         "files": [
             "src/bootstrap.php",
             "tools/ptouch-sim/Png.php",
-            "tools/ptouch-sim/Simulator.php"
+            "tools/ptouch-sim/Simulator.php",
+            "tools/ql-sim/QlSimulator.php"
         ],
         "psr-4": {
             "Labeler\\Tests\\": "tests/php/"

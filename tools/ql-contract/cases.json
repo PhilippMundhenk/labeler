@@ -1,0 +1,22 @@
+[
+  {"model": "QL-570", "media": "62", "length": 400, "cut": true},
+  {"model": "QL-570", "media": "62", "length": 150, "cut": false},
+  {"model": "QL-570", "media": "29", "length": 600, "cut": true},
+  {"model": "QL-570", "media": "12", "length": 300, "cut": true},
+  {"model": "QL-570", "media": "38", "length": 200, "cut": true},
+  {"model": "QL-570", "media": "50", "length": 200, "cut": true},
+  {"model": "QL-570", "media": "54", "length": 200, "cut": true},
+  {"model": "QL-570", "media": "29x90", "cut": true},
+  {"model": "QL-570", "media": "62x100", "cut": true},
+  {"model": "QL-570", "media": "39x90", "cut": true},
+  {"model": "QL-570", "media": "17x54", "cut": false},
+  {"model": "QL-570", "media": "62x29", "cut": true},
+  {"model": "QL-570", "media": "d24", "cut": true},
+  {"model": "QL-500", "media": "29", "length": 400, "cut": true},
+  {"model": "QL-700", "media": "62", "length": 300, "cut": true},
+  {"model": "QL-710W", "media": "62", "length": 300, "cut": true},
+  {"model": "QL-800", "media": "62", "length": 300, "cut": true},
+  {"model": "QL-1060N", "media": "102", "length": 400, "cut": true},
+  {"model": "QL-1060N", "media": "62", "length": 400, "cut": true},
+  {"model": "QL-1100", "media": "102x51", "cut": true}
+]

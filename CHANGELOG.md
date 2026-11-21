@@ -16,6 +16,13 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Brother QL printers on DK labels: the new `ql` driver (`printer_driver = ql`) speaks Brother's
+  raster protocol itself, in PHP through the USB printer device `/dev/usb/lp*`, without
+  ptouch-print, Python or anything else on the Pi. It finds QL printers by their USB description,
+  reads media, model and errors from the printer's status (no roll, cover open, cutter jam, ...),
+  prints continuous and die-cut DK media with copies, cut every n labels and chain printing, and
+  waits for the printer to confirm every page. A simulator (`tools/ql-sim`) imitates the printer;
+  a contract test compares the raster jobs with brother_ql's, byte for byte (#138)
 - Printer drivers: the API talks to the printer through a small driver interface, chosen with the
   new setting `printer_driver` (default and so far only driver: `ptouch`); the status answer names
   the driver (`driver`, `driver_version`), from the agent when there is one. A misspelt driver

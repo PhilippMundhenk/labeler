@@ -40,6 +40,8 @@ Server side, `src/`:
 | `Driver.php` | what the API needs from a printer: version, features, printers, info, print ([ADR 0007](adr/0007-printer-drivers.md)) |
 | `Drivers.php` | creates the driver named by `printer_driver` |
 | `PtouchPrint.php` | the `ptouch` driver: runs ptouch-print, reads its version, `--help` and `--info`, explains printer errors |
+| `QlRaster.php` | Brother's QL raster protocol: DK media and models, the print job, the status answer |
+| `QlPrint.php` | the `ql` driver: finds QL printers in `/dev/usb` and sysfs, asks for the status, prints ([ADR 0008](adr/0008-ql-raster-in-php.md)) |
 | `UnknownDriver.php` | stands in for a misspelt `printer_driver`: the status says so, nothing prints |
 | `Process.php` | starts a program with an argument list (no shell) and a time limit |
 | `Png.php` | checks an uploaded label PNG (size, height against the tape) |
@@ -93,6 +95,7 @@ See the [architecture decision records](adr/README.md):
 5. [0005](adr/0005-labels-in-the-browser.md) Saved labels live in the browser's storage.
 6. [0006](adr/0006-printer-agent.md) A printer agent with an access token lets the interface run elsewhere.
 7. [0007](adr/0007-printer-drivers.md) Printers are drivers behind one small interface, chosen in the config.
+8. [0008](adr/0008-ql-raster-in-php.md) Brother QL printers are driven in PHP through the kernel's USB printer device.
 
 ## Limits and open questions
 
