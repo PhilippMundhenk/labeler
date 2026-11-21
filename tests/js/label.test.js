@@ -74,6 +74,9 @@ test('layout places blocks with margins, gaps, minimum length and alignment', ()
   assert.deepEqual(layout([20], { ...long, align: 'right' }, 180).xs, [160]);
   assert.deepEqual(layout([20], { ...base, frame: true }, 180), { width: 24, xs: [2] });
   assert.equal(layout([], base, 180).width, 1);
+  // die-cut DK labels and the shortest DK label (media.js): a length in px
+  assert.deepEqual(layout([20], { ...base, align: 'center' }, 300, 150), { width: 150, xs: [65] });
+  assert.equal(layout([200], base, 300, 150).width, 200);
 });
 
 test('fitFontSize fills the height', () => {

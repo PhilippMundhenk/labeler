@@ -12,6 +12,13 @@ is the printout pixel for pixel, in the colours of the inserted tape.
 | --- | --- |
 | ![Editor](screenshots/editor.png) | ![Editor in dark mode](screenshots/editor-dark.png) |
 
+## Brother QL printer with DK labels
+
+A QL-570 with 62 × 100 mm die-cut shipping labels: the label has the fixed size of the DK label,
+its outline is drawn in the preview, and the print options a QL printer does not have are gone.
+
+![A shipping label on a DK label](screenshots/dk-labels.png)
+
 ## Wide screen
 
 From 1400 px wide, Print and every print option sit in a column beside the preview, always open.

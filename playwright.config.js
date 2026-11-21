@@ -1,11 +1,15 @@
 // Browser tests: PHP's built-in server with the ptouch-print simulator.
 import { defineConfig } from '@playwright/test';
 import { resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 
 const root = resolve(import.meta.dirname);
 export const RUN = resolve(root, 'test-results/e2e-run');
 const PORT = 8099;
 export const PASSWORD_PORT = 8100;
+export const QL_PORT = 8101;
+// the simulated Brother QL printer listens here (outside test-results, which is cleaned)
+const QL_SOCKET = resolve(tmpdir(), `labeler-e2e-ql-${QL_PORT}.sock`);
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -45,6 +49,20 @@ export default defineConfig({
       LABELER_PASSWORD: 'correct horse',
       PTSIM_STATE: resolve(RUN, 'sim-state.json'),
       PTSIM_OUT: resolve(RUN, 'printed'),
+    },
+  }, {
+    // a Brother QL printer with the ql driver (#139): the simulator on a socket, then the server
+    command: `sh -c 'php tools/ql-sim/ql-printer "$QL_SOCKET" & exec php -S 127.0.0.1:${QL_PORT} -t public src/router.php'`,
+    url: `http://127.0.0.1:${QL_PORT}/api.php?action=health`,
+    reuseExistingServer: false,
+    env: {
+      QL_SOCKET,
+      LABELER_PRINTER_DRIVER: 'ql',
+      LABELER_QL_DEVICE: QL_SOCKET,
+      LABELER_DATA_DIR: resolve(RUN, 'data-ql'),
+      LABELER_TIMEOUT: '10',
+      QLSIM_STATE: resolve(RUN, 'ql-state.json'),
+      QLSIM_OUT: resolve(RUN, 'ql-printed'),
     },
   }],
 });

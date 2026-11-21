@@ -4,6 +4,7 @@ import { qrMatrix } from './qr.js';
 import { buildQrContent } from './qrcontent.js';
 import { encodeBarcode } from './barcodes.js';
 import { layout, ptToPx, mmToPx, cssFont, lineScales, fitScaledFontSize, flagGap } from './label.js';
+import { overflowMessage } from './media.js';
 
 const MEASURE = 'ÁHgjy|';
 const images = new Map();
@@ -191,7 +192,9 @@ export async function renderLabel(label, tape) {
       parts.push(new Bitmap(0, H));
     }
   }
-  const { width, xs } = layout(parts.map((p) => p.width), label, tape.dpi);
+  // die-cut labels have a fixed length, continuous DK media a shortest one (media.js)
+  const minPx = tape.kind === 'die-cut' ? tape.lengthPx : (tape.minPx || 0);
+  const { width, xs } = layout(parts.map((p) => p.width), label, tape.dpi, label.flag ? 0 : minPx);
   let bitmap = new Bitmap(width, H);
   parts.forEach((p, i) => bitmap.blit(p, xs[i], 0));
   if (label.frame) bitmap.frame(label.frameWidth);
@@ -204,8 +207,15 @@ export async function renderLabel(label, tape) {
     flag.blit(bitmap.cropColumns(0, width).rotate180(), width + gap, 0);
     bitmap = flag;
   }
+  if (bitmap.width < minPx) {
+    const longer = new Bitmap(minPx, H);
+    longer.blit(bitmap, Math.floor((minPx - bitmap.width) / 2), 0);
+    bitmap = longer;
+  }
   if (label.cutMarks) bitmap.dashedColumn(0).dashedColumn(bitmap.width - 1);
   if (label.mirror) bitmap.mirror();
+  const over = overflowMessage(bitmap.width, tape);
+  if (over) errors.label = over;
   return { bitmap, errors };
 }
 
@@ -251,6 +261,20 @@ export function drawPreview(canvas, bitmap, tape, colors, maxScale = 6) {
   octx.putImageData(img, 0, 0);
   const y = Math.round(((tapeH - bitmap.height) / 2) * scale);
   ctx.drawImage(off, 0, y, canvas.width, Math.round(bitmap.height * scale));
+  if (tape.kind === 'die-cut') {
+    // the label's outline; what does not fit is shaded
+    const w = Math.round(tape.lengthPx * scale);
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (tape.round) ctx.ellipse(w / 2, canvas.height / 2, w / 2 - 0.5, canvas.height / 2 - 0.5, 0, 0, 2 * Math.PI);
+    else ctx.rect(0.5, 0.5, Math.min(w, canvas.width) - 1, canvas.height - 1);
+    ctx.stroke();
+    if (canvas.width > w) {
+      ctx.fillStyle = 'rgba(198, 40, 40, 0.3)';
+      ctx.fillRect(w, 0, canvas.width - w, canvas.height);
+    }
+  }
 }
 
 /** A small PNG data URL of the bitmap, for lists. */

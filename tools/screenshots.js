@@ -5,11 +5,15 @@ import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 
 const root = resolve(import.meta.dirname, '..');
 const run = resolve(root, 'test-results/screenshots');
 const out = resolve(root, process.env.SHOTS_OUT || 'docs/screenshots');
 const PORT = 8098;
+// the same with a simulated Brother QL printer on DK labels (tools/ql-sim)
+const QL_PORT = 8097;
+const QL_SOCKET = resolve(tmpdir(), `labeler-shots-ql-${QL_PORT}.sock`);
 
 rmSync(run, { recursive: true, force: true });
 mkdirSync(resolve(run, 'printed'), { recursive: true });
@@ -29,6 +33,24 @@ const server = spawn('php', ['-S', `127.0.0.1:${PORT}`, '-t', 'public'], {
   },
 });
 
+writeFileSync(resolve(run, 'ql-state.json'), JSON.stringify({ media: '62x100' }));
+const qlPrinter = spawn('php', ['tools/ql-sim/ql-printer', QL_SOCKET], {
+  cwd: root,
+  stdio: 'ignore',
+  env: { ...process.env, QLSIM_STATE: resolve(run, 'ql-state.json'), QLSIM_OUT: resolve(run, 'ql-printed') },
+});
+const qlServer = spawn('php', ['-S', `127.0.0.1:${QL_PORT}`, '-t', 'public'], {
+  cwd: root,
+  stdio: 'ignore',
+  env: {
+    ...process.env,
+    LABELER_PRINTER_DRIVER: 'ql',
+    LABELER_QL_DEVICE: QL_SOCKET,
+    LABELER_DATA_DIR: resolve(run, 'data-ql'),
+    LABELER_FONTS_DIR: resolve(run, 'fonts'),
+  },
+});
+
 const LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#000"/>
 <path d="M28 52l15 15 30-34" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
@@ -41,10 +63,18 @@ const DEMO = {
   ],
 };
 
-async function waitForServer() {
+// a shipping label on a 62 × 100 mm die-cut DK label (the template of the same name)
+const DK_DEMO = {
+  margin: 4, gap: 3, length: 0, align: 'left', frame: false, frameWidth: 2,
+  blocks: [
+    { id: 'to', type: 'text', text: 'From: A. Example, 54321 Sample Town\nTo:\nErika Example\nExample Street 1\n12345 Example City', font: 'sans-serif', size: 22, bold: false, italic: false, align: 'left', invert: false, lineSizes: '45, 45, 100' },
+  ],
+};
+
+async function waitForServer(port = PORT) {
   for (let i = 0; i < 50; i++) {
     try {
-      if ((await fetch(`http://127.0.0.1:${PORT}/api.php?action=health`)).ok) return;
+      if ((await fetch(`http://127.0.0.1:${port}/api.php?action=health`)).ok) return;
     } catch {
       // not yet
     }
@@ -53,11 +83,11 @@ async function waitForServer() {
   throw new Error('server did not start');
 }
 
-async function shot(browser, name, { width, height, scheme = 'light', label = DEMO, state = { tape_mm: 24 }, before }) {
+async function shot(browser, name, { width, height, scheme = 'light', label = DEMO, state = { tape_mm: 24 }, port = PORT, before }) {
   writeFileSync(resolve(run, 'state.json'), JSON.stringify(state));
   const page = await browser.newPage({ viewport: { width, height }, colorScheme: scheme, deviceScaleFactor: 1 });
   await page.addInitScript((l) => localStorage.setItem('labeler.label', JSON.stringify(l)), label);
-  await page.goto(`http://127.0.0.1:${PORT}/`);
+  await page.goto(`http://127.0.0.1:${port}/`);
   await page.waitForFunction(() => document.querySelector('#status').dataset.state !== 'busy');
   await page.waitForTimeout(500);
   if (before) await before(page);
@@ -67,6 +97,7 @@ async function shot(browser, name, { width, height, scheme = 'light', label = DE
 }
 
 await waitForServer();
+await waitForServer(QL_PORT);
 const browser = await chromium.launch();
 try {
   await shot(browser, 'wide', { width: 1920, height: 1080 });
@@ -83,6 +114,7 @@ try {
   await shot(browser, 'editor-dark', { width: 1100, height: 1000, scheme: 'dark' });
   await shot(browser, 'phone', { width: 390, height: 844 });
   await shot(browser, 'no-printer', { width: 390, height: 844, state: { printer: 'none' } });
+  await shot(browser, 'dk-labels', { width: 1100, height: 1000, label: DK_DEMO, port: QL_PORT });
   await shot(browser, 'details', {
     width: 1100,
     height: 800,
@@ -97,5 +129,7 @@ try {
 } finally {
   await browser.close();
   server.kill();
+  qlServer.kill();
+  qlPrinter.kill();
 }
 console.log(`screenshots written to ${out}`);
