@@ -155,9 +155,9 @@ need() {
   [ -n "$missing" ] || return 0
   say "Installing packages:$missing"
   echo "(this can take a few minutes on a Raspberry Pi Zero)"
-  if [ "$updated" = 0 ]; then apt-get update -q; updated=1; fi
+  if [ "$updated" = 0 ]; then apt-get update -q -o Acquire::Retries=3; updated=1; fi
   # shellcheck disable=SC2086
-  DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends $missing
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -q -o Acquire::Retries=3 --no-install-recommends $missing
 }
 
 base="php-cli curl ca-certificates"
@@ -216,26 +216,27 @@ ptouch_download() {
   file=ptouch-print-$PTOUCH_REF$suffix-$arch
   base_url=https://github.com/$REPO/releases/download/ptouch-print-$PTOUCH_REF
   say "Downloading ptouch-print $PTOUCH_REF$suffix ($arch)"
-  curl -fsSL "$base_url/$file" -o "$work/$file" 2>/dev/null || { echo "no ready-made ptouch-print for $arch"; return 1; }
-  curl -fsSL "$base_url/SHA256SUMS" -o "$work/SHA256SUMS" || return 1
+  curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "$base_url/$file" -o "$work/$file" 2>/dev/null || { echo "no ready-made ptouch-print for $arch"; return 1; }
+  curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "$base_url/SHA256SUMS" -o "$work/SHA256SUMS" || return 1
   (cd "$work" && grep " $file\$" SHA256SUMS | sha256sum -c - >/dev/null) || die "checksum of $file does not match"
   install -m 755 "$work/$file" /usr/local/bin/ptouch-print
 }
 ptouch_build() {
   need git cmake gcc make pkg-config gettext libgd-dev libusb-1.0-0-dev
   say "Building ptouch-print $PTOUCH_REF$suffix from the sources"
-  for i in 1 2 3; do
-    git clone -q "$PTOUCH_REPO" "$work/ptouch-print" && break
+  # a small self-hosted server: five tries with growing pauses, stalled transfers are retried
+  for i in 1 2 3 4 5; do
+    git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 clone -q "$PTOUCH_REPO" "$work/ptouch-print" && break
     rm -rf "$work/ptouch-print"
-    [ "$i" = 3 ] && die "cannot download ptouch-print; try again later"
-    sleep 10
+    [ "$i" = 5 ] && die "cannot download ptouch-print; try again later"
+    sleep $((i * 15))
   done
   git -C "$work/ptouch-print" -c advice.detachedHead=false checkout -q "$PTOUCH_REF"
   if [ "$PTOUCH_PATCHES" = 1 ]; then
     patches=${TREE:+$TREE/tools/ptouch-patches}
     if [ -z "$patches" ]; then
       patches=$work/patches; mkdir -p "$patches"
-      curl -fsSL "https://codeload.github.com/$REPO/tar.gz/refs/heads/${BRANCH:-main}" \
+      curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "https://codeload.github.com/$REPO/tar.gz/refs/heads/${BRANCH:-main}" \
         | tar -xz -C "$patches" --strip-components=3 --wildcards '*/tools/ptouch-patches/*.patch'
     fi
     git -C "$work/ptouch-print" -c user.name=install -c user.email=install@localhost am -q "$patches"/*.patch
@@ -291,7 +292,7 @@ else
       api=https://api.github.com/repos/$REPO/releases/tags/v${VERSION#v}
     fi
     if [ "$AGENT" = 1 ]; then pattern='labeler-agent-[0-9][^"]*[.]zip'; else pattern='labeler-[0-9][^"]*[.]zip'; fi
-    release=$(curl -fsSL "$api" 2>/dev/null || true)
+    release=$(curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "$api" 2>/dev/null || true)
     sums=$(printf '%s' "$release" | grep -o '"browser_download_url": *"[^"]*/SHA256SUMS"' | head -n 1 | sed 's/.*"\(https[^"]*\)"/\1/' || true)
     url=$(printf '%s' "$release" | grep -o "\"browser_download_url\": *\"[^\"]*$pattern\"" | head -n 1 | sed 's/.*"\(https[^"]*\)"/\1/' || true)
     if [ -z "$url" ]; then
@@ -304,16 +305,16 @@ else
     say "Downloading $NAME ($VERSION)"
     need unzip
     ZIP=$work/${url##*/}
-    curl -fsSL "$url" -o "$ZIP"
+    curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "$url" -o "$ZIP"
     if [ -n "$sums" ]; then
-      curl -fsSL "$sums" -o "$work/SHA256SUMS"
+      curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "$sums" -o "$work/SHA256SUMS"
       (cd "$work" && grep " ${url##*/}$" SHA256SUMS | sha256sum -c - >/dev/null) || die "checksum of ${url##*/} does not match"
     fi
     unzip -q "$ZIP" -d "$work/unpacked"
   else
     say "Downloading $NAME from the branch $BRANCH"
     mkdir -p "$work/tree"
-    curl -fsSL "https://codeload.github.com/$REPO/tar.gz/refs/heads/$BRANCH" | tar -xz -C "$work/tree" --strip-components=1 \
+    curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "https://codeload.github.com/$REPO/tar.gz/refs/heads/$BRANCH" | tar -xz -C "$work/tree" --strip-components=1 \
       || die "cannot download the branch $BRANCH"
     stage "$work/tree"
   fi

@@ -6,7 +6,7 @@ set -eu
 cd "$(dirname "$0")/.."
 image=${1:-debian:bookworm}
 MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -euc '
-  apt-get update -qq && apt-get install -y -qq zip tar >/dev/null
+  apt-get update -qq -o Acquire::Retries=5 && apt-get install -y -qq -o Acquire::Retries=5 zip tar >/dev/null
   mkdir /tmp/repo
   tar -C /src --exclude=./node_modules --exclude=./vendor --exclude=./test-results --exclude=./build --exclude=./coverage -cf - . | tar -C /tmp/repo -xf -
   cd /tmp/repo
