@@ -43,7 +43,7 @@ jobs:
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work -e HOME=/tmp labeler-dev sh -c 'npm ci && composer install --no-progress'
       - name: PHP tests with 95 % line coverage per file
-        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work -e HOME=/tmp labeler-dev composer coverage
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work -e HOME=/tmp labeler-dev sh -c 'composer coverage > cov.txt 2>&1 || { cat cov.txt; grep -vE "^\s+(Methods|Lines|Classes):|^\s*$" cov.txt | tail -c 6000 | sed ":a;N;\$!ba;s/%/%25/g;s/\n/%0A/g" | sed "s/^/::error::/"; exit 1; }'
       - name: JS lint, unit and browser tests with 95 % line coverage per file
         run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work -e HOME=/tmp -e CI=true labeler-dev npm test
       - name: Upload reports
