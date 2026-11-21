@@ -143,6 +143,7 @@ set the environment variable (in `labeler.service`: `Environment=`).
 
 | Setting | Variable | Default | Purpose |
 | --- | --- | --- | --- |
+| `printer_driver` | `LABELER_PRINTER_DRIVER` | `ptouch` | Printer driver: `ptouch` for P-Touch printers through ptouch-print |
 | `ptouch_bin` | `LABELER_PTOUCH_BIN` | `ptouch-print` | ptouch-print program, name or full path |
 | `timeout` | `LABELER_TIMEOUT` | `60` | Seconds a print job may take |
 | `serial` | `LABELER_SERIAL` | empty | USB serial of the printer to use when several are attached (ptouch-print 1.9) |

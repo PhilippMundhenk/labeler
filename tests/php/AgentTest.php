@@ -98,6 +98,7 @@ final class AgentTest extends TestCase
         $this->assertTrue($body['printer']['ready']);
         $this->assertSame(128, $body['printer']['tape_px']);
         $this->assertSame('1.9', $body['ptouch_version']);
+        $this->assertSame(['ptouch', '1.9'], [$body['driver'], $body['driver_version']], 'the driver of the agent');
         $this->assertSame(3, $body['max_copies'], 'the smaller limit of agent and interface');
         $this->assertSame('https://api.iconify.design', $body['icon_api'], 'icons are a matter of the interface');
         $this->assertSame(['url' => 'http://127.0.0.1:' . self::$port, 'version' => Config::VERSION, 'reachable' => true], $body['agent']);
@@ -159,6 +160,7 @@ final class AgentTest extends TestCase
         $this->assertStringContainsString('cannot be reached', $body['printer']['message']);
         $this->assertFalse($body['agent']['reachable']);
         $this->assertFalse($body['features']['copies']);
+        $this->assertSame(['ptouch', null], [$body['driver'], $body['driver_version']]);
         [$status, $body] = self::json($this->ui(self::TOKEN, $closed)->handle('GET', ['action' => 'log'], '', ''));
         $this->assertSame(502, $status);
     }

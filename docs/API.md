@@ -44,6 +44,8 @@ POST bodies are JSON (`Content-Type: application/json`). Errors come as `{"error
 ```json
 {
   "app_version": "1.0.0",
+  "driver": "ptouch",
+  "driver_version": "1.9",
   "ptouch_version": "1.9",
   "features": {"copies": true, "chain": true, "precut": true, "serial": true,
                "feed": false, "halfcut": false, "cut_every": false, "hires": false},
@@ -57,7 +59,10 @@ POST bodies are JSON (`Content-Type: application/json`). Errors come as `{"error
 }
 ```
 
-`features` says which options the installed ptouch-print has (`feed`, `halfcut`, `cut_every` and
+`driver` is the printer driver (`printer_driver`) of the computer the printer is attached to, the
+agent's when there is one; `driver_version` is the version of what that driver uses (for `ptouch`
+the ptouch-print version, also in `ptouch_version`, which is null for other drivers). `features`
+says which options the installed ptouch-print has (`feed`, `halfcut`, `cut_every` and
 `hires` need [the patches](PTOUCH-PRINT.md)). `printer.message` explains in words why the printer is
 not ready. `agent` is set when the interface uses a printer agent: `{"url", "version", "reachable"}`.
 

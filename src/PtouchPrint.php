@@ -11,7 +11,7 @@ namespace Labeler;
  * --info output gained lines in 1.7 and 1.9, so output is parsed by pattern and
  * options are only passed when the installed version has them.
  */
-final class PtouchPrint
+final class PtouchPrint implements Driver
 {
     /** Option => first ptouch-print version that has it. */
     public const FEATURES = [
@@ -86,6 +86,11 @@ final class PtouchPrint
         );
     }
 
+    public function name(): string
+    {
+        return 'ptouch';
+    }
+
     /**
      * Installed version as "major.minor", or null when ptouch-print cannot be run.
      */
@@ -138,11 +143,12 @@ final class PtouchPrint
         return $features;
     }
 
-    /**
-     * Printer and tape status from `ptouch-print --info`.
-     *
-     * @return array<string, mixed>
-     */
+    /** @return array<string, bool> the version-dependent options, all false */
+    public function offlineFeatures(): array
+    {
+        return array_fill_keys(array_keys(self::FEATURES), false);
+    }
+
     /** The same tool, talking to the printer with this USB serial number (empty: the configured one). */
     public function withSerial(string $serial): self
     {
@@ -174,10 +180,25 @@ final class PtouchPrint
         return $printers;
     }
 
+    /**
+     * Printer and tape status from `ptouch-print --info`.
+     *
+     * @return array<string, mixed>
+     */
     public function info(): array
     {
+        if ($this->version() === null) {
+            return self::parseInfo('', 127);
+        }
         $result = $this->run(array_merge($this->serialArgs(), ['--info']), false);
         return self::parseInfo($result['output'], $result['code']);
+    }
+
+    public function offline(string $message): array
+    {
+        $info = self::parseInfo('', 1);
+        $info['message'] = $message;
+        return $info;
     }
 
     /**
@@ -275,11 +296,9 @@ final class PtouchPrint
     /**
      * Print a 2-colour palette PNG.
      *
-     * @return array{ok: bool, output: string, notes: list<string>}
-     */
-    /**
      * @param array{feed?: ?int, halfcut?: bool, cut_every?: ?int, hires?: bool} $extra options of
      *        the patched ptouch-print (EXTENSIONS); left out with a note when not available
+     * @return array{ok: bool, output: string, notes: list<string>}
      */
     public function printImage(string $png, int $copies = 1, bool $chain = false, bool $precut = false, array $extra = []): array
     {
