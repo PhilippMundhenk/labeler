@@ -4,9 +4,11 @@
 
 ```
 public/            web root: index.html, app.css, api.php, js/ (ES modules), lib/qrcode.mjs (vendored)
-src/               PHP: Api, Config, Log, Png, Process, PtouchPrint, Response, bootstrap.php
+src/               PHP: Api, Config, Driver(s), Log, Png, Process, PtouchPrint, QlPrint, QlRaster, Response, ...
 tools/ptouch-sim/  simulated ptouch-print with a simulated printer (PHP, see its README)
 tools/contract/    contract test against the real ptouch-print, built from upstream
+tools/ql-sim/      simulated Brother QL printer on a Unix socket (PHP, see its README)
+tools/ql-contract/ contract test: the ql driver's raster jobs against brother_ql's
 tools/ptouch-build/ static ptouch-print for install.sh (workflow ptouch-print.yml publishes it)
 tools/ptouch-patches/ patches for ptouch-print, applied with PTOUCH_PATCHES=1
 tools/dev/         development image: PHP + pcov, Composer, Node, Playwright
@@ -31,6 +33,7 @@ tools/dev.sh composer install && tools/dev.sh npm ci   # once
 tools/dev.sh composer coverage    # PHPUnit with the 95 % gate per file
 tools/dev.sh npm test             # lint, node tests, browser tests, merged JS coverage gate
 docker build -t labeler-contract -f tools/contract/Dockerfile tools && docker run --rm -v "$PWD:/work" labeler-contract
+docker build -t labeler-ql-contract -f tools/ql-contract/Dockerfile tools && docker run --rm -v "$PWD:/work" labeler-ql-contract
 docker buildx build --platform linux/arm/v6 -f tools/ptouch-build/Dockerfile --output type=local,dest=build/ptouch tools
 sh tools/test-install.sh debian:bookworm       # install script in a clean container
 ```
@@ -70,6 +73,14 @@ Three layers plus a contract test, all in CI:
    understands the real "no printer" output, and records whether `--text a b` still works (it
    stopped in 1.7, which is what broke the first version of Labeler). A weekly workflow runs it
    against upstream's main branch.
+5. **QL contract test** (`tools/ql-contract`). For 20 label, model and media combinations
+   (`cases.json`: QL-500 to QL-1100, continuous, die-cut and round DK media, with and without
+   cutting) the `ql` driver's raster job must be byte for byte what brother_ql writes for the same
+   PNG turned upright (`rotate=90`). CI runs it against both maintained forks, brother_ql-next and
+   brother_ql-inventree. Not compared: several copies (brother_ql sends every page as a last page
+   with page number 0; Labeler follows Brother's reference: `0x0C` between pages and page number 1
+   after the first), and 12 mm round labels on printers whose shortest label is longer than 94
+   dots (brother_ql refuses them; Labeler sends them, untested on a printer).
 
 ### The simulated printer
 
@@ -77,6 +88,13 @@ Three layers plus a contract test, all in CI:
 messages on stdout and stderr, same exit codes, the same image checks (palette, height). State
 comes from `PTSIM_*` variables or a JSON file that tests rewrite while the server runs. See
 [tools/ptouch-sim/README.md](../tools/ptouch-sim/README.md).
+
+`tools/ql-sim/ql-printer SOCKET` is a Brother QL printer on a Unix socket, which the `ql` driver
+opens like `/dev/usb/lp0` (`LABELER_PRINTER_DRIVER=ql LABELER_QL_DEVICE=SOCKET`). It reads the
+raster protocol command by command, checks media, line length and line count like the printer,
+answers status requests and stores each printed page as a PNG turned back into the label's
+orientation, so tests can compare what was printed with what was sent. See
+[tools/ql-sim/README.md](../tools/ql-sim/README.md).
 
 ### Coverage
 

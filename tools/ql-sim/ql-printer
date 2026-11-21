@@ -1,0 +1,49 @@
+#!/usr/bin/env php
+<?php
+
+// Simulated Brother QL printer on a Unix socket, in place of /dev/usb/lp0. See README.md.
+//   tools/ql-sim/ql-printer /tmp/ql.sock &
+//   LABELER_PRINTER_DRIVER=ql LABELER_QL_DEVICE=/tmp/ql.sock php -S 127.0.0.1:8080 -t public
+
+declare(strict_types=1);
+
+require __DIR__ . '/../../src/QlRaster.php';
+require __DIR__ . '/../ptouch-sim/Png.php';
+require __DIR__ . '/QlSimulator.php';
+
+$path = $argv[1] ?? '';
+if ($path === '') {
+    fwrite(STDERR, "usage: ql-printer SOCKET\n");
+    exit(2);
+}
+@unlink($path);
+$server = stream_socket_server('unix://' . $path, $code, $message);
+if ($server === false) {
+    fwrite(STDERR, "ql-printer: $message\n");
+    exit(1);
+}
+$env = getenv();
+while (true) {
+    $client = @stream_socket_accept($server, -1);
+    if ($client === false) {
+        continue;
+    }
+    // one connection is one open() of the device: a fresh printer state, the current settings
+    $sim = new Labeler\Sim\QlSimulator(Labeler\Sim\QlSimulator::stateFromEnv($env), (string) ($env['QLSIM_STATE'] ?? ''));
+    if ($sim->state()['fail'] === 'silent') {
+        stream_get_contents($client);
+        fclose($client);
+        continue;
+    }
+    while (!feof($client)) {
+        $data = fread($client, 65536);
+        if ($data === false || $data === '') {
+            break;
+        }
+        $reply = $sim->feed($data);
+        if ($reply !== '') {
+            fwrite($client, $reply);
+        }
+    }
+    fclose($client);
+}

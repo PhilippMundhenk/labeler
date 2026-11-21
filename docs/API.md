@@ -59,6 +59,13 @@ POST bodies are JSON (`Content-Type: application/json`). Errors come as `{"error
 }
 ```
 
+With the `ql` driver, `printer` also has `media` (`{"id": "62", "kind": "continuous",
+"width_mm": 62, "length_mm": null, "length_px": null, "round": false}`; die-cut labels have
+`length_mm` and `length_px`, their fixed printable length) and `min_px`, the shortest label the
+model prints (shorter labels are lengthened with white); `dpi` is 300 and `tape_px` the printable
+width of the DK media. `print` refuses a label higher than `tape_px` or, on die-cut labels, longer
+than `length_px`; a shorter die-cut label is filled up with white at its end.
+
 `driver` is the printer driver (`printer_driver`) of the computer the printer is attached to, the
 agent's when there is one; `driver_version` is the version of what that driver uses (for `ptouch`
 the ptouch-print version, also in `ptouch_version`, which is null for other drivers). `features`

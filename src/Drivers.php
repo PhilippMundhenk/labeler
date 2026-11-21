@@ -12,6 +12,7 @@ final class Drivers
     /** Known drivers: name => what they print on. */
     public const NAMES = [
         'ptouch' => 'Brother P-Touch printers through ptouch-print',
+        'ql' => 'Brother QL printers on DK media, built in',
     ];
 
     public static function create(Config $config, ?Log $log = null): Driver
@@ -19,6 +20,9 @@ final class Drivers
         $name = (string) $config->get('printer_driver');
         if ($name === 'ptouch') {
             return PtouchPrint::fromConfig($config, $log);
+        }
+        if ($name === 'ql') {
+            return QlPrint::fromConfig($config, $log);
         }
         return new UnknownDriver($name, array_keys(self::NAMES));
     }

@@ -115,11 +115,30 @@ final class Png
         return $out;
     }
 
+    /**
+     * A 1-bit palette PNG from rows of "0" (white) and "1" (black).
+     *
+     * @param list<string> $rows
+     */
+    public static function fromRows(array $rows): string
+    {
+        $width = max(1, strlen($rows[0] ?? ''));
+        $raw = '';
+        foreach ($rows as $row) {
+            $raw .= "\0" . pack('C*', ...array_map('bindec', str_split(str_pad($row, (int) ceil($width / 8) * 8, '0'), 8)));
+        }
+        return self::encode($width, max(1, count($rows)), $raw === '' ? "\0\0" : $raw);
+    }
+
     /** A white 1-bit palette PNG. */
     public static function blank(int $width, int $height): string
     {
         $stride = (int) ceil($width / 8);
-        $raw = str_repeat("\0" . str_repeat("\0", $stride), $height);
+        return self::encode($width, $height, str_repeat("\0" . str_repeat("\0", $stride), $height));
+    }
+
+    private static function encode(int $width, int $height, string $raw): string
+    {
         $chunk = static function (string $type, string $data): string {
             return pack('N', strlen($data)) . $type . $data . pack('N', crc32($type . $data));
         };
