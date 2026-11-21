@@ -1,6 +1,6 @@
 # Development and test image: PHP with pcov, Composer, Node and Playwright's Chromium.
 # Not used on the device. Run everything with tools/dev.sh.
-FROM mcr.microsoft.com/playwright:v1.65.0-noble
+FROM mcr.microsoft.com/playwright:v1.65.1-noble
 RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries \
  && apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
