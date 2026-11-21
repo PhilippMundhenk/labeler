@@ -225,7 +225,10 @@ final class QlPrintTest extends TestCase
         $body = json_decode($raw, true);
         $this->assertSame(200, $status, $raw);
         $this->assertSame([300, 696, 25.4, 2], [$body['width_px'], $body['height_px'], $body['length_mm'], $body['copies']]);
-        $this->assertCount(2, self::records());
+        // (the slow page of testPrintProblems may still arrive: count only these)
+        $this->assertCount(2, array_filter(self::records(), static function (array $r): bool {
+            return $r['width'] === 300;
+        }));
         [, , $raw] = $api->handle('GET', ['action' => 'printers'], '', '')->parts();
         $this->assertSame(['supported' => true, 'printers' => [['model' => 'QL-570', 'serial' => '', 'usable' => true]]], json_decode($raw, true), 'a configured device has no sysfs entry here');
     }
