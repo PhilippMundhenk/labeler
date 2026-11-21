@@ -50,7 +50,9 @@ BRANCH=
 ZIP=
 PTOUCH_REF=v1.9
 PTOUCH_PATCHES=0
-PTOUCH_REPO=https://git.familie-radermacher.ch/linux/ptouch-print.git
+PTOUCH_UPSTREAM=https://git.familie-radermacher.ch/linux/ptouch-print.git
+PTOUCH_MIRROR=https://github.com/PhilippMundhenk/ptouch-print.git
+PTOUCH_REPO=$PTOUCH_UPSTREAM
 PTOUCH=auto          # auto: keep a matching one, else download, else build | build | skip
 DRIVER=              # ptouch | ql; empty: from config.php or the attached printer
 PORT=
@@ -221,17 +223,39 @@ ptouch_download() {
   (cd "$work" && grep " $file\$" SHA256SUMS | sha256sum -c - >/dev/null) || die "checksum of $file does not match"
   install -m 755 "$work/$file" /usr/local/bin/ptouch-print
 }
+# release tag => upstream commit (keep equal to tools/ptouch-fetch.sh)
+ptouch_pinned() {
+  case "$PTOUCH_REF" in
+    v1.5) echo e3c0073466ed99dbde9bbbcceea1c54f64967fc8 ;;
+    v1.6) echo aa5392bc135161252d06c48745c0d53c281d69f3 ;;
+    v1.7) echo e730c3b480e5959e655f7622462f77ff39e5b6fc ;;
+    v1.8) echo 76c419f952a65384e759646d313c52a7b398e697 ;;
+    v1.9) echo 02be73c75be483bd2bf947a048d447200e3229af ;;
+    *) echo ;;
+  esac
+}
 ptouch_build() {
   need git cmake gcc make pkg-config gettext libgd-dev libusb-1.0-0-dev
   say "Building ptouch-print $PTOUCH_REF$suffix from the sources"
-  # a small self-hosted server: five tries with growing pauses, stalled transfers are retried
-  for i in 1 2 3 4 5; do
-    git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 clone -q "$PTOUCH_REPO" "$work/ptouch-print" && break
+  # upstream is a small self-hosted server: three tries with growing pauses, stalled transfers
+  # are retried; then a release tag comes from the GitHub fork, checked against its pinned commit
+  # (the same list as tools/ptouch-fetch.sh)
+  repo=$PTOUCH_REPO
+  for i in 1 2 3 4 5 6; do
+    git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 clone -q "$repo" "$work/ptouch-print" && break
     rm -rf "$work/ptouch-print"
-    [ "$i" = 5 ] && die "cannot download ptouch-print; try again later"
-    sleep $((i * 15))
+    if [ "$i" = 3 ]; then
+      [ "$PTOUCH_REPO" = "$PTOUCH_UPSTREAM" ] && [ -n "$(ptouch_pinned)" ] || die "cannot download ptouch-print; try again later"
+      echo "$PTOUCH_REPO cannot be reached; taking $PTOUCH_REF from $PTOUCH_MIRROR"
+      repo=$PTOUCH_MIRROR
+    fi
+    [ "$i" = 6 ] && die "cannot download ptouch-print; try again later"
+    sleep $((i % 3 * 15))
   done
   git -C "$work/ptouch-print" -c advice.detachedHead=false checkout -q "$PTOUCH_REF"
+  if [ -n "$(ptouch_pinned)" ] && [ "$PTOUCH_REPO" = "$PTOUCH_UPSTREAM" ]; then
+    [ "$(git -C "$work/ptouch-print" rev-parse HEAD)" = "$(ptouch_pinned)" ] || die "ptouch-print $PTOUCH_REF is not the expected commit"
+  fi
   if [ "$PTOUCH_PATCHES" = 1 ]; then
     patches=${TREE:+$TREE/tools/ptouch-patches}
     if [ -z "$patches" ]; then

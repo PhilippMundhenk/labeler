@@ -14,10 +14,11 @@ RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries \
       ca-certificates git cmake gcc make pkg-config gettext libgd-dev libusb-1.0-0-dev \
  && rm -rf /var/lib/apt/lists/*
 COPY tools/ptouch-patches /patches
-# upstream is a small self-hosted server: up to five tries with growing pauses; a stalled
-# transfer (under 1 kB/s for 30 s) is aborted and retried instead of hanging
-RUN for i in 1 2 3 4 5; do git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 clone https://git.familie-radermacher.ch/linux/ptouch-print.git /src && break; rm -rf /src; [ "$i" = 5 ] && exit 1; sleep $((i * 15)); done \
- && cd /src && git -c advice.detachedHead=false checkout "$PTOUCH_REF" \
+COPY tools/ptouch-fetch.sh /usr/local/bin/ptouch-fetch
+# ptouch-print's sources: upstream, or a pinned release tag from the GitHub fork when upstream
+# cannot be reached (tools/ptouch-fetch.sh)
+RUN sh /usr/local/bin/ptouch-fetch "$PTOUCH_REF" /src \
+ && cd /src \
  && if [ "$PTOUCH_PATCHES" = 1 ]; then git -c user.name=build -c user.email=build@localhost am -q /patches/*.patch; fi \
  && cmake -S . -B build && cmake --build build -j"$(nproc)" \
  && install -m 755 build/ptouch-print /usr/local/bin/ptouch-print \

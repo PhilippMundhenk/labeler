@@ -29,6 +29,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION_ARG: ${{ startsWith(github.ref, 'refs/tags/v') && format('--version {0}', github.ref_name) || '' }}
         run: python3 tools/consistency_check.py --config tools/consistency.json $VERSION_ARG
+      - name: ptouch-print sources come from the fork when upstream is down, only as pinned
+        run: |
+          export PTOUCH_UPSTREAM=http://127.0.0.1:9/ptouch-print.git PTOUCH_FETCH_PAUSE=0
+          sh tools/ptouch-fetch.sh v1.9 /tmp/pt 2>&1 | tee /tmp/fetch.txt
+          grep -q "taking v1.9 from https://github.com/PhilippMundhenk/ptouch-print.git" /tmp/fetch.txt
+          test "$(git -C /tmp/pt rev-parse HEAD)" = "$(sed -n 's/^ *v1.9) echo \([0-9a-f]*\) ;;$/\1/p' tools/ptouch-fetch.sh)"
+          if sh tools/ptouch-fetch.sh master /tmp/pt-master; then echo "FAIL: master taken from the fork"; exit 1; fi
 
   test:
     name: Lint, unit, browser tests and coverage gates

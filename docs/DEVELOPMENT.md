@@ -11,6 +11,7 @@ tools/ql-sim/      simulated Brother QL printer on a Unix socket (PHP, see its R
 tools/ql-contract/ contract test: the ql driver's raster jobs against brother_ql's
 tools/ptouch-build/ static ptouch-print for install.sh (workflow ptouch-print.yml publishes it)
 tools/ptouch-patches/ patches for ptouch-print, applied with PTOUCH_PATCHES=1
+tools/ptouch-fetch.sh ptouch-print's sources for the images: upstream, or a pinned tag from the fork
 tools/dev/         development image: PHP + pcov, Composer, Node, Playwright
 tests/php/         PHPUnit: API, ptouch-print wrapper, PNG checks, config, log, simulator
 tests/js/          node:test: PNG encoder, bitmaps, Code 128, QR, label model, API client
