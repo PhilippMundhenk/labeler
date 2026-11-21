@@ -11,6 +11,7 @@ consequences; superseded records stay here with a note.
 | [0004](0004-php-built-in-server.md) | PHP's built-in server under systemd is the default deployment |
 | [0005](0005-labels-in-the-browser.md) | Saved labels live in the browser's storage |
 | [0006](0006-printer-agent.md) | A printer agent with an access token lets the interface run elsewhere |
+| [0007](0007-printer-drivers.md) | Printers are drivers behind one small interface, chosen in the config |
 
 Adding a record: copy the template into `NNNN-short-title.md`, add a row here, and link it from
 [DESIGN.md](../DESIGN.md) where the decision matters.

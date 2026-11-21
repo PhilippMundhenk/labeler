@@ -5,6 +5,9 @@
 // which wins over this file. Keys not listed here keep their default.
 
 return [
+    // Printer driver: "ptouch" for Brother P-Touch printers through ptouch-print.
+    'printer_driver' => 'ptouch',
+
     // ptouch-print executable: a name on PATH or an absolute path.
     'ptouch_bin' => 'ptouch-print',
 

@@ -37,7 +37,10 @@ Server side, `src/`:
 | `bootstrap.php` | loads the classes and `Config` for `public/api.php` |
 | `Api.php` | the JSON API ([API.md](API.md)): routing, access (token, password), checks, answers |
 | `Config.php` | settings: defaults, `config.php`, `LABELER_*` environment variables |
-| `PtouchPrint.php` | runs ptouch-print, reads its version, `--help` and `--info`, explains printer errors |
+| `Driver.php` | what the API needs from a printer: version, features, printers, info, print ([ADR 0007](adr/0007-printer-drivers.md)) |
+| `Drivers.php` | creates the driver named by `printer_driver` |
+| `PtouchPrint.php` | the `ptouch` driver: runs ptouch-print, reads its version, `--help` and `--info`, explains printer errors |
+| `UnknownDriver.php` | stands in for a misspelt `printer_driver`: the status says so, nothing prints |
 | `Process.php` | starts a program with an argument list (no shell) and a time limit |
 | `Png.php` | checks an uploaded label PNG (size, height against the tape) |
 | `Log.php` | the print log in the data folder |
@@ -89,6 +92,7 @@ See the [architecture decision records](adr/README.md):
 4. [0004](adr/0004-php-built-in-server.md) PHP's built-in server under systemd is the default deployment.
 5. [0005](adr/0005-labels-in-the-browser.md) Saved labels live in the browser's storage.
 6. [0006](adr/0006-printer-agent.md) A printer agent with an access token lets the interface run elsewhere.
+7. [0007](adr/0007-printer-drivers.md) Printers are drivers behind one small interface, chosen in the config.
 
 ## Limits and open questions
 

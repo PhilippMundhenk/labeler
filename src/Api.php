@@ -19,7 +19,7 @@ final class Api
     ];
 
     private Config $config;
-    private PtouchPrint $printer;
+    private Driver $printer;
     private Log $log;
     private ?Remote $remote;
     private Session $session;
@@ -27,11 +27,11 @@ final class Api
     /** Delay after a wrong password, against guessing; tests set it to 0. */
     public static int $loginDelayMs = 1000;
 
-    public function __construct(Config $config, ?PtouchPrint $printer = null, ?Log $log = null)
+    public function __construct(Config $config, ?Driver $printer = null, ?Log $log = null)
     {
         $this->config = $config;
         $this->log = $log ?? new Log((string) $config->get('data_dir'), (int) $config->get('log_entries'));
-        $this->printer = $printer ?? PtouchPrint::fromConfig($config, $this->log);
+        $this->printer = $printer ?? Drivers::create($config, $this->log);
         $url = (string) $config->get('printer_url');
         $this->remote = $url === '' ? null : new Remote($url, (string) $config->get('printer_token'), (int) $config->get('timeout'));
         $this->session = new Session((string) $config->get('password'), (string) $config->get('data_dir'));
@@ -191,12 +191,12 @@ final class Api
             return $this->remoteStatus($this->remote);
         }
         $version = $this->printer->version();
-        $info = $version === null
-            ? PtouchPrint::parseInfo('', 127)
-            : $this->printer->info();
+        $info = $this->printer->info();
         return Response::json(200, [
             'app_version' => Config::VERSION,
-            'ptouch_version' => $version,
+            'driver' => $this->printer->name(),
+            'ptouch_version' => $this->printer->name() === 'ptouch' ? $version : null,
+            'driver_version' => $version,
             'features' => $this->printer->features(),
             'max_copies' => (int) $this->config->get('max_copies'),
             'icon_api' => (string) $this->config->get('icon_api'),
@@ -213,19 +213,25 @@ final class Api
         $data = $result['data'] ?? [];
         if ($result['status'] === 200 && isset($data['printer']) && is_array($data['printer'])) {
             $printer = $data['printer'];
+            // agents before 1.1 do not name their driver: they only know ptouch-print
+            $driver = is_string($data['driver'] ?? null) ? $data['driver'] : 'ptouch';
             $version = $data['ptouch_version'] ?? null;
+            $driverVersion = $data['driver_version'] ?? $version;
             $features = $data['features'] ?? [];
             $maxCopies = min((int) $this->config->get('max_copies'), (int) ($data['max_copies'] ?? PHP_INT_MAX));
         } else {
-            $printer = PtouchPrint::parseInfo('', 1);
-            $printer['message'] = $this->remoteProblem($remote, $result);
+            $printer = $this->printer->offline($this->remoteProblem($remote, $result));
+            $driver = $this->printer->name();
             $version = null;
-            $features = array_fill_keys(array_keys(PtouchPrint::FEATURES), false);
+            $driverVersion = null;
+            $features = $this->printer->offlineFeatures();
             $maxCopies = (int) $this->config->get('max_copies');
         }
         return Response::json(200, [
             'app_version' => Config::VERSION,
+            'driver' => $driver,
             'ptouch_version' => $version,
+            'driver_version' => $driverVersion,
             'features' => $features,
             'max_copies' => $maxCopies,
             'icon_api' => (string) $this->config->get('icon_api'),

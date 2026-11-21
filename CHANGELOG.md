@@ -16,6 +16,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Printer drivers: the API talks to the printer through a small driver interface, chosen with the
+  new setting `printer_driver` (default and so far only driver: `ptouch`); the status answer names
+  the driver (`driver`, `driver_version`), from the agent when there is one. A misspelt driver
+  name is reported in the status instead of printing with something else (#137)
 - The release workflow stops before publishing anything unless the tag, `package.json`,
   `package-lock.json`, `Config::VERSION`, the examples in docs/API.md and the newest changelog
   section name the same version, and checks the version inside the zips and the image (#131)
