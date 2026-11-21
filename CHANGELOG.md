@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Downloads retry instead of failing on the first network hiccup: `install.sh` tries the
+  ptouch-print sources five times with growing pauses and aborts stalled transfers, and retries
+  its curl and apt downloads; the container images and CI do the same for git, apt, apk, curl, pip
+  and npm
 - When the interface cannot use its server (a host name not in `allowed_hosts`, a token the
   browser cannot send, the server unreachable or failing), an overlay blocks the interface with
   the reason and a hint how to fix it, until *Try again* succeeds; the status chip names the

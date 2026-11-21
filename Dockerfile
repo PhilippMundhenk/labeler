@@ -8,13 +8,15 @@
 FROM debian:bookworm-slim AS ptouch
 ARG PTOUCH_REF=v1.9
 ARG PTOUCH_PATCHES=0
-RUN apt-get update \
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries \
+ && apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       ca-certificates git cmake gcc make pkg-config gettext libgd-dev libusb-1.0-0-dev \
  && rm -rf /var/lib/apt/lists/*
 COPY tools/ptouch-patches /patches
-# upstream is a small self-hosted server: try the clone up to three times
-RUN for i in 1 2 3; do git clone https://git.familie-radermacher.ch/linux/ptouch-print.git /src && break; rm -rf /src; sleep 10; done \
+# upstream is a small self-hosted server: up to five tries with growing pauses; a stalled
+# transfer (under 1 kB/s for 30 s) is aborted and retried instead of hanging
+RUN for i in 1 2 3 4 5; do git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 clone https://git.familie-radermacher.ch/linux/ptouch-print.git /src && break; rm -rf /src; [ "$i" = 5 ] && exit 1; sleep $((i * 15)); done \
  && cd /src && git -c advice.detachedHead=false checkout "$PTOUCH_REF" \
  && if [ "$PTOUCH_PATCHES" = 1 ]; then git -c user.name=build -c user.email=build@localhost am -q /patches/*.patch; fi \
  && cmake -S . -B build && cmake --build build -j"$(nproc)" \
@@ -28,7 +30,8 @@ LABEL org.opencontainers.image.title="Labeler" \
       org.opencontainers.image.description="Web interface for Brother P-touch label printers" \
       org.opencontainers.image.source="https://github.com/PhilippMundhenk/labeler" \
       org.opencontainers.image.licenses="MIT AND GPL-3.0-only"
-RUN apt-get update \
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries \
+ && apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       php-cli libgd3 libusb-1.0-0 ca-certificates \
  && rm -rf /var/lib/apt/lists/* \

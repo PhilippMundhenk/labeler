@@ -7,13 +7,15 @@
 FROM node:26-bookworm
 ARG PTOUCH_REF=v1.9
 ARG PTOUCH_PATCHES=0
-RUN apt-get update \
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries \
+ && apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       cmake gcc make pkg-config gettext git libgd-dev libusb-1.0-0-dev php-cli \
  && rm -rf /var/lib/apt/lists/*
 COPY ptouch-patches /patches
-# upstream is a small self-hosted server: try the clone up to three times
-RUN for i in 1 2 3; do git clone https://git.familie-radermacher.ch/linux/ptouch-print.git /src/ptouch-print && break; rm -rf /src/ptouch-print; sleep 10; done \
+# upstream is a small self-hosted server: up to five tries with growing pauses; a stalled
+# transfer (under 1 kB/s for 30 s) is aborted and retried instead of hanging
+RUN for i in 1 2 3 4 5; do git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 clone https://git.familie-radermacher.ch/linux/ptouch-print.git /src/ptouch-print && break; rm -rf /src/ptouch-print; [ "$i" = 5 ] && exit 1; sleep $((i * 15)); done \
  && cd /src/ptouch-print && git -c advice.detachedHead=false checkout "$PTOUCH_REF" \
  && if [ "$PTOUCH_PATCHES" = 1 ]; then git -c user.name=ci -c user.email=ci@localhost am -q /patches/*.patch; fi \
  && cmake -S . -B build && cmake --build build -j"$(nproc)" \
