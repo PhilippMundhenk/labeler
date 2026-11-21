@@ -75,7 +75,7 @@ jobs:
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work php:${{ matrix.php }}-cli sh -c '
             for f in src/*.php public/*.php tools/ptouch-sim/*.php tools/ptouch-sim/ptouch-print tools/ql-sim/*.php tools/ql-sim/ql-printer tools/ql-contract/*.php; do php -l "$f" >/dev/null || exit 1; done
-            vendor/bin/phpunit'
+            vendor/bin/phpunit > /work/phpunit.txt 2>&1 || { cat /work/phpunit.txt; grep -A12 -E "^[0-9]+\) |Error|Warning" /work/phpunit.txt | head -150 | sed "s/^/::error::/"; exit 1; }'
 
   contract:
     name: Real ptouch-print ${{ matrix.ref }}${{ matrix.patches == 1 && ' with patches' || '' }}
