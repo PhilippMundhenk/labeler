@@ -1,6 +1,6 @@
 # <img src="public/icon.svg" alt="" width="48" height="48" align="absmiddle"> Labeler
 
-Design and print labels on a Brother P-touch printer from any browser on your network: text in
+Design and print labels on a Brother P-touch or QL printer from any browser on your network: text in
 any font, thousands of icons, QR codes, barcodes and images, with a live preview that shows exactly what the printer
 will print.
 
@@ -22,6 +22,19 @@ in Docker on a server, with only a small printer agent next to the printer.
 **Works with:** the P-touch printers ptouch-print supports (`ptouch-print --list-supported`), for
 example PT-P700, PT-P750W, PT-H500, PT-D600, PT-P300BT and PT-P900W, with ptouch-print 1.5 or
 newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
+
+**Brother QL printers** (DK labels) work without ptouch-print: Labeler speaks their raster
+protocol itself, in PHP, through the USB printer device (`printer_driver` `ql`, chosen by the
+install script when a QL printer is plugged in). Continuous DK rolls of 12, 29, 38, 50, 54 and 62
+mm, die-cut DK labels (17 × 54, 17 × 87, 23 × 23, 29 × 42, 29 × 90, 38 × 90, 39 × 48, 52 × 29,
+54 × 29, 60 × 86, 62 × 29, 62 × 100 mm) and round ones (12, 24, 58 mm), 300 dpi; 102 mm media on
+the wide models. Expected to work: QL-500, 550, 560, 570, 580N, 600, 650TD, 700, 710W, 720NW, 800,
+810W, 820NWB, 1050, 1060N, 1100, 1110NWB and 1115NWB over USB (black only; the network and
+two-colour printing are not supported). The print jobs are checked byte for byte against
+[brother_ql](https://github.com/LunarEclipse363/brother_ql_next) in CI; **tested on a printer:
+none yet** — the QL-570 is the test device; please report how yours does.
+
+![A shipping label on a 62 × 100 mm DK label, with the QL-570 in the status badge](docs/screenshots/dk-labels.png)
 
 ## Features
 
@@ -53,7 +66,11 @@ newer. Tape from 3.5 to 36 mm, 180 and 360 dpi.
   a check after every print job (ptouch-print itself does not notice a jam during printing), a hint
   when the printer switched itself off, and a log of the last print jobs.
 - **Templates** to start from: asset tag with numbered QR code, Wi-Fi guest access, cable label,
-  folder spine, address, name tag, shelf label with barcode.
+  folder spine, address, name tag, shelf label with barcode; for DK media an address label, a
+  shipping label and a dated note.
+- **DK labels** on Brother QL printers: the label takes the size of the inserted DK media; on a
+  continuous roll it grows with the content, on die-cut labels it has their size, and content that
+  does not fit is marked instead of cut off.
 - **Undo and redo** for every change, also with Ctrl+Z and Ctrl+Shift+Z.
 - **Recent prints** with a small picture of each label, to load or print again.
 - **Saved labels** in the browser, or with *On the server* checked on the server, shared by phone
@@ -90,6 +107,8 @@ libraries; it is built from the sources only on other systems) and PHP. Options,
 Rather read the script first? `curl -fsSLO https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh`,
 `less install.sh`, `sudo sh install.sh`. In a clone of this repository, `sudo sh deploy/install.sh`
 installs the clone.
+With a Brother QL printer plugged in, the script picks the `ql` driver and installs no
+ptouch-print at all; `--driver ql` or `--driver ptouch` chooses explicitly.
 To remove it again: `... | sudo sh -s -- --uninstall` ([docs/INSTALL.md](docs/INSTALL.md#uninstalling)).
 
 Or by hand:

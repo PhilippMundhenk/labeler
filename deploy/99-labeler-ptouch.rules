@@ -3,4 +3,7 @@
 # users logged in at the console, not a service.
 # Install: sudo cp 99-labeler-ptouch.rules /etc/udev/rules.d/ && sudo udevadm control --reload-rules
 # then unplug and plug in the printer.
+# P-Touch printers: ptouch-print talks to the USB device itself (libusb)
 SUBSYSTEM=="usb", ATTRS{idVendor}=="04f9", MODE="0660", GROUP="lp"
+# Brother QL printers: the ql driver writes to the kernel's USB printer device /dev/usb/lp*
+SUBSYSTEM=="usbmisc", KERNEL=="lp[0-9]*", ATTRS{idVendor}=="04f9", MODE="0660", GROUP="lp"

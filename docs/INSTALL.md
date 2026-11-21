@@ -1,7 +1,8 @@
 # Installation
 
 Labeler runs where the printer is plugged in, typically a Raspberry Pi (a Zero W is enough) with
-Raspberry Pi OS. It needs PHP 7.4 or newer and ptouch-print 1.5 or newer. PHP 7.4 is what Debian
+Raspberry Pi OS. It needs PHP 7.4 or newer and, for P-touch printers, ptouch-print 1.5 or newer
+(Brother QL printers need nothing else, see [below](#brother-ql-printers)). PHP 7.4 is what Debian
 11 (bullseye) ships; bullseye's long-term support ended in 2026, so it gets no security updates any
 more: prefer Raspberry Pi OS bookworm or newer (PHP 8.2). The steps below assume
 Raspberry Pi OS or Debian; other Linux distributions work the same way with their package names.
@@ -36,7 +37,40 @@ What it installs, so it stays quick on a Pi Zero:
 - **Labeler:** the newest release; before the first release, the branch `main` (`--branch NAME`
   picks another branch).
 
+- **Printer driver:** `--driver ptouch` or `--driver ql`. Without it the script keeps the
+  `printer_driver` of the existing `config.php`, else takes `ql` when a Brother QL printer is
+  plugged in, else `ptouch`. The choice is written to `config.php` (`printer_driver`); with `ql`
+  ptouch-print is neither downloaded nor built.
+
 CI runs the script on Debian bookworm and trixie for every change.
+
+## Brother QL printers
+
+QL printers (DK labels) are driven by Labeler itself (`printer_driver` `ql`, [ADR
+0008](adr/0008-ql-raster-in-php.md)): it writes Brother's raster commands to the kernel's USB
+printer device, `/dev/usb/lp0` and following, and reads the printer's status answers from it.
+Nothing is compiled or installed besides PHP.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy/install.sh | sudo sh -s -- --driver ql
+```
+
+- **Printer access:** the kernel module `usblp` creates `/dev/usb/lp0` when the printer is
+  switched on (Raspberry Pi OS and Debian load it by themselves; check with `ls -l /dev/usb/`).
+  Debian gives these devices to the group `lp`; the udev rule `99-labeler-ptouch.rules` makes
+  sure of it for Brother devices, and the service runs with the group `lp`.
+- **Which printer:** Labeler takes the first Brother QL it finds through sysfs
+  (`/sys/class/usbmisc/lp*/device/ieee1284_id`, `MDL:QL-…`); with several, pick one in the
+  printer details or set `serial`. `ql_device` names a device explicitly, e.g. `/dev/usb/lp1`.
+- **Media:** the printer reports the inserted DK roll or labels; the editor takes their size.
+  Unknown media are named in the status.
+- **Printer agent:** the same with `--agent --driver ql`.
+- **Editor-only options:** auto cut, half cut, high resolution and margin are P-touch options and
+  hidden for a QL printer; QL printers cut after every label, or after every n with *Cut after
+  every*; *Chain printing* leaves the last label uncut.
+
+Tested so far against the simulated printer (`tools/ql-sim`) and, byte for byte, against the
+print jobs of brother_ql; not yet on a real QL printer. The QL-570 is the test device.
 
 ## Printer agent: printer and interface on different computers
 
@@ -140,7 +174,7 @@ sudo udevadm control --reload-rules
 ```
 
 Unplug the printer and plug it in again. The rule gives the group `lp` access to Brother USB
-devices.
+devices, and to the USB printer devices `/dev/usb/lp*` of Brother QL printers.
 
 ## 4a. Run it with PHP's built-in server (recommended)
 
@@ -231,6 +265,9 @@ with the exact ptouch-print command and output.
 | The printer is in P-Lite mode | Mode switch from EL to E, or hold the PLite button for two seconds. |
 | No tape cassette inserted | Insert tape; close the cover. |
 | The cover is open / Cutter jam / Replace the tape cassette / overheated / batteries weak | What the printer reports about itself; the message says what to do. Unknown error bits are shown as `error 0x…`. |
+| No Brother QL printer found | QL printer switched on and connected? `ls -l /dev/usb/` should show `lp0`; if not, `sudo modprobe usblp`. With a P-touch printer, set `printer_driver` to `ptouch`. |
+| No DK roll / The DK roll is used up / This DK roll does not fit the label | What a QL printer reports; insert the right DK roll and close the cover. |
+| The printer does not answer | The QL printer is on `/dev/usb/lp0` but silent: switch it off and on. |
 | Chain printing / auto cut is greyed out | The installed ptouch-print is too old: chain needs 1.6, auto cut 1.8. Auto cut also needs a printer with a cutter. |
 
 ### The printer switches itself off

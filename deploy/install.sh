@@ -16,6 +16,9 @@ printer agent (the API, protected by a generated access token) for an interface 
 elsewhere, for example in Docker.
 
   --agent             printer agent only: /opt/labeler-agent, port 8631, token
+  --driver NAME       ptouch (P-Touch printers, through ptouch-print) or ql (Brother QL
+                      printers on DK labels, built in: nothing else is installed); default:
+                      the one set in config.php, else ql when a Brother QL is plugged in
   --version X.Y.Z     install this release instead of the newest
   --branch NAME       install the current state of a branch (for testing; default: the newest
                       release, or main while there is no release yet)
@@ -49,6 +52,7 @@ PTOUCH_REF=v1.9
 PTOUCH_PATCHES=0
 PTOUCH_REPO=https://git.familie-radermacher.ch/linux/ptouch-print.git
 PTOUCH=auto          # auto: keep a matching one, else download, else build | build | skip
+DRIVER=              # ptouch | ql; empty: from config.php or the attached printer
 PORT=
 DIR=
 SERVICE=1
@@ -82,6 +86,7 @@ while [ $# -gt 0 ]; do
     --dir) DIR=${2:?}; shift ;;
     --no-service) SERVICE=0 ;;
     --agent) AGENT=1 ;;
+    --driver) DRIVER=${2:?}; shift ;;
     --uninstall) UNINSTALL=1 ;;
     --purge) PURGE=1 ;;
     -h|--help) usage; exit 0 ;;
@@ -99,6 +104,7 @@ fi
 case "$PORT" in *[!0-9]*|'') die "--port needs a number" ;; esac
 [ -z "$ZIP" ] || [ -f "$ZIP" ] || die "$ZIP not found"
 [ "$PURGE" = 0 ] || [ "$UNINSTALL" = 1 ] || die "--purge only goes with --uninstall"
+case "$DRIVER" in ''|ptouch|ql) ;; *) die "--driver is ptouch or ql" ;; esac
 
 if [ "$UNINSTALL" = 1 ]; then
   say "Removing $NAME from $DIR"
@@ -159,7 +165,40 @@ base="php-cli curl ca-certificates"
 # shellcheck disable=SC2086
 need $base
 
+# --- printer driver ------------------------------------------------------------------------
+# printer_driver in the config.php of an existing installation
+configured_driver() {
+  [ -f "$DIR/config.php" ] || return 0
+  sed -n "s/.*'printer_driver' *=> *'\([a-z]*\)'.*/\1/p" "$DIR/config.php" | head -n 1
+}
+# a Brother (USB vendor 04f9) QL printer is plugged in
+ql_attached() {
+  for dev in /sys/bus/usb/devices/*; do
+    [ "$(cat "$dev/idVendor" 2>/dev/null)" = 04f9 ] || continue
+    case "$(cat "$dev/product" 2>/dev/null)" in QL-*) return 0 ;; esac
+  done
+  return 1
+}
+WRITE_DRIVER=0
+if [ -n "$DRIVER" ]; then
+  WRITE_DRIVER=1
+else
+  DRIVER=$(configured_driver)
+  if [ -z "$DRIVER" ]; then
+    if ql_attached; then
+      DRIVER=ql; WRITE_DRIVER=1
+      say "A Brother QL printer is plugged in: using the ql driver (--driver ptouch for a P-Touch)"
+    else
+      DRIVER=ptouch
+    fi
+  fi
+fi
+
 # --- ptouch-print -------------------------------------------------------------------------
+if [ "$DRIVER" = ql ]; then
+  echo "Brother QL printer: Labeler prints on it itself, ptouch-print is not needed"
+  PTOUCH=skip
+fi
 suffix=; [ "$PTOUCH_PATCHES" = 0 ] || suffix=-labeler
 ptouch_ok() {
   command -v ptouch-print >/dev/null || return 1
@@ -213,8 +252,10 @@ case "$PTOUCH" in
     else ptouch_download || ptouch_build
     fi ;;
 esac
-command -v ptouch-print >/dev/null || die "ptouch-print is not installed; run without --skip-ptouch"
-ptouch-print --version 2>&1 | head -n 1
+if [ "$DRIVER" = ptouch ]; then
+  command -v ptouch-print >/dev/null || die "ptouch-print is not installed; run without --skip-ptouch"
+  ptouch-print --version 2>&1 | head -n 1
+fi
 
 # --- Labeler --------------------------------------------------------------------------------
 # Copies what the device needs from a source tree ($1) into $work/unpacked/$NAME: the same
@@ -310,6 +351,19 @@ if [ "$AGENT" = 1 ]; then
   token=$(sed -n "s/.*'token' => '\([0-9a-f]*\)'.*/\1/p" "$DIR/config.php")
 fi
 
+if [ "$WRITE_DRIVER" = 1 ]; then
+  if [ ! -f "$DIR/config.php" ]; then
+    printf "<?php\n\nreturn ['printer_driver' => '%s'];\n" "$DRIVER" > "$DIR/config.php"
+  elif grep -q "'printer_driver' *=>" "$DIR/config.php"; then
+    sed -i "s/'printer_driver' *=> *'[a-z]*'/'printer_driver' => '$DRIVER'/" "$DIR/config.php"
+  elif grep -q "return *\[" "$DIR/config.php"; then
+    sed -i "0,/return *\[/s//return ['printer_driver' => '$DRIVER', /" "$DIR/config.php"
+  else
+    echo "Set 'printer_driver' => '$DRIVER' in $DIR/config.php yourself."
+  fi
+fi
+echo "printer driver: $DRIVER"
+
 # config.php holds the password and tokens: readable only by root and the service
 if [ -f "$DIR/config.php" ]; then
   chown root:labeler "$DIR/config.php"
@@ -319,7 +373,7 @@ fi
 if [ "$SERVICE" = 1 ]; then
   say "Setting up printer access and the service"
   cp "$DIR/deploy/99-labeler-ptouch.rules" /etc/udev/rules.d/
-  udevadm control --reload-rules 2>/dev/null && udevadm trigger --subsystem-match=usb 2>/dev/null || true
+  udevadm control --reload-rules 2>/dev/null && udevadm trigger --subsystem-match=usb --subsystem-match=usbmisc 2>/dev/null || true
   sed -e "s#/opt/$NAME#$DIR#g" -e "s#0.0.0.0:[0-9]*#0.0.0.0:$PORT#" "$DIR/deploy/$NAME.service" > "/etc/systemd/system/$NAME.service"
   systemctl daemon-reload
   systemctl enable --now "$NAME" >/dev/null 2>&1

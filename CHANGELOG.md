@@ -16,6 +16,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Installing for Brother QL printers: `install.sh --driver ql` (picked by itself when a QL printer
+  is plugged in, kept on updates) writes `printer_driver` to `config.php` and installs no
+  ptouch-print; the udev rule covers the USB printer devices of Brother printers. README and
+  docs/INSTALL.md say which QL printers and DK media are expected to work (#140)
 - The editor for DK media (Brother QL printers): the label is as high as the DK media is wide, at
   300 dpi; on continuous rolls its length follows the content with a shortest label, die-cut
   labels have their fixed size, drawn in the preview, and content that does not fit is flagged and

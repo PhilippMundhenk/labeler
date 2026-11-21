@@ -62,5 +62,24 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -euc '
   sh deploy/install.sh --uninstall --purge >/dev/null
   sh deploy/install.sh --uninstall --agent --purge >/dev/null
   test ! -e /opt/labeler && test ! -e /opt/labeler-agent && test ! -e /usr/local/bin/ptouch-print
+
+  # Brother QL printer: nothing is compiled or downloaded, the driver goes into config.php and
+  # stays on updates; --driver ptouch switches back
+  sh deploy/install.sh --zip build/labeler-0.0.0-test.zip --no-service --driver ql > /tmp/ql.txt
+  grep -q "ptouch-print is not needed" /tmp/ql.txt
+  ! grep -q "Installing packages" /tmp/ql.txt
+  test ! -e /usr/local/bin/ptouch-print
+  grep -q "'"'"'printer_driver'"'"' => '"'"'ql'"'"'" /opt/labeler/config.php
+  test "$(stat -c "%a %U:%G" /opt/labeler/config.php)" = "640 root:labeler"
+  sh deploy/install.sh --zip build/labeler-0.0.0-test.zip --no-service | grep -q "printer driver: ql"
+  su -s /bin/sh labeler -c "php -S 127.0.0.1:8082 -t /opt/labeler/public" >/dev/null 2>&1 &
+  for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8082/api.php?action=health >/dev/null 2>&1 && break; sleep 0.3; done
+  status=$(curl -fsS http://127.0.0.1:8082/api.php?action=status)
+  echo "$status" | grep -q "\"driver\":\"ql\""
+  echo "$status" | grep -q "No Brother QL printer found"
+  if sh deploy/install.sh --driver laser 2>/dev/null; then echo "FAIL: unknown driver accepted"; exit 1; fi
+  sh deploy/install.sh --agent --zip build/labeler-agent-0.0.0-test.zip --no-service --driver ql > /tmp/qlagent.txt
+  grep -q "TOKEN=" /tmp/qlagent.txt
+  grep -q "'"'"'printer_driver'"'"' => '"'"'ql'"'"', '"'"'token'"'"' => '"'"'[0-9a-f]" /opt/labeler-agent/config.php
   echo "install test passed"
 '
