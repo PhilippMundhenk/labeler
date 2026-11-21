@@ -23,6 +23,19 @@ export function printed() {
     .map((f) => ({ ...JSON.parse(readFileSync(resolve(dir, f), 'utf8')), png: resolve(dir, f.replace('.json', '.png')) }));
 }
 
+/** State of the simulated Brother QL printer (tools/ql-sim). */
+export function setQl(state) {
+  writeFileSync(resolve(RUN, 'ql-state.json'), JSON.stringify(state));
+}
+
+/** Pages the simulated QL printer printed, oldest first. */
+export function qlPrinted() {
+  const dir = resolve(RUN, 'ql-printed');
+  mkdirSync(dir, { recursive: true });
+  return readdirSync(dir).filter((f) => f.endsWith('.json')).sort()
+    .map((f) => ({ ...JSON.parse(readFileSync(resolve(dir, f), 'utf8')), png: resolve(dir, f.replace('.json', '.png')) }));
+}
+
 export function clearPrinted() {
   rmSync(resolve(RUN, 'printed'), { recursive: true, force: true });
   mkdirSync(resolve(RUN, 'printed'), { recursive: true });
@@ -33,7 +46,9 @@ export const test = base.extend({
   // eslint-disable-next-line no-empty-pattern
   reset: [async ({}, use) => {
     setSim({});
+    setQl({});
     clearPrinted();
+    rmSync(resolve(RUN, 'ql-printed'), { recursive: true, force: true });
     rmSync(resolve(RUN, 'data/print-log.json'), { force: true });
     rmSync(resolve(RUN, 'data/labels.json'), { force: true });
     await use();

@@ -3,8 +3,9 @@ import {
   getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel, login, logout, getLabels, saveLabel, deleteLabel,
 } from './api.js';
 import {
-  BLOCK_NAMES, FONTS, TAPES, defaultLabel, newBlock, newId, normalizeLabel, pxToMm, tapePx,
+  BLOCK_NAMES, FONTS, defaultLabel, newBlock, newId, normalizeLabel, pxToMm,
 } from './label.js';
+import { chosenMedia, mediaChoice, mediaChoices, mediaInfo, mediaName, printerMedia } from './media.js';
 import { renderLabel, renderHires, drawPreview, thumbnail } from './render.js';
 import { encodePng, toBase64 } from './png.js';
 import { COLLECTIONS, searchIcons, fetchIcon, iconPreviews, parseId } from './icons.js';
@@ -101,7 +102,7 @@ const FIELDS = {
 const state = {
   label: defaultLabel(),
   status: null,
-  tape: { mm: 12, px: 76, dpi: 180, tapeColor: 'White', inkColor: 'Black', live: false },
+  tape: chosenMedia(12),
   fonts: { server: [], local: [] },
   bitmap: null,
   errors: {},
@@ -180,20 +181,14 @@ async function refreshStatus() {
   state.status = res.ok ? res.data : null;
   const p = state.status && state.status.printer;
   if (p && p.ready) {
-    state.tape = {
-      mm: p.media_width_mm,
-      px: p.tape_px,
-      dpi: p.dpi,
-      tapeColor: (p.tape_color && p.tape_color.name) || 'White',
-      inkColor: (p.text_color && p.text_color.name) || 'Black',
-      live: true,
-    };
+    state.tape = printerMedia(p);
     chip.dataset.state = 'ok';
     state.wasReady = true;
-    $('#status-text').textContent = `${p.model || 'Printer'} · ${p.media_width_mm} mm`;
+    $('#status-text').textContent = `${p.model || 'Printer'} · ${mediaName(state.tape)}`;
   } else {
-    const manual = load(STORE_TAPE, 12);
-    state.tape = { mm: manual, px: tapePx(manual, 180), dpi: 180, tapeColor: 'White', inkColor: 'Black', live: false };
+    // without a ready printer: what was chosen last; a QL printer suggests a DK roll
+    const ql = Boolean(state.status && state.status.driver === 'ql');
+    state.tape = chosenMedia(load(STORE_TAPE, ql ? 'dk:62' : 12));
     chip.dataset.state = p && p.connected ? 'warn' : 'bad';
     if (problem) $('#status-text').textContent = problem.title;
     else $('#status-text').textContent = p && p.connected ? 'Printer not ready' : 'No printer';
@@ -210,7 +205,7 @@ async function refreshStatus() {
   notice.hidden = !message;
   $('#printer-message').textContent = message || '';
   $('#manual-tape').hidden = state.tape.live;
-  $('#tape-select').value = String(state.tape.mm);
+  $('#tape-select').value = mediaChoice(state.tape);
   $('#add-icon').hidden = !iconApi();
   updateFeatures();
   scheduleRender();
@@ -227,10 +222,15 @@ const PRINT_OPTIONS = [
   ['feed', 'feed', 'Blank tape before and after the label; empty: the printer default (2 mm)', PATCHED],
 ];
 
+// options a driver does not have at all are hidden rather than greyed out
+const DRIVER_HIDES = { ql: ['precut', 'halfcut', 'hires', 'feed'] };
+
 function updateFeatures() {
   const f = (state.status && state.status.features) || {};
+  const hides = DRIVER_HIDES[state.status && state.status.driver] || [];
   for (const [id, key, help, missing] of PRINT_OPTIONS) {
     const input = $(`#${id}`);
+    input.closest('label').hidden = hides.includes(id);
     input.disabled = !f[key];
     input.closest('label').title = f[key] ? help : missing;
     if (!f[key]) {
@@ -263,9 +263,19 @@ function updatePrintButton() {
   const empty = !state.bitmap || state.bitmap.countBlack() === 0;
   btn.disabled = state.printing || !state.tape.live || errors > 0 || empty;
   const batch = batchActive() ? `${state.batch.rows.length} labels from the batch` : '';
-  const reason = !state.tape.live ? 'No printer ready' : errors ? 'Fix the marked blocks first' : empty ? 'The label is empty' : '';
+  const reason = !state.tape.live ? 'No printer ready' : state.errors.label ? 'The content does not fit the label'
+    : errors ? 'Fix the marked blocks first' : empty ? 'The label is empty' : '';
   btn.title = reason || 'Print (Ctrl+Enter)';
   $('#print-hint').textContent = state.printing ? 'Printing…' : reason || batch;
+}
+
+/** Design for a media without a printer (a value of the "Design for" list). */
+function designFor(value) {
+  // tape widths stay numbers, as older versions stored them
+  store(STORE_TAPE, value.startsWith('dk:') ? value : Number(value));
+  state.tape = chosenMedia(value);
+  $('#tape-select').value = mediaChoice(state.tape);
+  scheduleRender();
 }
 
 /* ---------- fonts ---------- */
@@ -945,8 +955,9 @@ async function render() {
     drawMini();
     $('#preview').dataset.width = bitmap.width;
     $('#preview').dataset.height = bitmap.height;
-    $('#tape-info').textContent = `${state.tape.mm} mm tape · ${state.tape.px} px at ${state.tape.dpi} dpi`;
-    $('#length-info').textContent = `${pxToMm(bitmap.width, state.tape.dpi)} mm long`;
+    $('#tape-info').textContent = mediaInfo(state.tape);
+    $('#length-info').textContent = errors.label || `${pxToMm(bitmap.width, state.tape.dpi)} mm long`;
+    $('#length-info').classList.toggle('over', Boolean(errors.label));
     showErrors();
     updatePrintButton();
   })();
@@ -1160,11 +1171,11 @@ async function openDetails() {
   const p = s && s.printer;
   const rows = [
     ['Labeler', s ? s.app_version : '?'],
-    ['ptouch-print', s && s.ptouch_version ? s.ptouch_version : 'not found'],
+    s && s.driver === 'ql' ? ['Driver', 'Brother QL, built in'] : ['ptouch-print', s && s.ptouch_version ? s.ptouch_version : 'not found'],
     ['Printer agent', s && s.agent ? `${s.agent.url}${s.agent.reachable ? '' : ' (not reachable)'}` : 'none, this computer prints'],
     ['Printer', p && p.model ? p.model : 'none'],
     ['Serial', p && p.serial ? p.serial : '–'],
-    ['Tape', p && p.media_width_mm ? `${p.media_width_mm} mm, ${p.tape_px} px, ${p.dpi} dpi` : '–'],
+    [p && p.media ? 'Media' : 'Tape', p && p.media_width_mm ? `${p.media ? mediaName(printerMedia(p)) : `${p.media_width_mm} mm`}, ${p.tape_px} px, ${p.dpi} dpi` : '–'],
     ['Colours', p && p.tape_color ? `${p.text_color ? p.text_color.name : '?'} on ${p.tape_color.name}` : '–'],
     ['Status', p ? (p.ready ? 'ready' : p.message) : 'server not reachable'],
   ];
@@ -1172,7 +1183,7 @@ async function openDetails() {
   const res = await getLog();
   const entries = res.ok ? res.data.entries : [];
   $('#details-log').innerHTML = entries.length
-    ? entries.map((e) => `<li class="${Number(e.code) === 0 ? '' : 'failed'}"><div><time>${esc(new Date(e.time).toLocaleString())}</time> · exit ${Number(e.code)} · ${Number(e.ms)} ms</div><code>ptouch-print ${esc(e.args.join(' '))}</code><pre>${esc(e.output)}</pre></li>`).join('')
+    ? entries.map((e) => `<li class="${Number(e.code) === 0 ? '' : 'failed'}"><div><time>${esc(new Date(e.time).toLocaleString())}</time> · exit ${Number(e.code)} · ${Number(e.ms)} ms</div><code>${e.args[0] === 'ql' ? '' : 'ptouch-print '}${esc(e.args.join(' '))}</code><pre>${esc(e.output)}</pre></li>`).join('')
     : `<li class="muted">${res.ok && !res.data.enabled ? 'The print log is off: the data folder is not writable.' : 'Nothing printed yet.'}</li>`;
   dialog.showModal();
 }
@@ -1194,12 +1205,9 @@ async function init() {
   state.label = normalizeLabel(load(STORE_LABEL, null) || defaultLabel());
 
   const select = $('#tape-select');
-  select.innerHTML = Object.keys(TAPES).map((mm) => `<option value="${mm}">${mm} mm</option>`).join('');
-  select.addEventListener('change', () => {
-    store(STORE_TAPE, Number(select.value));
-    state.tape = { ...state.tape, mm: Number(select.value), px: tapePx(Number(select.value), 180) };
-    scheduleRender();
-  });
+  select.innerHTML = mediaChoices().map(([group, options]) => `<optgroup label="${group}">${
+    options.map(([value, text]) => `<option value="${value}">${text}</option>`).join('')}</optgroup>`).join('');
+  select.addEventListener('change', () => designFor(select.value));
 
   const blocks = $('#blocks');
   blocks.addEventListener('input', onBlockInput);
@@ -1304,7 +1312,12 @@ async function init() {
     renderSettings();
     renderBlocks();
     commit();
-    toast(`Template "${t.name}"`, 'ok');
+    if (t.media && !state.tape.live) designFor(`dk:${t.media}`);
+    if (t.media && state.tape.live && state.tape.media !== t.media) {
+      toast(`Template "${t.name}" is made for ${mediaName(chosenMedia(`dk:${t.media}`))} DK labels`, 'warn');
+    } else {
+      toast(`Template "${t.name}"`, 'ok');
+    }
   });
   $('#undo').addEventListener('click', undo);
   $('#redo').addEventListener('click', redo);

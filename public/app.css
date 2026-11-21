@@ -306,3 +306,4 @@ dialog::backdrop { background: #0008; }
 .log li.muted { border: 0; background: none; padding: 0; }
 .log pre { white-space: pre-wrap; margin: 4px 0 0; max-height: 120px; overflow: auto; }
 .log code { overflow-wrap: anywhere; }
+.meta .over { color: var(--bad); }

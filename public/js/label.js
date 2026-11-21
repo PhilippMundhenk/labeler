@@ -154,15 +154,16 @@ export function normalizeLabel(raw) {
 /**
  * Horizontal positions of the blocks.
  * @param {number[]} widths block widths in px
+ * @param {number} minPx shortest label in px (die-cut labels: their length)
  * @returns {{width: number, xs: number[]}}
  */
-export function layout(widths, label, dpi) {
+export function layout(widths, label, dpi, minPx = 0) {
   const margin = mmToPx(label.margin, dpi);
   const gap = mmToPx(label.gap, dpi);
   const frame = label.frame ? label.frameWidth : 0;
   const content = widths.reduce((s, w) => s + w, 0) + gap * Math.max(0, widths.length - 1);
   const natural = content + 2 * (margin + frame);
-  const width = Math.max(natural, mmToPx(label.length, dpi), 1);
+  const width = Math.max(natural, mmToPx(label.length, dpi), minPx, 1);
   const free = width - natural;
   let x = margin + frame + (label.align === 'center' ? Math.floor(free / 2) : label.align === 'right' ? free : 0);
   const xs = widths.map((w) => {

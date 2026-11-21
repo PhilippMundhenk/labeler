@@ -16,6 +16,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- The editor for DK media (Brother QL printers): the label is as high as the DK media is wide, at
+  300 dpi; on continuous rolls its length follows the content with a shortest label, die-cut
+  labels have their fixed size, drawn in the preview, and content that does not fit is flagged and
+  not printed. Without a printer, *Design for* lists P-Touch tapes, DK rolls and DK labels.
+  Templates for an address label, a shipping label and a dated note; options a QL printer does
+  not have (auto cut, half cut, high resolution, margin) are hidden (#139)
 - Brother QL printers on DK labels: the new `ql` driver (`printer_driver = ql`) speaks Brother's
   raster protocol itself, in PHP through the USB printer device `/dev/usb/lp*`, without
   ptouch-print, Python or anything else on the Pi. It finds QL printers by their USB description,

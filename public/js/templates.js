@@ -55,6 +55,30 @@ export const TEMPLATES = [
       { type: 'barcode', format: 'code128', content: 'SKU-0042', text: true, bar: 2, scale: 100 },
     ] }),
   },
+  // for Brother QL printers: `media` is the DK media they are made for (media.js)
+  {
+    id: 'dk-address',
+    name: 'Address label (DK 29 × 90 mm)',
+    description: 'Recipient in three lines on a die-cut address label.',
+    media: '29x90',
+    label: layout({ margin: 3, align: 'left', blocks: [text('Erika Example\nExample Street 1\n12345 Example City', { bold: false, align: 'left' })] }),
+  },
+  {
+    id: 'dk-shipping',
+    name: 'Shipping label (DK 62 × 100 mm)',
+    description: 'Sender in small print above the recipient, on a die-cut shipping label.',
+    media: '62x100',
+    label: layout({ margin: 4, align: 'left', blocks: [
+      text('From: A. Example, 54321 Sample Town\nTo:\nErika Example\nExample Street 1\n12345 Example City', { size: 22, bold: false, align: 'left', lineSizes: '45, 45, 100' }),
+    ] }),
+  },
+  {
+    id: 'dk-note',
+    name: 'Note with date (DK 62 mm)',
+    description: 'Today\'s date and a few lines, for boxes, jars and the fridge.',
+    media: '62',
+    label: layout({ length: 80, align: 'left', blocks: [text('{date}\nLeftovers\nEat by Friday', { align: 'left', lineSizes: '60, 100, 80' })] }),
+  },
 ];
 
 export function findTemplate(id) {

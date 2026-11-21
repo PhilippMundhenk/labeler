@@ -26,6 +26,12 @@ the small computer the printer hangs on.
  preview canvas (tape colour from --info) ◀── status ─── │
 ```
 
+What the label is printed on comes from `media.js`: P-Touch tape (height from the tape width,
+length from the content) or Brother DK media with the `ql` driver: a continuous roll behaves like
+tape with a shortest label, a die-cut label has a fixed length, and content longer than that is
+flagged instead of cut off. Without a printer, the same list lets the user design for any tape or
+DK media.
+
 Icons are searched and downloaded by the browser from an Iconify API (`icon_api`); the SVG of
 the chosen icon is stored in the label and rendered like an image, so neither the Pi nor printing
 depend on that service.
