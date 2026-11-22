@@ -129,7 +129,7 @@ jobs:
         image: ["debian:bookworm", "debian:trixie"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: sh tools/test-install.sh ${{ matrix.image }} > /tmp/inst.txt 2>&1 || { tail -c 5000 /tmp/inst.txt | sed ":a;N;\$!ba;s/%/%25/g;s/\n/%0A/g" | sed "s/^/::error::/"; exit 1; }
+      - run: sh tools/test-install.sh ${{ matrix.image }} > /tmp/inst.txt 2>&1 || { tail -c 2500 /tmp/inst.txt | sed ":a;N;\$!ba;s/%/%25/g;s/\n/%0A/g" | sed "s/^/::error::/"; exit 1; }
 
   docker:
     name: Docker image builds and works as interface and agent
