@@ -79,7 +79,7 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -xeuc '
   echo "$status" | grep -q "No Brother QL printer found"
   if sh deploy/install.sh --driver laser 2>/dev/null; then echo "FAIL: unknown driver accepted"; exit 1; fi
   sh deploy/install.sh --agent --zip build/labeler-agent-0.0.0-test.zip --no-service --driver ql > /tmp/qlagent.txt
-  grep -q "TOKEN=" /tmp/qlagent.txt
+  grep -q "TOKEN=" /tmp/qlagent.txt || { cat /tmp/qlagent.txt; exit 1; }
   grep -q "'"'"'printer_driver'"'"' => '"'"'ql'"'"', '"'"'token'"'"' => '"'"'[0-9a-f]" /opt/labeler-agent/config.php
   # both kinds in one interface (#147): ptouch-print comes back (ready-made build), the list stays
   sh deploy/install.sh --zip build/labeler-0.0.0-test.zip --no-service --driver ql,ptouch > /tmp/both.txt
