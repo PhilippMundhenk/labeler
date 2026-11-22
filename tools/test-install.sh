@@ -5,7 +5,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 image=${1:-debian:bookworm}
-MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -xeuc '
+MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -euc '
   apt-get update -qq -o Acquire::Retries=5 && apt-get install -y -qq -o Acquire::Retries=5 zip tar >/dev/null
   mkdir /tmp/repo
   tar -C /src --exclude=./node_modules --exclude=./vendor --exclude=./test-results --exclude=./build --exclude=./coverage -cf - . | tar -C /tmp/repo -xf -
@@ -79,7 +79,7 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -xeuc '
   echo "$status" | grep -q "No Brother QL printer found"
   if sh deploy/install.sh --driver laser 2>/dev/null; then echo "FAIL: unknown driver accepted"; exit 1; fi
   sh deploy/install.sh --agent --zip build/labeler-agent-0.0.0-test.zip --no-service --driver ql > /tmp/qlagent.txt
-  grep -q "TOKEN=" /tmp/qlagent.txt || { cat /tmp/qlagent.txt; exit 1; }
+  grep -q "TOKEN=" /tmp/qlagent.txt
   grep -q "'"'"'printer_driver'"'"' => '"'"'ql'"'"', '"'"'token'"'"' => '"'"'[0-9a-f]" /opt/labeler-agent/config.php
   # both kinds in one interface (#147): ptouch-print comes back (ready-made build), the list stays
   sh deploy/install.sh --zip build/labeler-0.0.0-test.zip --no-service --driver ql,ptouch > /tmp/both.txt
@@ -90,6 +90,6 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -xeuc '
   su -s /bin/sh labeler -c "php -S 127.0.0.1:8083 -t /opt/labeler/public" >/dev/null 2>&1 &
   for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8083/api.php?action=health >/dev/null 2>&1 && break; sleep 0.3; done
   curl -fsS http://127.0.0.1:8083/api.php?action=overview | grep -q "No Brother QL printer found"
-  curl -fsS "http://127.0.0.1:8083/api.php?action=status&printer=ptouch" | grep -q "No printer found"
+  curl -fsS "http://127.0.0.1:8083/api.php?action=status&printer=ptouch" | grep -q "\"printer_id\":\"ptouch\",\"printer_name\":\"P-touch\""
   echo "install test passed"
 '
