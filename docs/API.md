@@ -20,6 +20,10 @@ Every action that talks to a printer takes an optional `serial=<USB serial>` in 
 (ptouch-print 1.9). With `printer_url` set, the interface forwards `status`, `print`, `log` and
 `printers` to that printer agent.
 
+With several printers configured (`printer_driver` `ptouch,ql` or `printers`), `printer=<id>`
+picks one of them (default: the first; an unknown id gives `400`). It goes with every action that
+talks to a printer, also to a printer agent (as the agent's own printer id, when one is set).
+
 ## Actions
 
 | Action | Method | Request | Answer |
@@ -31,6 +35,7 @@ Every action that talks to a printer takes an optional `serial=<USB serial>` in 
 | `font` | GET | `file=<file name>` from `fonts` | the font file |
 | `log` | GET | | `{"enabled": bool, "entries": [{"time", "args", "code", "output", "ms"}]}`: the last ptouch-print runs |
 | `printers` | GET | | `{"supported": bool, "printers": [{"model", "serial", "usable"}]}` (needs ptouch-print 1.9) |
+| `overview` | GET | | `{"printers": [{"id", "name", "driver", "agent": bool, "printer": {...}}]}`: the state of every configured printer, `printer` as in `status` |
 | `login` | POST | `{"password": "..."}` | `200` and the session cookie, `401` wrong password |
 | `logout` | POST | | `200`, deletes the cookie |
 | `labels` | GET | | `{"enabled": bool, "labels": {"<name>": {"label": {...}, "updated": "<ISO time>"}}}`: labels saved on the server |
@@ -65,6 +70,10 @@ With the `ql` driver, `printer` also has `media` (`{"id": "62", "kind": "continu
 model prints (shorter labels are lengthened with white); `dpi` is 300 and `tape_px` the printable
 width of the DK media. `print` refuses a label higher than `tape_px` or, on die-cut labels, longer
 than `length_px`; a shorter die-cut label is filled up with white at its end.
+
+`printer_id` and `printer_name` name the configured printer the answer is about; `printers` lists
+all of them as `{"id", "name", "kind"}` (`kind`: the driver, or `agent`). Log entries of an
+interface with several printers carry `printer` (the id).
 
 `driver` is the printer driver (`printer_driver`) of the computer the printer is attached to, the
 agent's when there is one; `driver_version` is the version of what that driver uses (for `ptouch`

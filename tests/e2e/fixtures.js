@@ -28,9 +28,15 @@ export function setQl(state) {
   writeFileSync(resolve(RUN, 'ql-state.json'), JSON.stringify(state));
 }
 
-/** Pages the simulated QL printer printed, oldest first. */
-export function qlPrinted() {
-  const dir = resolve(RUN, 'ql-printed');
+/** State of the two simulated printers of the server with both kinds (#147). */
+export function setMulti(ptouch, ql) {
+  writeFileSync(resolve(RUN, 'multi-sim-state.json'), JSON.stringify(ptouch));
+  writeFileSync(resolve(RUN, 'multi-ql-state.json'), JSON.stringify(ql));
+}
+
+/** Labels of a simulated printer: `dir` is ql-printed, multi-printed or multi-ql-printed. */
+export function qlPrinted(dir = 'ql-printed') {
+  dir = resolve(RUN, dir);
   mkdirSync(dir, { recursive: true });
   return readdirSync(dir).filter((f) => f.endsWith('.json')).sort()
     .map((f) => ({ ...JSON.parse(readFileSync(resolve(dir, f), 'utf8')), png: resolve(dir, f.replace('.json', '.png')) }));
@@ -47,8 +53,9 @@ export const test = base.extend({
   reset: [async ({}, use) => {
     setSim({});
     setQl({});
+    setMulti({}, {});
     clearPrinted();
-    rmSync(resolve(RUN, 'ql-printed'), { recursive: true, force: true });
+    for (const dir of ['ql-printed', 'multi-printed', 'multi-ql-printed']) rmSync(resolve(RUN, dir), { recursive: true, force: true });
     rmSync(resolve(RUN, 'data/print-log.json'), { force: true });
     rmSync(resolve(RUN, 'data/labels.json'), { force: true });
     await use();

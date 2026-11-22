@@ -307,3 +307,6 @@ dialog::backdrop { background: #0008; }
 .log pre { white-space: pre-wrap; margin: 4px 0 0; max-height: 120px; overflow: auto; }
 .log code { overflow-wrap: anywhere; }
 .meta .over { color: var(--bad); }
+/* the printer picker beside the status chip, when the server has several printers (#147) */
+#printer-pick { margin-left: auto; appearance: auto; max-width: 46vw; }
+#printer-pick option { color: #000; background: #fff; }

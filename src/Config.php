@@ -26,8 +26,11 @@ final class Config
     {
         return [
             // Printer driver: "ptouch" (Brother P-Touch printers through ptouch-print) or "ql"
-            // (Brother QL printers on DK media).
+            // (Brother QL printers on DK media); "ptouch,ql" for one printer of each kind.
             'printer_driver' => 'ptouch',
+            // Several printers with names and their own settings or printer agents, see
+            // config.example.php; empty: printer_url, else printer_driver.
+            'printers' => [],
             // ql: the printer's device, e.g. /dev/usb/lp0. Empty: the first Brother QL found.
             'ql_device' => '',
             // ptouch-print executable: a name on PATH or an absolute path.
@@ -90,6 +93,14 @@ final class Config
                 $values[$key] = $env[$name];
             }
         }
+        if (is_string($values['printers'])) {
+            // LABELER_PRINTERS: the same list as JSON
+            $decoded = json_decode($values['printers'], true);
+            $values['printers'] = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($values['printers'])) {
+            $values['printers'] = [];
+        }
         foreach (['timeout', 'max_upload_bytes', 'max_copies', 'log_entries'] as $key) {
             $values[$key] = max(0, (int) $values[$key]);
         }
@@ -110,6 +121,16 @@ final class Config
     public function get(string $key)
     {
         return $this->values[$key];
+    }
+
+    /**
+     * The same settings with some values replaced (one printer's own settings).
+     *
+     * @param array<string, mixed> $values
+     */
+    public function with(array $values): self
+    {
+        return new self(array_merge($this->values, $values));
     }
 
     /** @return array<string, mixed> */

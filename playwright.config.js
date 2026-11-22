@@ -8,6 +8,9 @@ export const RUN = resolve(root, 'test-results/e2e-run');
 const PORT = 8099;
 export const PASSWORD_PORT = 8100;
 export const QL_PORT = 8101;
+// a P-touch and a QL printer behind one interface (#147)
+export const MULTI_PORT = 8102;
+const MULTI_SOCKET = resolve(tmpdir(), `labeler-e2e-ql-${MULTI_PORT}.sock`);
 // the simulated Brother QL printer listens here (outside test-results, which is cleaned)
 const QL_SOCKET = resolve(tmpdir(), `labeler-e2e-ql-${QL_PORT}.sock`);
 
@@ -63,6 +66,24 @@ export default defineConfig({
       LABELER_TIMEOUT: '10',
       QLSIM_STATE: resolve(RUN, 'ql-state.json'),
       QLSIM_OUT: resolve(RUN, 'ql-printed'),
+    },
+  }, {
+    command: `sh -c 'php tools/ql-sim/ql-printer "$QL_SOCKET" & exec php -S 127.0.0.1:${MULTI_PORT} -t public src/router.php'`,
+    url: `http://127.0.0.1:${MULTI_PORT}/api.php?action=health`,
+    reuseExistingServer: false,
+    env: {
+      QL_SOCKET: MULTI_SOCKET,
+      // several requests at once, as in labeler.service: one printer prints while the other does too
+      PHP_CLI_SERVER_WORKERS: '4',
+      LABELER_PRINTER_DRIVER: 'ptouch,ql',
+      LABELER_PTOUCH_BIN: resolve(root, 'tools/ptouch-sim/ptouch-print'),
+      LABELER_QL_DEVICE: MULTI_SOCKET,
+      LABELER_DATA_DIR: resolve(RUN, 'data-multi'),
+      LABELER_TIMEOUT: '10',
+      PTSIM_STATE: resolve(RUN, 'multi-sim-state.json'),
+      PTSIM_OUT: resolve(RUN, 'multi-printed'),
+      QLSIM_STATE: resolve(RUN, 'multi-ql-state.json'),
+      QLSIM_OUT: resolve(RUN, 'multi-ql-printed'),
     },
   }],
 });

@@ -375,4 +375,9 @@ export default {
   "Labeler does not know DK labels of {w} × {l} mm.": "Labeler 不认识 {w} × {l} mm 的 DK 标签。",
   "The printer cannot be opened: {reason}.": "无法打开打印机：{reason}。",
   "{option} is not available on Brother QL printers": "Brother QL 打印机不支持 {option}",
+  // several printers (#147)
+  "Printer to print on": "用于打印的打印机",
+  "{name} · not ready": "{name} · 未就绪",
+  "{name} · no printer": "{name} · 没有打印机",
+  "there is no printer \"{id}\"": "没有打印机“{id}”",
 };

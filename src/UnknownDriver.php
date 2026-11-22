@@ -13,12 +13,17 @@ final class UnknownDriver implements Driver
     private string $name;
     /** @var list<string> */
     private array $known;
+    private string $problem;
 
-    /** @param list<string> $known */
-    public function __construct(string $name, array $known)
+    /**
+     * @param list<string> $known
+     * @param string $problem what is wrong, instead of the unknown driver name
+     */
+    public function __construct(string $name, array $known, string $problem = '')
     {
         $this->name = $name;
         $this->known = $known;
+        $this->problem = $problem;
     }
 
     public function name(): string
@@ -88,6 +93,9 @@ final class UnknownDriver implements Driver
 
     private function message(): string
     {
+        if ($this->problem !== '') {
+            return $this->problem;
+        }
         return "Unknown printer driver \"{$this->name}\" in printer_driver: use " . implode(' or ', $this->known) . '.';
     }
 }

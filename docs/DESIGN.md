@@ -45,6 +45,8 @@ Server side, `src/`:
 | `Config.php` | settings: defaults, `config.php`, `LABELER_*` environment variables |
 | `Driver.php` | what the API needs from a printer: version, features, printers, info, print ([ADR 0007](adr/0007-printer-drivers.md)) |
 | `Drivers.php` | creates the driver named by `printer_driver` |
+| `Target.php` | one printer of the interface: id, name, a driver or a printer agent |
+| `Targets.php` | the printers from `printers`, `printer_url` or `printer_driver` ([ADR 0009](adr/0009-several-printers.md)) |
 | `PtouchPrint.php` | the `ptouch` driver: runs ptouch-print, reads its version, `--help` and `--info`, explains printer errors |
 | `QlRaster.php` | Brother's QL raster protocol: DK media and models, the print job, the status answer |
 | `QlPrint.php` | the `ql` driver: finds QL printers in `/dev/usb` and sysfs, asks for the status, prints ([ADR 0008](adr/0008-ql-raster-in-php.md)) |
@@ -102,6 +104,7 @@ See the [architecture decision records](adr/README.md):
 6. [0006](adr/0006-printer-agent.md) A printer agent with an access token lets the interface run elsewhere.
 7. [0007](adr/0007-printer-drivers.md) Printers are drivers behind one small interface, chosen in the config.
 8. [0008](adr/0008-ql-raster-in-php.md) Brother QL printers are driven in PHP through the kernel's USB printer device.
+9. [0009](adr/0009-several-printers.md) One interface serves several printers of different kinds, picked per request.
 
 ## Limits and open questions
 

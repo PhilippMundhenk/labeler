@@ -81,5 +81,15 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/src:ro" "$image" sh -euc '
   sh deploy/install.sh --agent --zip build/labeler-agent-0.0.0-test.zip --no-service --driver ql > /tmp/qlagent.txt
   grep -q "TOKEN=" /tmp/qlagent.txt
   grep -q "'"'"'printer_driver'"'"' => '"'"'ql'"'"', '"'"'token'"'"' => '"'"'[0-9a-f]" /opt/labeler-agent/config.php
+  # both kinds in one interface (#147): ptouch-print comes back (ready-made build), the list stays
+  sh deploy/install.sh --zip build/labeler-0.0.0-test.zip --no-service --driver ql,ptouch > /tmp/both.txt
+  grep -q "printer driver: ptouch,ql" /tmp/both.txt
+  test -x /usr/local/bin/ptouch-print
+  grep -q "'"'"'printer_driver'"'"' => '"'"'ptouch,ql'"'"'" /opt/labeler/config.php
+  sh deploy/install.sh --zip build/labeler-0.0.0-test.zip --no-service | grep -q "printer driver: ptouch,ql"
+  su -s /bin/sh labeler -c "php -S 127.0.0.1:8083 -t /opt/labeler/public" >/dev/null 2>&1 &
+  for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8083/api.php?action=health >/dev/null 2>&1 && break; sleep 0.3; done
+  curl -fsS http://127.0.0.1:8083/api.php?action=overview | grep -q "No Brother QL printer found"
+  curl -fsS "http://127.0.0.1:8083/api.php?action=status&printer=ptouch" | grep -q "\"printer_id\":\"ptouch\",\"printer_name\":\"P-touch\""
   echo "install test passed"
 '

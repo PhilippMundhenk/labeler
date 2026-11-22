@@ -6,8 +6,15 @@ export const setSerial = (value) => {
   serial = value || '';
 };
 
-async function call(action, options = {}) {
-  const query = `action=${encodeURIComponent(action)}${serial ? `&serial=${encodeURIComponent(serial)}` : ''}`;
+// id of the chosen printer when the server has several (#147); empty: its first one
+let printer = '';
+export const setPrinter = (value) => {
+  printer = value || '';
+};
+export const currentPrinter = () => printer;
+
+async function call(action, options = {}, target = printer) {
+  const query = `action=${encodeURIComponent(action)}${target ? `&printer=${encodeURIComponent(target)}` : ''}${serial ? `&serial=${encodeURIComponent(serial)}` : ''}`;
   try {
     const res = await fetch(`api.php?${query}`, { cache: 'no-store', ...options });
     let data = {};
@@ -27,6 +34,7 @@ export const getStatus = () => call('status');
 export const getFonts = () => call('fonts');
 export const getLog = () => call('log');
 export const getPrinters = () => call('printers');
+export const getOverview = () => call('overview');
 const post = (action, body) => call(action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 export const login = (password) => post('login', { password });
 export const getLabels = () => call('labels');
@@ -35,10 +43,11 @@ export const deleteLabel = (name) => post('label-delete', { name });
 export const logout = () => post('logout', {});
 export const fontUrl = (file) => `api.php?action=font&file=${encodeURIComponent(file)}`;
 
-export function printLabel(png, options) {
+/** Prints on `target`, the printer the job was started on, even if another is chosen meanwhile. */
+export function printLabel(png, options, target = printer) {
   return call('print', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ png, ...options }),
-  });
+  }, target);
 }

@@ -375,4 +375,9 @@ export default {
   "Labeler does not know DK labels of {w} × {l} mm.": "Labeler {w} × {l} mm के DK लेबल नहीं जानता।",
   "The printer cannot be opened: {reason}.": "प्रिंटर खोला नहीं जा सका: {reason}।",
   "{option} is not available on Brother QL printers": "Brother QL प्रिंटरों पर {option} उपलब्ध नहीं है",
+  // several printers (#147)
+  "Printer to print on": "प्रिंट करने के लिए प्रिंटर",
+  "{name} · not ready": "{name} · तैयार नहीं",
+  "{name} · no printer": "{name} · कोई प्रिंटर नहीं",
+  "there is no printer \"{id}\"": "“{id}” नाम का कोई प्रिंटर नहीं है",
 };
