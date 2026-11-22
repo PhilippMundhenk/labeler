@@ -72,6 +72,15 @@ curl -fsSL https://raw.githubusercontent.com/PhilippMundhenk/labeler/main/deploy
 Tested so far against the simulated printer (`tools/ql-sim`) and, byte for byte, against the
 print jobs of brother_ql; not yet on a real QL printer. The QL-570 is the test device.
 
+## A P-touch and a QL printer together
+
+One interface can serve both: `--driver ptouch,ql` (picked by itself when both are plugged in)
+sets `printer_driver` to `ptouch,ql` and installs ptouch-print for the P-touch. The bar then shows
+a printer picker with the state and media of each; the choice is kept per browser, and each
+printer prints on its own, also at the same time. For names, a second printer of the same kind
+(each with its `serial` or `ql_device`) or printers on other computers (printer agents), list them
+in `printers` in `config.php` (see `config.example.php`).
+
 ## Printer agent: printer and interface on different computers
 
 The interface can run on a server (for example in Docker) while the printer hangs on a small

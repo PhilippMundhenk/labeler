@@ -61,6 +61,9 @@ none yet** — the QL-570 is the test device; please report how yours does.
   printer support them; half cut, margin, cut after every n labels and high resolution with
   [patched ptouch-print](docs/PTOUCH-PRINT.md); download the label as PNG.
 - **Several printers** on one computer (ptouch-print 1.9): pick one in the printer details.
+- **P-touch and QL side by side**: with both kinds configured (`ptouch,ql`, or a list of printers
+  and printer agents), a picker in the bar shows every printer with its state and media; the label
+  follows the chosen printer's tape or DK media, and one printer prints while the other does too.
 - **Printer status** with tape width and colour, clear messages for a missing printer, missing
   tape, open cover, cutter jam, overheating, weak batteries, P-Lite mode or missing USB permissions,
   a check after every print job (ptouch-print itself does not notice a jam during printing), a hint
@@ -162,7 +165,8 @@ set the environment variable (in `labeler.service`: `Environment=`).
 
 | Setting | Variable | Default | Purpose |
 | --- | --- | --- | --- |
-| `printer_driver` | `LABELER_PRINTER_DRIVER` | `ptouch` | Printer driver: `ptouch` for P-Touch printers through ptouch-print, `ql` for Brother QL printers on DK labels |
+| `printer_driver` | `LABELER_PRINTER_DRIVER` | `ptouch` | Printer driver: `ptouch` for P-Touch printers through ptouch-print, `ql` for Brother QL printers on DK labels, `ptouch,ql` for one of each in the same interface |
+| `printers` | `LABELER_PRINTERS` (JSON) | empty | Several printers with names: each a driver with its own `ptouch_bin`, `serial`, `ql_device`, or a printer agent (`url`, `token`, `printer`); see `config.example.php` |
 | `ql_device` | `LABELER_QL_DEVICE` | empty | `ql`: the printer's device, e.g. `/dev/usb/lp0`; empty: the first Brother QL found |
 | `ptouch_bin` | `LABELER_PTOUCH_BIN` | `ptouch-print` | ptouch-print program, name or full path |
 | `timeout` | `LABELER_TIMEOUT` | `60` | Seconds a print job may take |

@@ -12,11 +12,14 @@ final class Log
 {
     private string $file;
     private int $max;
+    /** The printer whose runs this log records (several printers share one file). */
+    private string $printer;
 
-    public function __construct(string $dir, int $max = 50)
+    public function __construct(string $dir, int $max = 50, string $printer = '')
     {
         $this->file = $dir === '' ? '' : rtrim($dir, '/\\') . '/print-log.json';
         $this->max = $max;
+        $this->printer = $printer;
     }
 
     public function enabled(): bool
@@ -48,7 +51,7 @@ final class Log
             // temporary file names carry no information
             return preg_match('/\.png$/i', $arg) ? 'label.png' : $arg;
         }, $args);
-        array_unshift($entries, [
+        array_unshift($entries, ($this->printer !== '' ? ['printer' => $this->printer] : []) + [
             'time' => gmdate('c'),
             'args' => $args,
             'code' => $code,

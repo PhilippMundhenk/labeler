@@ -1,7 +1,7 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel, login, logout, getLabels, saveLabel, deleteLabel,
+  getStatus, getFonts, getLog, getPrinters, getOverview, setSerial, setPrinter, currentPrinter, fontUrl, printLabel, login, logout, getLabels, saveLabel, deleteLabel,
 } from '../../public/js/api.js';
 
 let calls;
@@ -54,6 +54,24 @@ test('the chosen printer goes with every call', async () => {
   await getStatus();
   assert.deepEqual(calls.map((c) => c.url), ['api.php?action=printers&serial=B%202', 'api.php?action=print&serial=B%202', 'api.php?action=status']);
   setSerial(undefined);
+});
+
+test('the chosen one of several printers goes with every call; a job keeps its printer', async () => {
+  fake(() => new Response('{}', { status: 200 }));
+  setPrinter('ql');
+  assert.equal(currentPrinter(), 'ql');
+  setSerial('S 1');
+  await getStatus();
+  await printLabel('AAAA', {}, 'ptouch');
+  setSerial('');
+  await getOverview();
+  setPrinter(undefined);
+  assert.equal(currentPrinter(), '');
+  await getStatus();
+  assert.deepEqual(calls.map((c) => c.url), [
+    'api.php?action=status&printer=ql&serial=S%201', 'api.php?action=print&printer=ptouch&serial=S%201',
+    'api.php?action=overview&printer=ql', 'api.php?action=status',
+  ]);
 });
 
 test('login, logout and saved labels post JSON', async () => {

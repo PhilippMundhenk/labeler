@@ -375,6 +375,11 @@ export const DE = {
   "Labeler does not know DK labels of {w} × {l} mm.": "Labeler kennt keine DK-Etiketten mit {w} × {l} mm.",
   "The printer cannot be opened: {reason}.": "Der Drucker lässt sich nicht öffnen: {reason}.",
   "{option} is not available on Brother QL printers": "{option} gibt es bei Brother-QL-Druckern nicht",
+  // several printers (#147)
+  "Printer to print on": "Drucker, auf dem gedruckt wird",
+  "{name} · not ready": "{name} · nicht bereit",
+  "{name} · no printer": "{name} · kein Drucker",
+  "there is no printer \"{id}\"": "es gibt keinen Drucker „{id}“",
 };
 
 export default DE;

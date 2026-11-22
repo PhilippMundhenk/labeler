@@ -150,6 +150,24 @@ final class AgentTest extends TestCase
         $this->assertStringContainsString('refused the access token', $body['error']);
     }
 
+    public function testAPrinterOfTheAgentInTheList(): void
+    {
+        self::state(['tape_mm' => 24]);
+        $agent = static function (string $printer): array {
+            return ['id' => 'shed', 'name' => 'Shed', 'url' => 'http://127.0.0.1:' . self::$port, 'token' => self::TOKEN, 'printer' => $printer];
+        };
+        $ui = new Api(Config::load(sys_get_temp_dir(), null, ['LABELER_PRINTERS' => json_encode([$agent('ptouch')]), 'LABELER_DATA_DIR' => '']));
+        [$status, $body] = self::json($ui->handle('GET', ['action' => 'status', 'printer' => 'shed'], '', ''));
+        $this->assertSame([200, 'shed', 'Shed', true, 128], [$status, $body['printer_id'], $body['printer_name'], $body['printer']['ready'], $body['printer']['tape_px']]);
+        $this->assertSame([['id' => 'shed', 'name' => 'Shed', 'kind' => 'agent']], $body['printers']);
+        [, $body] = self::json($ui->handle('GET', ['action' => 'overview'], '', ''));
+        $this->assertSame([true, 'ptouch'], [$body['printers'][0]['agent'], $body['printers'][0]['driver']]);
+        // the agent is asked for its printer "nope", which it does not have
+        $ui = new Api(Config::load(sys_get_temp_dir(), null, ['LABELER_PRINTERS' => json_encode([$agent('nope')]), 'LABELER_DATA_DIR' => '']));
+        [, $body] = self::json($ui->handle('GET', ['action' => 'status'], '', ''));
+        $this->assertSame('The printer agent answered HTTP 400: there is no printer "nope".', $body['printer']['message']);
+    }
+
     public function testAgentDown(): void
     {
         $socket = stream_socket_server('tcp://127.0.0.1:0');

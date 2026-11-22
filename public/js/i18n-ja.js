@@ -375,4 +375,9 @@ export default {
   "Labeler does not know DK labels of {w} × {l} mm.": "Labeler は {w} × {l} mm の DK ラベルを知りません。",
   "The printer cannot be opened: {reason}.": "プリンターを開けません：{reason}。",
   "{option} is not available on Brother QL printers": "Brother QL プリンターでは {option} は使えません",
+  // several printers (#147)
+  "Printer to print on": "印刷に使うプリンター",
+  "{name} · not ready": "{name} · 準備ができていません",
+  "{name} · no printer": "{name} · プリンターなし",
+  "there is no printer \"{id}\"": "プリンター「{id}」はありません",
 };

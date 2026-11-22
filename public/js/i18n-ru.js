@@ -375,4 +375,9 @@ export default {
   "Labeler does not know DK labels of {w} × {l} mm.": "Labeler не знает этикеток DK {w} × {l} mm.",
   "The printer cannot be opened: {reason}.": "Не удаётся открыть принтер: {reason}.",
   "{option} is not available on Brother QL printers": "{option} недоступно на принтерах Brother QL",
+  // several printers (#147)
+  "Printer to print on": "Принтер для печати",
+  "{name} · not ready": "{name} · не готов",
+  "{name} · no printer": "{name} · нет принтера",
+  "there is no printer \"{id}\"": "принтера «{id}» нет",
 };

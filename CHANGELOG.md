@@ -23,6 +23,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Several printers of different kinds in one interface: `printer_driver` takes `ptouch,ql`, and
+  the new setting `printers` lists printers with names, their own settings and printer agents.
+  A picker in the bar shows each printer with its state and media, the label follows the chosen
+  printer's tape or DK media, a print job stays on the printer it was started on and the other
+  printer can print meanwhile; the print log names the printer. API: `printer=<id>`, `overview`.
+  `install.sh --driver ptouch,ql`, picked by itself when both kinds are plugged in (#147)
 - Installing for Brother QL printers: `install.sh --driver ql` (picked by itself when a QL printer
   is plugged in, kept on updates) writes `printer_driver` to `config.php` and installs no
   ptouch-print; the udev rule covers the USB printer devices of Brother printers. README and

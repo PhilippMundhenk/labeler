@@ -375,4 +375,9 @@ export default {
   "Labeler does not know DK labels of {w} × {l} mm.": "لا يعرف Labeler ملصقات DK بمقاس {w} × {l} mm.",
   "The printer cannot be opened: {reason}.": "تعذّر فتح الطابعة: {reason}.",
   "{option} is not available on Brother QL printers": "{option} غير متاح في طابعات Brother QL",
+  // several printers (#147)
+  "Printer to print on": "الطابعة المستخدمة للطباعة",
+  "{name} · not ready": "{name} · غير جاهزة",
+  "{name} · no printer": "{name} · لا توجد طابعة",
+  "there is no printer \"{id}\"": "لا توجد طابعة «{id}»",
 };

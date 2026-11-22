@@ -375,4 +375,9 @@ export default {
   "Labeler does not know DK labels of {w} × {l} mm.": "Labeler tidak mengenal label DK {w} × {l} mm.",
   "The printer cannot be opened: {reason}.": "Printer tidak dapat dibuka: {reason}.",
   "{option} is not available on Brother QL printers": "{option} tidak tersedia pada printer Brother QL",
+  // several printers (#147)
+  "Printer to print on": "Printer untuk mencetak",
+  "{name} · not ready": "{name} · belum siap",
+  "{name} · no printer": "{name} · tidak ada printer",
+  "there is no printer \"{id}\"": "tidak ada printer “{id}”",
 };

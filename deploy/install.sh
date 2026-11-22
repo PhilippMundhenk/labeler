@@ -16,9 +16,10 @@ printer agent (the API, protected by a generated access token) for an interface 
 elsewhere, for example in Docker.
 
   --agent             printer agent only: /opt/labeler-agent, port 8631, token
-  --driver NAME       ptouch (P-Touch printers, through ptouch-print) or ql (Brother QL
-                      printers on DK labels, built in: nothing else is installed); default:
-                      the one set in config.php, else ql when a Brother QL is plugged in
+  --driver NAME       ptouch (P-Touch printers, through ptouch-print), ql (Brother QL
+                      printers on DK labels, built in: nothing else is installed) or ptouch,ql
+                      (one of each in the same interface); default: the one set in config.php,
+                      else what is plugged in
   --version X.Y.Z     install this release instead of the newest
   --branch NAME       install the current state of a branch (for testing; default: the newest
                       release, or main while there is no release yet)
@@ -54,7 +55,7 @@ PTOUCH_UPSTREAM=https://git.familie-radermacher.ch/linux/ptouch-print.git
 PTOUCH_MIRROR=https://github.com/PhilippMundhenk/ptouch-print.git
 PTOUCH_REPO=$PTOUCH_UPSTREAM
 PTOUCH=auto          # auto: keep a matching one, else download, else build | build | skip
-DRIVER=              # ptouch | ql; empty: from config.php or the attached printer
+DRIVER=              # ptouch | ql | ptouch,ql; empty: from config.php or the attached printers
 PORT=
 DIR=
 SERVICE=1
@@ -106,7 +107,8 @@ fi
 case "$PORT" in *[!0-9]*|'') die "--port needs a number" ;; esac
 [ -z "$ZIP" ] || [ -f "$ZIP" ] || die "$ZIP not found"
 [ "$PURGE" = 0 ] || [ "$UNINSTALL" = 1 ] || die "--purge only goes with --uninstall"
-case "$DRIVER" in ''|ptouch|ql) ;; *) die "--driver is ptouch or ql" ;; esac
+case "$DRIVER" in ql,ptouch) DRIVER=ptouch,ql ;; esac
+case "$DRIVER" in ''|ptouch|ql|ptouch,ql) ;; *) die "--driver is ptouch, ql or ptouch,ql" ;; esac
 
 if [ "$UNINSTALL" = 1 ]; then
   say "Removing $NAME from $DIR"
@@ -171,15 +173,16 @@ need $base
 # printer_driver in the config.php of an existing installation
 configured_driver() {
   [ -f "$DIR/config.php" ] || return 0
-  sed -n "s/.*'printer_driver' *=> *'\([a-z]*\)'.*/\1/p" "$DIR/config.php" | head -n 1
+  sed -n "s/.*'printer_driver' *=> *'\([a-z,]*\)'.*/\1/p" "$DIR/config.php" | head -n 1
 }
-# a Brother (USB vendor 04f9) QL printer is plugged in
-ql_attached() {
+# the kinds of Brother (USB vendor 04f9) printers plugged in: "ql", "ptouch" or "ptouch,ql"
+attached_drivers() {
+  ql=; pt=
   for dev in /sys/bus/usb/devices/*; do
     [ "$(cat "$dev/idVendor" 2>/dev/null)" = 04f9 ] || continue
-    case "$(cat "$dev/product" 2>/dev/null)" in QL-*) return 0 ;; esac
+    case "$(cat "$dev/product" 2>/dev/null)" in QL-*) ql=ql ;; PT-*|P-touch*|*P-Touch*) pt=ptouch ;; esac
   done
-  return 1
+  echo "$pt${pt:+${ql:+,}}$ql"
 }
 WRITE_DRIVER=0
 if [ -n "$DRIVER" ]; then
@@ -187,12 +190,13 @@ if [ -n "$DRIVER" ]; then
 else
   DRIVER=$(configured_driver)
   if [ -z "$DRIVER" ]; then
-    if ql_attached; then
-      DRIVER=ql; WRITE_DRIVER=1
-      say "A Brother QL printer is plugged in: using the ql driver (--driver ptouch for a P-Touch)"
-    else
-      DRIVER=ptouch
-    fi
+    case "$(attached_drivers)" in
+      ql) DRIVER=ql; WRITE_DRIVER=1
+        say "A Brother QL printer is plugged in: using the ql driver (--driver ptouch for a P-Touch)" ;;
+      ptouch,ql) DRIVER=ptouch,ql; WRITE_DRIVER=1
+        say "A P-touch and a Brother QL printer are plugged in: both go into the interface" ;;
+      *) DRIVER=ptouch ;;
+    esac
   fi
 fi
 
@@ -277,7 +281,7 @@ case "$PTOUCH" in
     else ptouch_download || ptouch_build
     fi ;;
 esac
-if [ "$DRIVER" = ptouch ]; then
+if [ "$DRIVER" != ql ]; then
   command -v ptouch-print >/dev/null || die "ptouch-print is not installed; run without --skip-ptouch"
   ptouch-print --version 2>&1 | head -n 1
 fi
@@ -380,7 +384,7 @@ if [ "$WRITE_DRIVER" = 1 ]; then
   if [ ! -f "$DIR/config.php" ]; then
     printf "<?php\n\nreturn ['printer_driver' => '%s'];\n" "$DRIVER" > "$DIR/config.php"
   elif grep -q "'printer_driver' *=>" "$DIR/config.php"; then
-    sed -i "s/'printer_driver' *=> *'[a-z]*'/'printer_driver' => '$DRIVER'/" "$DIR/config.php"
+    sed -i "s/'printer_driver' *=> *'[a-z,]*'/'printer_driver' => '$DRIVER'/" "$DIR/config.php"
   elif grep -q "return *\[" "$DIR/config.php"; then
     sed -i "0,/return *\[/s//return ['printer_driver' => '$DRIVER', /" "$DIR/config.php"
   else

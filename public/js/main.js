@@ -1,6 +1,6 @@
 // Labeler user interface.
 import {
-  getStatus, getFonts, getLog, getPrinters, setSerial, fontUrl, printLabel, login, logout, getLabels, saveLabel, deleteLabel,
+  getStatus, getFonts, getLog, getPrinters, getOverview, setSerial, setPrinter, currentPrinter, fontUrl, printLabel, login, logout, getLabels, saveLabel, deleteLabel,
 } from './api.js';
 import {
   BLOCK_NAMES, FONTS, defaultLabel, newBlock, newId, normalizeLabel, pxToMm,
@@ -24,6 +24,9 @@ const STORE_TAPE = 'labeler.tape';
 const STORE_BATCH = 'labeler.batch';
 const STORE_HISTORY = 'labeler.history';
 const STORE_SERIAL = 'labeler.serial';
+const STORE_PRINTER = 'labeler.printer';
+// the USB serial is chosen per printer of the server (#147)
+const serialKey = () => (currentPrinter() ? `${STORE_SERIAL}.${currentPrinter()}` : STORE_SERIAL);
 const STORE_LANG = 'labeler.lang';
 const STORE_FLOAT = 'labeler.floatPreview';
 const HISTORY_MAX = 20;
@@ -108,7 +111,8 @@ const state = {
   errors: {},
   rendering: null,
   dirty: false,
-  printing: false,
+  // ids of the printers a job is running on: the others can print meanwhile
+  printing: new Set(),
   batch: { text: '', header: false, on: false, index: 0, rows: [], headers: [] },
 };
 
@@ -175,7 +179,12 @@ async function refreshStatus() {
   const chip = $('#status');
   chip.dataset.state = 'busy';
   $('#status-text').textContent = 'Checking printer…';
-  const res = await getStatus();
+  let res = await getStatus();
+  if (res.status === 400 && currentPrinter()) {
+    // the chosen printer is not configured any more: back to the server's first one
+    choosePrinter('');
+    res = await getStatus();
+  }
   const problem = showBlocking(res);
   const blocked = $('#blocked-dialog').open;
   state.status = res.ok ? res.data : null;
@@ -194,6 +203,7 @@ async function refreshStatus() {
     else $('#status-text').textContent = p && p.connected ? 'Printer not ready' : 'No printer';
   }
   $('#logout').hidden = !(state.status && state.status.password);
+  updatePrinterPick();
   if (Boolean(state.status && state.status.shared_labels) !== sharedLabels()) savedLoading = refreshSaved();
   // when blocked, the overlay shows the error
   let message = res.ok ? (p && !p.ready ? p.message : '') : (blocked ? '' : res.data.error);
@@ -261,12 +271,53 @@ function updatePrintButton() {
   const btn = $('#print');
   const errors = Object.keys(state.errors).length;
   const empty = !state.bitmap || state.bitmap.countBlack() === 0;
-  btn.disabled = state.printing || !state.tape.live || errors > 0 || empty;
+  const printing = state.printing.has(printerId());
+  btn.disabled = printing || !state.tape.live || errors > 0 || empty;
+  btn.classList.toggle('busy', printing);
   const batch = batchActive() ? `${state.batch.rows.length} labels from the batch` : '';
   const reason = !state.tape.live ? 'No printer ready' : state.errors.label ? 'The content does not fit the label'
     : errors ? 'Fix the marked blocks first' : empty ? 'The label is empty' : '';
   btn.title = reason || 'Print (Ctrl+Enter)';
-  $('#print-hint').textContent = state.printing ? 'Printing…' : reason || batch;
+  $('#print-hint').textContent = printing ? 'Printing…' : reason || batch;
+}
+
+/* ---------- several printers (#147) ---------- */
+
+/** Id of the printer the status is about (the server's first one when none was chosen). */
+const printerId = () => (state.status && state.status.printer_id) || currentPrinter();
+
+function printerName(id) {
+  const found = ((state.status && state.status.printers) || []).find((p) => p.id === id);
+  return found ? found.name : id;
+}
+
+function choosePrinter(id) {
+  store(STORE_PRINTER, id);
+  setPrinter(id);
+  setSerial(load(serialKey(), ''));
+}
+
+let overviewRun = 0;
+
+/** The printer picker: shown when the server has several printers, with each one's state. */
+async function updatePrinterPick() {
+  const pick = $('#printer-pick');
+  const list = (state.status && state.status.printers) || [];
+  pick.hidden = list.length < 2;
+  if (pick.hidden) return;
+  const fill = (states) => {
+    pick.innerHTML = list.map((p) => {
+      const s = states[p.id];
+      const info = !s ? '' : s.ready ? ` · ${mediaName(printerMedia(s))}` : s.connected ? ' · not ready' : ' · no printer';
+      return `<option value="${esc(p.id)}">${esc(p.name)}${esc(info)}</option>`;
+    }).join('');
+    pick.value = printerId();
+  };
+  fill({});
+  const run = ++overviewRun;
+  const res = await getOverview();
+  if (!res.ok || run !== overviewRun) return;
+  fill(Object.fromEntries(res.data.printers.map((p) => [p.id, p.printer])));
 }
 
 /** Design for a media without a printer (a value of the "Design for" list). */
@@ -1075,9 +1126,15 @@ function printJobs(copies) {
 
 async function onPrint() {
   if ($('#print').disabled) return;
-  state.printing = true;
+  // the job stays on the printer it was started on, with its media and options, also when
+  // another printer is chosen while it runs
+  const target = printerId();
+  const tape = state.tape;
+  const extra = extraOptions();
+  const chain = $('#chain').checked;
+  const precut = $('#precut').checked;
+  state.printing.add(target);
   updatePrintButton();
-  $('#print').classList.add('busy');
   try {
     await (state.rendering || Promise.resolve());
     const jobs = printJobs(Number($('#copies').value) || 1);
@@ -1086,20 +1143,19 @@ async function onPrint() {
     for (let i = 0; i < jobs.length; i++) {
       const job = jobs[i];
       if (jobs.length > 1) $('#print-hint').textContent = `Printing ${i + 1} of ${jobs.length}…`;
-      const extra = extraOptions();
       const draw = extra.hires ? renderHires : renderLabel;
-      const { bitmap, errors } = await draw(resolveLabel(state.label, job.ctx), state.tape);
+      const { bitmap, errors } = await draw(resolveLabel(state.label, job.ctx), tape);
       const problem = Object.values(errors)[0];
       if (problem || !bitmap.countBlack()) {
         toast(`Label ${i + 1} cannot be printed: ${problem || 'it is empty'}`, 'bad');
         break;
       }
-      const res = await printLabel(toBase64(await encodePng(bitmap, undefined, state.tape.dpi)), {
+      const res = await printLabel(toBase64(await encodePng(bitmap, undefined, tape.dpi)), {
         copies: job.copies,
-        chain: $('#chain').checked || i < jobs.length - 1,
-        precut: $('#precut').checked,
+        chain: chain || i < jobs.length - 1,
+        precut,
         ...extra,
-      });
+      }, target);
       if (!res.ok) {
         toast(res.data.error || 'Printing failed', 'bad', res.data.output);
         if (res.status === 503) refreshStatus();
@@ -1117,8 +1173,7 @@ async function onPrint() {
       changed();
     }
   } finally {
-    state.printing = false;
-    $('#print').classList.remove('busy');
+    state.printing.delete(target);
     updatePrintButton();
   }
 }
@@ -1158,7 +1213,7 @@ async function renderPrinterChoice() {
   const printers = res.ok ? res.data.printers || [] : [];
   choice.hidden = printers.length < 2;
   if (choice.hidden) return;
-  const current = load(STORE_SERIAL, '');
+  const current = load(serialKey(), '');
   $('#printer-select').innerHTML = printers.map((p) =>
     `<option value="${esc(p.serial)}"${p.serial === current ? ' selected' : ''}${p.usable ? '' : ' disabled'}>${esc(p.model)} · ${esc(p.serial)}${p.usable ? '' : ' (not usable)'}</option>`).join('');
   if (!printers.some((p) => p.serial === current)) $('#printer-select').selectedIndex = -1;
@@ -1183,7 +1238,7 @@ async function openDetails() {
   const res = await getLog();
   const entries = res.ok ? res.data.entries : [];
   $('#details-log').innerHTML = entries.length
-    ? entries.map((e) => `<li class="${Number(e.code) === 0 ? '' : 'failed'}"><div><time>${esc(new Date(e.time).toLocaleString())}</time> · exit ${Number(e.code)} · ${Number(e.ms)} ms</div><code>${e.args[0] === 'ql' ? '' : 'ptouch-print '}${esc(e.args.join(' '))}</code><pre>${esc(e.output)}</pre></li>`).join('')
+    ? entries.map((e) => `<li class="${Number(e.code) === 0 ? '' : 'failed'}"><div>${e.printer ? `<strong>${esc(printerName(e.printer))}</strong> · ` : ''}<time>${esc(new Date(e.time).toLocaleString())}</time> · exit ${Number(e.code)} · ${Number(e.ms)} ms</div><code>${e.args[0] === 'ql' ? '' : 'ptouch-print '}${esc(e.args.join(' '))}</code><pre>${esc(e.output)}</pre></li>`).join('')
     : `<li class="muted">${res.ok && !res.data.enabled ? 'The print log is off: the data folder is not writable.' : 'Nothing printed yet.'}</li>`;
   dialog.showModal();
 }
@@ -1280,9 +1335,13 @@ async function init() {
     await logout();
     location.reload();
   });
-  setSerial(load(STORE_SERIAL, ''));
+  choosePrinter(load(STORE_PRINTER, ''));
+  $('#printer-pick').addEventListener('change', (e) => {
+    choosePrinter(e.target.value);
+    refreshStatus();
+  });
   $('#printer-select').addEventListener('change', async (e) => {
-    store(STORE_SERIAL, e.target.value);
+    store(serialKey(), e.target.value);
     setSerial(e.target.value);
     await refreshStatus();
     $('#details').close();

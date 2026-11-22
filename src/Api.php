@@ -19,6 +19,9 @@ final class Api
     ];
 
     private Config $config;
+    /** @var list<Target> */
+    private array $targets;
+    private Target $target;
     private Driver $printer;
     private Log $log;
     private ?Remote $remote;
@@ -31,10 +34,21 @@ final class Api
     {
         $this->config = $config;
         $this->log = $log ?? new Log((string) $config->get('data_dir'), (int) $config->get('log_entries'));
-        $this->printer = $printer ?? Drivers::create($config, $this->log);
-        $url = (string) $config->get('printer_url');
-        $this->remote = $url === '' ? null : new Remote($url, (string) $config->get('printer_token'), (int) $config->get('timeout'));
+        $this->targets = $printer !== null
+            ? [new Target($printer->name(), $printer->name(), $printer)]
+            : Targets::fromConfig($config);
+        $this->select($this->targets[0]);
         $this->session = new Session((string) $config->get('password'), (string) $config->get('data_dir'));
+    }
+
+    private function select(Target $target): void
+    {
+        $this->target = $target;
+        $this->remote = $target->remote;
+        // an agent's own driver is unknown here: the configured one (the first) stands in for
+        // answers without the agent
+        $first = trim(explode(',', (string) $this->config->get('printer_driver'))[0]);
+        $this->printer = $target->driver ?? Drivers::create($this->config->with(['printer_driver' => $first]));
     }
 
     /**
@@ -55,6 +69,7 @@ final class Api
             'font' => ['GET', 'font'],
             'log' => ['GET', 'log'],
             'printers' => ['GET', 'printers'],
+            'overview' => ['GET', 'overview'],
             'login' => ['POST', 'login'],
             'labels' => ['GET', 'labels'],
             'label-save' => ['POST', 'labelSave'],
@@ -89,6 +104,19 @@ final class Api
         }
         if ($handler === 'logout') {
             return Response::json(200, ['ok' => true], ['Set-Cookie' => Session::cookie('', $secure, 0)]);
+        }
+        $wanted = (string) ($query['printer'] ?? '');
+        if ($wanted !== '') {
+            $found = null;
+            foreach ($this->targets as $target) {
+                if ($target->id === $wanted) {
+                    $found = $target;
+                }
+            }
+            if ($found === null) {
+                return Response::json(400, ['error' => "there is no printer \"" . substr($wanted, 0, 40) . "\""]);
+            }
+            $this->select($found);
         }
         $serial = (string) ($query['serial'] ?? '');
         if ($serial !== '' && !preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/', $serial)) {
@@ -187,12 +215,45 @@ final class Api
 
     private function status(): Response
     {
+        $data = $this->statusData();
+        $data['printer_id'] = $this->target->id;
+        $data['printer_name'] = $this->target->name;
+        $data['printers'] = array_map(static function (Target $t): array {
+            return ['id' => $t->id, 'name' => $t->name, 'kind' => $t->kind()];
+        }, $this->targets);
+        return Response::json(200, $data);
+    }
+
+    /**
+     * The state of every printer at once, for the printer picker. Asks each printer in turn.
+     */
+    private function overview(): Response
+    {
+        $printers = [];
+        foreach ($this->targets as $target) {
+            $this->select($target);
+            $this->serial = '';
+            $data = $this->statusData();
+            $printers[] = [
+                'id' => $target->id,
+                'name' => $target->name,
+                'driver' => $data['driver'],
+                'agent' => $data['agent'] !== null,
+                'printer' => $data['printer'],
+            ];
+        }
+        return Response::json(200, ['printers' => $printers]);
+    }
+
+    /** @return array<string, mixed> */
+    private function statusData(): array
+    {
         if ($this->remote !== null) {
             return $this->remoteStatus($this->remote);
         }
         $version = $this->printer->version();
         $info = $this->printer->info();
-        return Response::json(200, [
+        return [
             'app_version' => Config::VERSION,
             'driver' => $this->printer->name(),
             'ptouch_version' => $this->printer->name() === 'ptouch' ? $version : null,
@@ -204,12 +265,13 @@ final class Api
             'shared_labels' => (new Labels((string) $this->config->get('data_dir')))->enabled(),
             'printer' => $info,
             'agent' => null,
-        ]);
+        ];
     }
 
-    private function remoteStatus(Remote $remote): Response
+    /** @return array<string, mixed> */
+    private function remoteStatus(Remote $remote): array
     {
-        $result = $remote->call('GET', 'status', '', $this->serial);
+        $result = $remote->call('GET', 'status', '', $this->serial, $this->target->remotePrinter);
         $data = $result['data'] ?? [];
         if ($result['status'] === 200 && isset($data['printer']) && is_array($data['printer'])) {
             $printer = $data['printer'];
@@ -227,7 +289,7 @@ final class Api
             $features = $this->printer->offlineFeatures();
             $maxCopies = (int) $this->config->get('max_copies');
         }
-        return Response::json(200, [
+        return [
             'app_version' => Config::VERSION,
             'driver' => $driver,
             'ptouch_version' => $version,
@@ -239,7 +301,7 @@ final class Api
             'shared_labels' => (new Labels((string) $this->config->get('data_dir')))->enabled(),
             'printer' => $printer,
             'agent' => ['url' => $remote->url(), 'version' => $data['app_version'] ?? null, 'reachable' => $result['status'] !== 0],
-        ]);
+        ];
     }
 
     /** @param array{status: int, data: array<string, mixed>|null, error: string} $result */
@@ -259,7 +321,7 @@ final class Api
     {
         $remote = $this->remote;
         assert($remote !== null);
-        $result = $remote->call($method, $action, $body, $this->serial);
+        $result = $remote->call($method, $action, $body, $this->serial, $this->target->remotePrinter);
         if ($result['status'] === 0 || $result['status'] === 401 || $result['data'] === null) {
             return Response::json(502, ['ok' => false, 'error' => $this->remoteProblem($remote, $result), 'output' => '']);
         }
