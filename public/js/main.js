@@ -283,8 +283,8 @@ function updatePrintButton() {
 
 /* ---------- several printers (#147) ---------- */
 
-/** Id of the printer the status is about (the server's first one when none was chosen). */
-const printerId = () => (state.status && state.status.printer_id) || currentPrinter();
+/** Id of the chosen printer, else the one the status is about (the server's first one). */
+const printerId = () => currentPrinter() || (state.status && state.status.printer_id) || '';
 
 function printerName(id) {
   const found = ((state.status && state.status.printers) || []).find((p) => p.id === id);
@@ -311,7 +311,7 @@ async function updatePrinterPick() {
       const info = !s ? '' : s.ready ? ` · ${mediaName(printerMedia(s))}` : s.connected ? ' · not ready' : ' · no printer';
       return `<option value="${esc(p.id)}">${esc(p.name)}${esc(info)}</option>`;
     }).join('');
-    pick.value = printerId();
+    pick.value = (state.status && state.status.printer_id) || printerId();
   };
   fill({});
   const run = ++overviewRun;
@@ -1128,12 +1128,14 @@ async function onPrint() {
   if ($('#print').disabled) return;
   // the job stays on the printer it was started on, with its media and options, also when
   // another printer is chosen while it runs
-  const target = printerId();
+  // '' (no choice made) means the server's first printer, without naming it in the request
+  const target = currentPrinter();
+  const busy = printerId();
   const tape = state.tape;
   const extra = extraOptions();
   const chain = $('#chain').checked;
   const precut = $('#precut').checked;
-  state.printing.add(target);
+  state.printing.add(busy);
   updatePrintButton();
   try {
     await (state.rendering || Promise.resolve());
@@ -1173,7 +1175,7 @@ async function onPrint() {
       changed();
     }
   } finally {
-    state.printing.delete(target);
+    state.printing.delete(busy);
     updatePrintButton();
   }
 }
